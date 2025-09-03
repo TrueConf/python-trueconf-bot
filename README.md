@@ -1,4 +1,4 @@
-<p style="text-align: center;">
+<p align="center">
   <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://trueconf.com/images/headMenu/logo.svg">
@@ -7,11 +7,11 @@
   </a>
 </p>
 
-<h1 style="text-align: center;">python-trueconf-bot</h1>
+<h1 align="center">python-trueconf-bot</h1>
 
-<p style="text-align: center;">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a>, enabling quick integration of chatbots into TrueConf.</p>
+<p align="center">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a>, enabling quick integration of chatbots into TrueConf.</p>
 
-<p style="text-align: center;">
+<p align="center">
     <a href="https://t.me/trueconf_chat" target="_blank">
         <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
     </a>
@@ -23,11 +23,11 @@
     </a>
 </p>
 
-<p style="text-align: center;">
+<p align="center">
   <img src="/assets/head_en.png" alt="Example Bot in TrueConf" width="600" height="auto">
 </p>
 
-<p style="text-align: center;">
+<p align="center">
   <a href="./README.md">English</a> /
   <a href="./README-ru.md">Русский</a> /
 </p>
