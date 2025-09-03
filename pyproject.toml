@@ -44,7 +44,6 @@ dependencies = [
     "websockets",
     "httpx",
     "mashumaro",
-    "pillow",
     "aiofiles",
     "magic-filter"
 ]
