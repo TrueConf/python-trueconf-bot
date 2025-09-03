@@ -1,0 +1,86 @@
+<p style="text-align: center;">
+  <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://trueconf.com/images/headMenu/logo.svg">
+      <img width="150" src="https://trueconf.com/images/headMenu/logo.svg">
+    </picture>
+  </a>
+</p>
+
+<h1 style="text-align: center;">python-trueconf-bot</h1>
+
+<p style="text-align: center;">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a>, enabling quick integration of chatbots into TrueConf.</p>
+
+<p style="text-align: center;">
+    <a href="https://t.me/trueconf_chat" target="_blank">
+        <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
+    </a>
+    <a href="https://chat.whatsapp.com/GY97WBzSgvD1cJG0dWEiGP">
+        <img src="https://img.shields.io/badge/whatsapp-commiunity-gree?style=flat-square&logo=whatsapp" />
+    </a>
+    <a href="#">
+        <img src="https://img.shields.io/github/stars/trueconf/python-trueconf-bot?style=social" />
+    </a>
+</p>
+
+<p style="text-align: center;">
+  <img src="/assets/head_en.png" alt="Example Bot in TrueConf" width="600" height="auto">
+</p>
+
+<p style="text-align: center;">
+  <a href="./README.md">English</a> /
+  <a href="./README-ru.md">Русский</a> /
+</p>
+
+> [!TIP]
+> During development, we were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, making the transition **simple** and **painless** for developers already familiar with it.
+
+## Key Features
+
+* Easy integration with the [TrueConf Server Chatbot API](https://trueconf.com/docs/chatbot-connector/en/overview/);
+* Quick start with the `python-trueconf-bot` package;
+* Modern and intuitive Python API (`from trueconf import Bot`);
+* Support for all major TrueConf Server chatbot features.
+
+> [!IMPORTANT]
+> Chatbot functionality is supported starting from TrueConf Server 5.5, as well as in TrueConf Enterprise and TrueConf Server Free.
+
+## Example Bot
+
+```python
+import asyncio
+from trueconf import Bot, Dispatcher, Router, Message, F, ParseMode
+from os import getenv
+
+router = Router()
+dp = Dispatcher()
+dp.include_router(router)
+
+TOKEN = getenv("TOKEN")
+
+bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
+
+
+@router.message(F.text)
+async def echo(msg: Message):
+    await msg.answer(f"You says: **{msg.text}**", parse_mode=ParseMode.MARKDOWN)
+
+
+async def main():
+    await bot.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Documentation and Support
+
+1. [TrueConf Server Chatbot API Documentation](https://trueconf.com/docs/chatbot-connector/en/overview/)
+2. [python-trueconf-bot Documentation](https://trueconf.github.io/python-trueconf-bot/en/)
+
+All updates and releases are available in the repository. Track build status and test coverage.
+
+---
+
+Start building smart and reliable bots for TrueConf today with **python-trueconf-bot**!

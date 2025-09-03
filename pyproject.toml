@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm>=7.2.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-trueconf-bot"
+dynamic = ["version"]
+description = "Lightweight and powerful framework for the TrueConf Server Chatbot API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-3-Clause-Clear"
+license-files = ["LICENSE*"]
+authors = [
+    { name = "TrueConf LLC", email = "info@trueconf.com" },
+    { name = "Anton Baadzhi", email = "baadzhianton@gmail.com" }
+]
+
+keywords = [
+    "trueconf",
+    "chatbot",
+    "bot",
+    "api",
+    "framework",
+    "wrapper",
+    "asyncio",
+    "websocket"
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Communications :: Chat",
+]
+
+dependencies = [
+    "websockets",
+    "httpx",
+    "mashumaro",
+    "pillow",
+    "aiofiles",
+    "magic-filter"
+]
+
+[tool.setuptools]
+packages = ["trueconf"]
+
+[project.urls]
+Homepage = "https://github.com/TrueConf/python-trueconf-bot"
+Repository = "https://github.com/TrueConf/python-trueconf-bot"
+Documentation = "https://trueconf.github.io/python-trueconf-bot"
+Issues = "https://github.com/TrueConf/python-trueconf-bot/issues"
+
+[tool.setuptools.package-data]
+"trueconf" = ["py.typed"]
+
+[tool.setuptools_scm]
+version_file = "trueconf/_version.py"
