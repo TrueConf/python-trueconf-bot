@@ -14,12 +14,12 @@
 
 ### Установка через pip
 ```bash
-pip install python-trueconf-bot
+pip install git+https://github.com/TrueConf/{{product_name}}
 ```
 
 ## Сравнение с aiogram
 
-| Возможность             | aiogram (Telegram)                             | TrueConf Chatbot Connector                                                                |
+| Возможность             | aiogram (Telegram)                             | {{product_name}} (TrueConf)                                                               |
 |-------------------------|------------------------------------------------|-------------------------------------------------------------------------------------------|
 | Асинхронность           | asyncio                                        | asyncio                                                                                   |
 | Декораторы для роутинга | `@router.message(...)`                         | `@router.message(...)`                                                                    |

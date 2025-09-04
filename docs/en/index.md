@@ -25,12 +25,12 @@ This library is designed to simplify the development of chatbots by providing re
 ### Installation using pip
 
 ```shell
-pip install python-trueconf-bot
+pip install git+https://github.com/TrueConf/{{product_name}}
 ```
 
 ## Comparison with aiogram
 
-| Feature             | aiogram (Telegram)                             | TrueConf Chatbot Connector                                                                |
+| Feature             | aiogram (Telegram)                             | {{product_name}} (TrueConf)                                                               |
 |---------------------|------------------------------------------------|-------------------------------------------------------------------------------------------|
 | Asynchronous        | asyncio                                        | asyncio                                                                                   |
 | Routing decorators  | `@router.message(...)`                         | `@router.message(...)`                                                                    |

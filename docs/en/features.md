@@ -25,11 +25,11 @@ router = Router()
 
 @router.message(F.text.startswith("/start"))
 async def on_start(msg: Message):
-  await msg.answer("Привет! Я TrueConf бот 👋")
+  await msg.answer("Hello! I'm TrueConf bot 👋")
 
 @router.message(F.document.mime_type == "application/pdf")
 async def on_pdf(msg: Message):
-  await msg.reply("Спасибо за PDF!")
+  await msg.reply("Thanks for the PDF!")
 ```
 
 ## Two Connection Options
@@ -51,8 +51,8 @@ async def on_pdf(msg: Message):
 Common methods are available for messages:
 
 ```python
-await msg.answer("Текст в чат")
-await msg.reply("Ответ на сообщение")
+await msg.answer("Text to chat")
+await msg.reply("Reply to a message")
 await msg.copy_to(chat_id="other_chat")
 ```
 
