@@ -1,5 +1,7 @@
-from trueconf.enums import MessageType
-from trueconf.types import Message
+from __future__ import annotations
+from trueconf.enums.message_type import MessageType
+from trueconf.types.message import Message
+
 
 class MessageFilter:
     """Фильтр по payload.type (= EnvelopeType)."""

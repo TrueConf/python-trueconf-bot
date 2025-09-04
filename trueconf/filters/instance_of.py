@@ -1,6 +1,6 @@
+from __future__ import annotations
 from typing import Type
-
-from . import Event
+from trueconf.filters.base import Event
 
 
 class InstanceOfFilter:

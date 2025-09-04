@@ -1,10 +1,13 @@
+import aiofiles
 import asyncio
 import contextlib
+import httpx
 import json
 import mimetypes
 import signal
 import ssl
 import tempfile
+import websockets
 from pathlib import Path
 from contextlib import AsyncExitStack
 from typing import (
@@ -19,77 +22,68 @@ from typing import (
     Unpack
 )
 
-import httpx
-import aiofiles
-import websockets
-
-from .. import loggers
-from ..dispatcher.dispatcher import Dispatcher
-from ..enums import ParseMode, SurveyType, FileReadyState
-from ..exceptions import ApiError
-from ..methods import (
-    AuthMethod,
-    SendMessage,
-    UploadFile,
-    SendFile,
-    CreateP2PChat,
-    CreateChannel,
-    CreateGroupChat,
-    TrueConfMethod,
-    GetChatByID,
-    GetChats,
-    AddChatParticipant,
-    RemoveChat,
-    RemoveChatParticipant,
-    HasChatParticipant,
-    GetChatParticipants,
-    GetUserDisplayName,
-    EditMessage,
-    ForwardMessage,
-    GetMessageById,
-    GetChatHistory,
-    RemoveMessage,
-    GetFileInfo,
-    SubscribeFileProgress,
-    UnsubscribeFileProgress,
-    SendSurvey,
-    EditSurvey,
-)
-
-from ..types.responses import (
-    AddChatParticipantResponse,
-    ApiError,
-    CreateChannelResponse,
-    CreateGroupChatResponse,
-    CreateP2PChatResponse,
-    EditMessageResponse,
-    EditSurveyResponse,
-    ForwardMessageResponse,
-    GetChatByIdResponse,
-    GetChatHistoryResponse,
-    GetChatParticipantsResponse,
-    GetChatsResponse,
-    GetFileInfoResponse,
-    GetMessageByIdResponse,
-    GetUserDisplayNameResponse,
-    HasChatParticipantResponse,
-    RemoveChatParticipantResponse,
-    RemoveChatResponse,
-    RemoveMessageResponse,
-    SendFileResponse,
-    SendMessageResponse,
-    SendSurveyResponse,
-    SubscribeFileProgressResponse,
-    UnsubscribeFileProgressResponse,
-)
-from trueconf.types.requests.uploading_progress import UploadingProgress
+from trueconf import loggers
 from trueconf.client.session import WebSocketSession
+from trueconf.dispatcher.dispatcher import Dispatcher
+from trueconf.enums.file_ready_state import FileReadyState
+from trueconf.enums.parse_mode import ParseMode
+from trueconf.enums.survey_type import SurveyType
+from trueconf.exceptions import ApiError
+from trueconf.methods.add_participant_to_chat import AddChatParticipant
+from trueconf.methods.auth import AuthMethod
+from trueconf.methods.base import TrueConfMethod
+from trueconf.methods.create_channel import CreateChannel
+from trueconf.methods.create_group_chat import CreateGroupChat
+from trueconf.methods.create_p2p_chat import CreateP2PChat
+from trueconf.methods.edit_message import EditMessage
+from trueconf.methods.edit_survey import EditSurvey
+from trueconf.methods.forward_message import ForwardMessage
+from trueconf.methods.get_chat_by_id import GetChatByID
+from trueconf.methods.get_chat_history import GetChatHistory
+from trueconf.methods.get_chat_participants import GetChatParticipants
+from trueconf.methods.get_chats import GetChats
+from trueconf.methods.get_file_info import GetFileInfo
+from trueconf.methods.get_message_by_id import GetMessageById
+from trueconf.methods.get_user_display_name import GetUserDisplayName
+from trueconf.methods.has_chat_participant import HasChatParticipant
+from trueconf.methods.remove_chat import RemoveChat
+from trueconf.methods.remove_message import RemoveMessage
+from trueconf.methods.remove_participant_from_chat import RemoveChatParticipant
+from trueconf.methods.send_file import SendFile
+from trueconf.methods.send_message import SendMessage
+from trueconf.methods.send_survey import SendSurvey
+from trueconf.methods.subscribe_file_progress import SubscribeFileProgress
+from trueconf.methods.unsubscribe_file_progress import UnsubscribeFileProgress
+from trueconf.methods.upload_file import UploadFile
 from trueconf.types.parser import parse_update
-from trueconf.utils import (
-    validate_token,
-    get_auth_token,
-    generate_secret_for_survey,
-)
+from trueconf.types.requests.uploading_progress import UploadingProgress
+from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
+from trueconf.types.responses.api_error import ApiError
+from trueconf.types.responses.create_channel_response import CreateChannelResponse
+from trueconf.types.responses.create_group_chat_response import CreateGroupChatResponse
+from trueconf.types.responses.create_p2p_chat_response import CreateP2PChatResponse
+from trueconf.types.responses.edit_message_response import EditMessageResponse
+from trueconf.types.responses.edit_survey_response import EditSurveyResponse
+from trueconf.types.responses.forward_message_response import ForwardMessageResponse
+from trueconf.types.responses.get_chat_by_id_response import GetChatByIdResponse
+from trueconf.types.responses.get_chat_history_response import GetChatHistoryResponse
+from trueconf.types.responses.get_chat_participants_response import GetChatParticipantsResponse
+from trueconf.types.responses.get_chats_response import GetChatsResponse
+from trueconf.types.responses.get_file_info_response import GetFileInfoResponse
+from trueconf.types.responses.get_message_by_id_response import GetMessageByIdResponse
+from trueconf.types.responses.get_user_display_name_response import GetUserDisplayNameResponse
+from trueconf.types.responses.has_chat_participant_response import HasChatParticipantResponse
+from trueconf.types.responses.remove_chat_participant_response import RemoveChatParticipantResponse
+from trueconf.types.responses.remove_chat_response import RemoveChatResponse
+from trueconf.types.responses.remove_message_response import RemoveMessageResponse
+from trueconf.types.responses.send_file_response import SendFileResponse
+from trueconf.types.responses.send_message_response import SendMessageResponse
+from trueconf.types.responses.send_survey_response import SendSurveyResponse
+from trueconf.types.responses.subscribe_file_progress_response import SubscribeFileProgressResponse
+from trueconf.types.responses.unsubscribe_file_progress_response import UnsubscribeFileProgressResponse
+from trueconf.utils import generate_secret_for_survey
+from trueconf.utils import get_auth_token
+from trueconf.utils import validate_token
 
 T = TypeVar("T")
 
@@ -342,7 +336,7 @@ class Bot:
 
         Args:
             file_path (str): Path to the file to be uploaded.
-            preview (bytes | None, optional): Preview data in WebP format (if applicable).
+            preview_path (bytes | None, optional): Preview data in WebP format (if applicable).
             preview_mimetype (str, optional): MIME type of the preview, e.g., "image/webp".
             verify (bool, optional): Whether to verify the SSL certificate. Defaults to True.
             timeout (int, optional): Upload timeout in seconds. Defaults to 60.
@@ -369,8 +363,6 @@ class Bot:
                 client = await stack.enter_async_context(
                     httpx.AsyncClient(verify=verify, timeout=httpx.Timeout(timeout)))
 
-
-
                 f = stack.enter_context(open(file_path, "rb"))
                 files = {"file": (file_name, f, file_mimetype)}
 
@@ -386,7 +378,6 @@ class Bot:
         except Exception as e:
             loggers.chatbot.error(f"Failed to upload file to server: {e}")
             return None
-
 
     async def _send_ws_payload(self, message: dict) -> bool:
         if not self._session:

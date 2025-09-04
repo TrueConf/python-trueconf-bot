@@ -1,8 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
-
-from .base import TrueConfMethod
-from ..types.responses import GetChatHistoryResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.get_chat_history_response import GetChatHistoryResponse
 
 
 @dataclass
@@ -12,7 +11,7 @@ class GetChatHistory(TrueConfMethod[GetChatHistoryResponse]):
 
     chat_id: str
     count: int
-    from_message_id: Optional[str] = None
+    from_message_id: str | None = None
 
     def __post_init__(self):
         super().__init__()

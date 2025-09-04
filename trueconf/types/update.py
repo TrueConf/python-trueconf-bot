@@ -1,14 +1,11 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
 from mashumaro import DataClassDictMixin
-
-from ..client.context_controller import BoundToBot
+from trueconf.client.context_controller import BoundToBot
 
 
 @dataclass
-class Update(BoundToBot,DataClassDictMixin):
-
-
+class Update(BoundToBot, DataClassDictMixin):
     method: str
     type: int
     id: int

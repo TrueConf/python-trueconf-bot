@@ -1,6 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from trueconf.client.context_controller import BoundToBot
 from pathlib import Path
+
 
 @dataclass
 class Document(BoundToBot):
@@ -49,7 +51,7 @@ class Document(BoundToBot):
         r = await self.bot.get_file_info(self.file_id)
         return r.preview.download_url
 
-    async def download(self, dest_path:str) -> Path | None:
+    async def download(self, dest_path: str) -> Path | None:
         """
         Shortcut for the `download_file_by_id` method of the bot instance.
 
@@ -67,4 +69,3 @@ class Document(BoundToBot):
             Path | None: Path to the downloaded file, or None if the download failed.
         """
         return await self.bot.download_file_by_id(file_id=self.file_id, dest_path=dest_path)
-

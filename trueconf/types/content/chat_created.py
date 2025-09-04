@@ -1,6 +1,6 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-
-from .base import AbstractEnvelopeContent
+from trueconf.types.content.base import AbstractEnvelopeContent
 
 
 @dataclass

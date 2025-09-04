@@ -1,19 +1,21 @@
-import asyncio
+from __future__ import annotations
 import logging
+from asyncio import get_running_loop
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
-
 from trueconf.exceptions import ApiError as ApiErrorException
-from trueconf.types.responses import ApiError
+from trueconf.types.responses.api_error import ApiError
 
 logger = logging.getLogger("chat_bot")
 
 T = TypeVar("T")
 
+
 @runtime_checkable
 class ReturnResolver(Protocol[T]):
     @staticmethod
     def parse(resp: dict) -> T: ...
+
 
 class MessageIdCounter:
     _counter = 0
@@ -29,16 +31,18 @@ class TrueConfMethod(ABC, Generic[T]):
         self.id = MessageIdCounter.get_next_id()
 
     if TYPE_CHECKING:
-            __api_method__: ClassVar[str]
-            __returning__: ClassVar[type[T]]
+        __api_method__: ClassVar[str]
+        __returning__: ClassVar[type[T]]
     else:
-            @property
-            @abstractmethod
-            def __api_method__(self) -> str: ...
+        @property
+        @abstractmethod
+        def __api_method__(self) -> str:
+            ...
 
-            @property
-            @abstractmethod
-            def __returning__(self) -> type[T]: ...
+        @property
+        @abstractmethod
+        def __returning__(self) -> type[T]:
+            ...
 
     @abstractmethod
     def payload(self) -> dict:
@@ -71,10 +75,9 @@ class TrueConfMethod(ABC, Generic[T]):
         return ret(**payload)  # type: ignore[misc]
 
     async def __call__(self, bot: "ChatBot") -> T:
-        loop = asyncio.get_running_loop()
+        loop = get_running_loop()
         future = loop.create_future()
         bot._register_future(self.id, future)
-
 
         try:
             message = {
@@ -89,11 +92,10 @@ class TrueConfMethod(ABC, Generic[T]):
                 f"{type(self).__name__} must define __api_method__ and __returning__"
             )
 
-
         logger.debug(f"📤 Sending message: {message}")
 
         await bot._send_ws_payload(message)
-                
+
         data = await future
         logger.debug(f"✅ Received response for {self.__api_method__}: {data}")
 

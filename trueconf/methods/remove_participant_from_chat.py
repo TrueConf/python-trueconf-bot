@@ -1,7 +1,8 @@
+from __future__ import annotations
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import RemoveChatParticipantResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.remove_chat_participant_response import RemoveChatParticipantResponse
 
 
 @dataclass

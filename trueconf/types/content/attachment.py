@@ -1,8 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
-
 from trueconf.client.context_controller import BoundToBot
-from .base import AbstractEnvelopeContent
+from trueconf.types.content.base import AbstractEnvelopeContent
 
 
 @dataclass

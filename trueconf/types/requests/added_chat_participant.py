@@ -1,9 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-
 from mashumaro import DataClassDictMixin
-
 from trueconf.client.context_controller import BoundToBot
-from ..author_box import EnvelopeAuthor
+from trueconf.types.author_box import EnvelopeAuthor
 
 
 @dataclass
@@ -34,7 +33,7 @@ class AddedChatParticipant(BoundToBot, DataClassDictMixin):
             print(event.user_id)
         ```
     """
-    
+
     timestamp: int
     chat_id: str = field(metadata={"alias": "chatId"})
     user_id: str = field(metadata={"alias": "userId"})

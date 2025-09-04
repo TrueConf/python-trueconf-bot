@@ -1,9 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List
-
 from mashumaro import DataClassDictMixin
-
-from .get_chat_by_id_response import GetChatByIdResponse
+from trueconf.types.responses.get_chat_by_id_response import GetChatByIdResponse
 
 
 @dataclass

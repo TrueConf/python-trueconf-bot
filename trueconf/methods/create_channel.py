@@ -1,12 +1,11 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import CreateChannelResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.create_channel_response import CreateChannelResponse
 
 
 @dataclass
 class CreateChannel(TrueConfMethod[CreateChannelResponse]):
-
     __api_method__ = "createChannel"
     __returning__ = CreateChannelResponse
 
@@ -19,4 +18,3 @@ class CreateChannel(TrueConfMethod[CreateChannelResponse]):
         return {
             "title": self.title,
         }
-

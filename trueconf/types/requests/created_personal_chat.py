@@ -1,9 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-
 from mashumaro import DataClassDictMixin
-
 from trueconf.client.context_controller import BoundToBot
-from trueconf.enums import ChatType
+from trueconf.enums.chat_type import ChatType
 from trueconf.types.last_message import LastMessage
 
 

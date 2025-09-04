@@ -1,21 +1,21 @@
+from __future__ import annotations
 from typing import TypeVar
-
-from trueconf.enums import (
-    UpdateType,
-    MessageType,
-    IncomingUpdateMethod as IUM)
+from trueconf.enums.incoming_update_method import IncomingUpdateMethod as IUM
+from trueconf.enums.message_type import MessageType
+from trueconf.enums.update_type import UpdateType
 from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
-from trueconf.types.message import Message, TextContent, AttachmentContent, SurveyContent
-from trueconf.types.requests import (
-    RemovedChatParticipant,
-    RemovedMessage,
-    EditedMessage,
-    AddedChatParticipant,
-    CreatedPersonalChat,
-    CreatedGroupChat,
-    CreatedChannel,
-    RemovedChat,
-)
+from trueconf.types.content.attachment import AttachmentContent
+from trueconf.types.content.survey import SurveyContent
+from trueconf.types.content.text import TextContent
+from trueconf.types.message import Message
+from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.created_channel import CreatedChannel
+from trueconf.types.requests.created_group_chat import CreatedGroupChat
+from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
+from trueconf.types.requests.edited_message import EditedMessage
+from trueconf.types.requests.removed_chat import RemovedChat
+from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
+from trueconf.types.requests.removed_message import RemovedMessage
 from trueconf.types.requests.uploading_progress import UploadingProgress
 from trueconf.types.update import Update
 
