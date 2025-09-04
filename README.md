@@ -29,7 +29,7 @@
 
 <p align="center">
   <a href="./README.md">English</a> /
-  <a href="./README-ru.md">Русский</a> /
+  <a href="./README-ru.md">Русский</a>
 </p>
 
 > [!TIP]
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 ## Documentation and Support
 
 1. [TrueConf Server Chatbot API Documentation](https://trueconf.com/docs/chatbot-connector/en/overview/)
-2. [python-trueconf-bot Documentation](https://trueconf.github.io/python-trueconf-bot/en/)
+2. [python-trueconf-bot Documentation](https://trueconf.github.io/python-trueconf-bot/)
 
 All updates and releases are available in the repository. Track build status and test coverage.
 
