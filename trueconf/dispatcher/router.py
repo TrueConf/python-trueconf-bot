@@ -1,30 +1,29 @@
 from __future__ import annotations
-
 import asyncio
 import logging
 import inspect
 from typing import Callable, Awaitable, List, Tuple, Any, Union
-
 from magic_filter import MagicFilter
-
+from trueconf.filters.base import Event
+from trueconf.filters.base import Filter
+from trueconf.filters.instance_of import InstanceOfFilter
+from trueconf.filters.method import MethodFilter
 from trueconf.types.message import Message
-from trueconf.types.requests import (
-    RemovedChatParticipant,
-    RemovedMessage,
-    EditedMessage,
-    AddedChatParticipant,
-    CreatedPersonalChat,
-    CreatedGroupChat,
-    CreatedChannel,
-    RemovedChat,
-    UploadingProgress
-)
-from trueconf.filters import Filter, Event, InstanceOfFilter, MethodFilter
+from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.created_channel import CreatedChannel
+from trueconf.types.requests.created_group_chat import CreatedGroupChat
+from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
+from trueconf.types.requests.edited_message import EditedMessage
+from trueconf.types.requests.removed_chat import RemovedChat
+from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
+from trueconf.types.requests.removed_message import RemovedMessage
+from trueconf.types.requests.uploading_progress import UploadingProgress
 
 logger = logging.getLogger("chat_bot")
 
 Handler = Callable[[Event], Awaitable[None]]
 FilterLike = Union[Filter, MagicFilter, Callable[[Event], bool], Callable[[Event], Awaitable[bool]], Any]
+
 
 class Router:
     """
@@ -127,19 +126,20 @@ class Router:
         """Register a handler for message deletion events."""
         return self._register((InstanceOfFilter(RemovedMessage), *filters))
 
-
     def _register(self, filters: Tuple[FilterLike, ...]):
         """Internal decorator for registering handlers with filters."""
+
         def decorator(func: Handler):
             if not asyncio.iscoroutinefunction(func):
                 async def async_wrapper(evt: Event):
                     return func(evt)
+
                 self._handlers.append((filters, async_wrapper))
                 return func
             self._handlers.append((filters, func))
             return func
-        return decorator
 
+        return decorator
 
     async def _feed(self, event: Event) -> bool:
         """Feed an incoming event to the router and invoke the first matching handler."""
@@ -174,11 +174,13 @@ class Router:
         """Internal method to spawn a task for executing the matched handler."""
         name = getattr(handler, "__name__", "<handler>")
         logger.info(f"[router:{self.name}] matched handler={name} filters=[{filters_str}]")
+
         async def _run():
             try:
                 await handler(event)
             except Exception as e:
                 logger.exception(f"Handler {name} failed: {e}")
+
         asyncio.create_task(_run())
 
     async def _apply_filter(self, f: Filter | Any, event: Event) -> bool:

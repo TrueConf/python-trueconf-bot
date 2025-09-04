@@ -1,8 +1,6 @@
 from __future__ import annotations
-
 from typing import Any
-
-from trueconf.enums import MessageType
+from trueconf.enums.message_type import MessageType
 from trueconf.types.message import Message
 
 Event = Any  # позже можно заменить на типизированные модели

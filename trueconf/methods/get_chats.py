@@ -1,7 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import GetChatsResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.get_chats_response import GetChatsResponse
 
 
 @dataclass

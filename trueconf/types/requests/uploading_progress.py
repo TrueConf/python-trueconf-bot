@@ -1,12 +1,11 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-
 from mashumaro import DataClassDictMixin
-
 from trueconf.client.context_controller import BoundToBot
 
 
 @dataclass
-class UploadingProgress(BoundToBot,DataClassDictMixin):
+class UploadingProgress(BoundToBot, DataClassDictMixin):
     """
         **Event type:** file upload progress.
 

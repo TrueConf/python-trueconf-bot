@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from trueconf.client.context_controller import BoundToBot
 from pathlib import Path

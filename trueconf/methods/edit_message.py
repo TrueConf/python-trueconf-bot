@@ -1,7 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import EditMessageResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.edit_message_response import EditMessageResponse
 
 
 @dataclass

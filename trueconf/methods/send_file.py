@@ -1,7 +1,8 @@
+from __future__ import annotations
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import SendFileResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.send_file_response import SendFileResponse
 
 
 @dataclass
@@ -18,7 +19,7 @@ class SendFile(TrueConfMethod[SendFileResponse]):
     def payload(self):
         return {
             "chatId": self.chat_id,
-                "content": {
-                    "temporalFileId": self.temporal_file_id,
-                }
+            "content": {
+                "temporalFileId": self.temporal_file_id,
+            }
         }

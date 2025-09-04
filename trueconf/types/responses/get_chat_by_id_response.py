@@ -1,8 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-
 from mashumaro import DataClassDictMixin
-
-from ..last_message import LastMessage
+from trueconf.types.last_message import LastMessage
 
 
 @dataclass

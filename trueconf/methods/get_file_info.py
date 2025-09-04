@@ -1,7 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import GetFileInfoResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.get_file_info_response import GetFileInfoResponse
 
 
 @dataclass

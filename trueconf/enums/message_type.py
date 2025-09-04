@@ -1,6 +1,6 @@
 from enum import Enum
-
 from typing import Any
+
 
 class MessageType(int, Enum):
     """
@@ -17,7 +17,6 @@ class MessageType(int, Enum):
     FORWARDED_MESSAGE = 201
     ATTACHMENT = 202
     SURVEY = 204
-
 
     async def __call__(self, event: Any) -> bool:
         if getattr(event, "type", None) is None:

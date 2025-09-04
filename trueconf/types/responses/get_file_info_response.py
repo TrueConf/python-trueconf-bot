@@ -1,9 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, List
-
 from mashumaro import DataClassDictMixin
-
-from trueconf.enums import FileReadyState
+from trueconf.enums.file_ready_state import FileReadyState
 
 
 @dataclass

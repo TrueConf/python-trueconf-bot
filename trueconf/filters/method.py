@@ -1,6 +1,5 @@
 from __future__ import annotations
-
-from . import Event
+from trueconf.filters.base import Event
 
 
 class MethodFilter:

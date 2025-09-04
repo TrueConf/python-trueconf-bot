@@ -1,28 +1,21 @@
 from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import Optional, Union
-
 from mashumaro import DataClassDictMixin
-
-from trueconf.enums import MessageType
-from .author_box import EnvelopeAuthor, EnvelopeBox
-from .content import (
-    TextContent,
-    AttachmentContent,
-    SurveyContent,
-    ParticipantRoleContent,
-    RemoveParticipant,
-    ForwardMessage,
-    Photo,
-    Video,
-    Sticker,
-    Document
-
-)
-
-from ..client.context_controller import BoundToBot
-from ..enums import ParseMode
+from trueconf.enums.message_type import MessageType
+from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
+from trueconf.types.content.text import TextContent
+from trueconf.types.content.attachment import AttachmentContent
+from trueconf.types.content.survey import SurveyContent
+from trueconf.types.content.remove_participant import RemoveParticipant
+from trueconf.types.content.forward_message import ForwardMessage
+from trueconf.types.content.chat_created import ParticipantRoleContent
+from trueconf.types.content.photo import Photo
+from trueconf.types.content.video import Video
+from trueconf.types.content.sticker import Sticker
+from trueconf.types.content.document import Document
+from trueconf.client.context_controller import BoundToBot
+from trueconf.enums.parse_mode import ParseMode
 
 import logging
 
@@ -132,7 +125,6 @@ class Message(BoundToBot, DataClassDictMixin):
 
         if isinstance(self.content, AttachmentContent) and not self.content.mimetype.startswith(
                 ("image/", "video/", "audio/")):
-
             return Document(
                 file_id=self.content.file_id,
                 file_name=self.content.file_name,
@@ -220,7 +212,7 @@ class Message(BoundToBot, DataClassDictMixin):
         Examples:
             >>> @<router>.message()
             >>> async def on_message(message:Message):
-            >>> await message.answer_photo(file_path='/path/to/file.jpg', preview_path='/path/to/preview.jpg')
+            >>>     await message.answer_photo(file_path='/path/to/file.jpg', preview_path='/path/to/preview.jpg')
         """
 
         return await self.bot.send_photo(
@@ -248,7 +240,7 @@ class Message(BoundToBot, DataClassDictMixin):
         Examples:
             >>> @<router>.message()
             >>> async def on_message(message:Message):
-            >>> await message.answer_sticker(file_path='/path/to/file.webp')
+            >>>     await message.answer_sticker(file_path='/path/to/file.webp')
         """
 
         return await self.bot.send_document(
@@ -275,7 +267,7 @@ class Message(BoundToBot, DataClassDictMixin):
         Examples:
             >>> @<router>.message()
             >>> async def on_message(message:Message):
-            >>> await message.answer_sticker(file_path='/path/to/file.webp')
+            >>>     await message.answer_sticker(file_path='/path/to/file.webp')
         """
 
         return await self.bot.send_sticker(
@@ -303,11 +295,11 @@ class Message(BoundToBot, DataClassDictMixin):
         Examples:
             >>> @<router>.message()
             >>> async def on_message(message:Message):
-            >>> await message.answer("Hi, there!")
+            >>>     await message.answer("Hi, there!")
 
             >>> @<router>.message()
             >>> async def on_message(message:Message):
-            >>> await message.answer("Hi, **there!**", parse_mode=ParseMode.MARKDOWN)
+            >>>     await message.answer("Hi, **there!**", parse_mode=ParseMode.MARKDOWN)
         """
 
         return await self.bot.send_message(

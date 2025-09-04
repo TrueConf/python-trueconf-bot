@@ -1,8 +1,6 @@
 from __future__ import annotations
-
 from typing import List
-
-from trueconf.filters import Event
+from trueconf.filters.base import Event
 from trueconf.dispatcher.router import Router
 
 
@@ -26,7 +24,6 @@ class Dispatcher:
             routers (List[Router]): List of root routers included in the dispatcher.
 
         """
-
 
     def __init__(self):
         """Initializes an empty dispatcher with no routers."""

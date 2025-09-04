@@ -1,8 +1,9 @@
+from __future__ import annotations
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
-
-from .base import TrueConfMethod
-from ..types.responses import SendMessageResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.send_message_response import SendMessageResponse
 
 
 @dataclass

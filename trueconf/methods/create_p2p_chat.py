@@ -1,7 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import CreateP2PChatResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.create_p2p_chat_response import CreateP2PChatResponse
 
 
 @dataclass

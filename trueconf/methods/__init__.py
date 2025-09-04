@@ -2,7 +2,7 @@ from .add_participant_to_chat import AddChatParticipant
 from .auth import AuthMethod
 from .base import MessageIdCounter
 from .base import ReturnResolver
-from .base import TrueConfMethod
+from trueconf.methods.base import TrueConfMethod
 from .create_channel import CreateChannel
 from .create_group_chat import CreateGroupChat
 from .create_p2p_chat import CreateP2PChat

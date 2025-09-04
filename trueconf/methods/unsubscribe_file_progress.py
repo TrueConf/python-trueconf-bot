@@ -1,7 +1,8 @@
+from __future__ import annotations
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import UnsubscribeFileProgressResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.unsubscribe_file_progress_response import UnsubscribeFileProgressResponse
 
 
 @dataclass

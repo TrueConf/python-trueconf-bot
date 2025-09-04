@@ -1,7 +1,8 @@
+from __future__ import annotations
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import UploadFileResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.upload_file_response import UploadFileResponse
 
 
 @dataclass

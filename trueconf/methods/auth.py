@@ -1,12 +1,11 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import AuthResponsePayload
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.auth_response_payload import AuthResponsePayload
 
 
 @dataclass
 class AuthMethod(TrueConfMethod[AuthResponsePayload]):
-
     __api_method__ = "auth"
     __returning__ = AuthResponsePayload
 

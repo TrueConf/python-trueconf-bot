@@ -1,7 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
-
-from .base import TrueConfMethod
-from ..types.responses import CreateGroupChatResponse
+from trueconf.methods.base import TrueConfMethod
+from trueconf.types.responses.create_group_chat_response import CreateGroupChatResponse
 
 
 @dataclass
@@ -18,4 +18,3 @@ class CreateGroupChat(TrueConfMethod[CreateGroupChatResponse]):
         return {
             "title": self.title,
         }
-
