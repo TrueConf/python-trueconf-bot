@@ -1,0 +1,12 @@
+:root  > * {
+  --md-primary-fg-color:        #0097A7;
+  --md-primary-fg-color--light: #0097A7;
+  --md-primary-fg-color--dark:  #0097A7;
+
+  --md-accent-fg-color:      #0097A7;
+}
+
+.md-typeset pre code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
