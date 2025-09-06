@@ -513,6 +513,9 @@ class Bot:
             AddChatParticipantResponse: Object containing the result of the participant addition.
         """
 
+        if "@" not in user_id:
+            user_id = f"{user_id}@{self.server_name}"
+
         call = AddChatParticipant(chat_id=chat_id, user_id=user_id)
         return await self(call)
 
