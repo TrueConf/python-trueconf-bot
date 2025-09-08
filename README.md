@@ -1,15 +1,15 @@
 <p align="center">
   <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://trueconf.com/images/headMenu/logo.svg">
-      <img width="150" src="https://trueconf.com/images/headMenu/logo.svg">
+      <source media="(prefers-color-scheme: dark)" srcset="assets/logo.svg" type="image/svg">
+      <img width="150" src="assets/logo.svg" type="image/svg">
     </picture>
   </a>
 </p>
 
 <h1 align="center">python-trueconf-bot</h1>
 
-<p align="center">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a>, enabling quick integration of chatbots into TrueConf.</p>
+<p align="center">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a> which enables quick integration of chatbots into TrueConf solutions.</p>
 
 <p align="center">
     <a href="https://t.me/trueconf_chat" target="_blank">
@@ -33,17 +33,17 @@
 </p>
 
 > [!TIP]
-> During development, we were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, making the transition **simple** and **painless** for developers already familiar with it.
+> We were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, so, the transition will be **simple** for developers already familiar with this library.
 
 ## Key Features
 
-* Easy integration with the [TrueConf Server Chatbot API](https://trueconf.com/docs/chatbot-connector/en/overview/);
-* Quick start with the `python-trueconf-bot` package;
-* Modern and intuitive Python API (`from trueconf import Bot`);
+* Easy integration with the [TrueConf Server Chatbot API](https://trueconf.com/docs/chatbot-connector/en/overview/)
+* Quick start with the `python-trueconf-bot` package
+* Modern and intuitive Python API (`from trueconf import Bot`)
 * Support for all major TrueConf Server chatbot features.
 
 > [!IMPORTANT]
-> Chatbot functionality is supported starting from TrueConf Server 5.5, as well as in TrueConf Enterprise and TrueConf Server Free.
+> Chatbot features are supported in TrueConf Server 5.5 or above, TrueConf Enterprise, and TrueConf Server Free.
 
 ## Example Bot
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 1. [TrueConf Server Chatbot API Documentation](https://trueconf.com/docs/chatbot-connector/en/overview/)
 2. [python-trueconf-bot Documentation](https://trueconf.github.io/python-trueconf-bot/)
 
-All updates and releases are available in the repository. Track build status and test coverage.
+All updates and releases are available in the repository. Track the build status and test coverage.
 
 ---
 

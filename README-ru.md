@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://trueconf.ru/images/headMenu/logo-cyrillic.svg">
-      <img width="150" src="https://trueconf.ru/images/headMenu/logo-cyrillic.svg">
+      <source media="(prefers-color-scheme: dark)" srcset="assets/logo-cyrillic.svg" type="image/svg">
+      <img width="150" src="assets/logo-cyrillic.svg" type="image/svg">
     </picture>
   </a>
 </p>
