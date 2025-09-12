@@ -5,6 +5,7 @@ on:
     tags:
       - "v*.*.*a*"
       - "v*.*.*dev*"
+  workflow_dispatch:
 
 permissions:
   contents: read
