@@ -2,9 +2,12 @@ name: Release to PyPI
 
 on:
   push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v1.2.3 or v1.2.3rc1)"
+        required: true
+        type: string
 
 permissions:
   contents: read

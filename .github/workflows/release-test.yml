@@ -2,9 +2,6 @@ name: Release to TestPyPI
 
 on:
   push:
-    tags:
-      - "v*.*.*a*"
-      - "v*.*.*dev*"
   workflow_dispatch:
 
 permissions:
