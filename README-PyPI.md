@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="assets/logo.svg" type="image/svg">
-      <img width="150" src="assets/logo.svg" type="image/svg">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TrueConf/python-trueconf-bot/master/assets/logo.svg" type="image/svg">
+      <img width="150" src="https://raw.githubusercontent.com/TrueConf/python-trueconf-bot/master/assets/logo.svg" type="image/svg">
     </picture>
   </a>
 </p>
@@ -24,19 +24,11 @@
 </p>
 
 <p align="center">
-  <a href="./README.md">English</a> /
-  <a href="./README-ru.md">Русский</a>
+  <img src="https://raw.githubusercontent.com/TrueConf/python-trueconf-bot/master/assets/head_en.png" alt="Example Bot in TrueConf" width="600" height="auto">
 </p>
 
-<p align="center">
-  <img src="/assets/head_en.png" alt="Example Bot in TrueConf" width="600" height="auto">
-</p>
-
-
-
----
-
-> [!TIP]
+> 💡TIP
+> 
 > We were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, so, the transition will be **simple** for developers already familiar with this library.
 
 ## 📌 Key Features
@@ -46,7 +38,8 @@
 * Modern and intuitive Python API (`from trueconf import Bot`)
 * Support for all major TrueConf Server chatbot features.
 
-> [!IMPORTANT]
+> ☝️**IMPORTANT**
+> 
 > Chatbot features are supported in TrueConf Server 5.5 or above, TrueConf Enterprise, and TrueConf Server Free.
 
 ## 🚀 Example Bot
