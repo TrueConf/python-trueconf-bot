@@ -12,6 +12,12 @@
 <p align="center">Это легкая и мощная обертка для <a href="hhttps://trueconf.ru/docs/chatbot-connector/ru/overview/">API чат-ботов TrueConf Server</a>, позволяющая быстро интегрировать чат-ботов с API TrueConf.</p>
 
 <p align="center">
+    <a href="https://pypi.org/project/python-trueconf-bot/">
+        <img src="https://img.shields.io/pypi/v/python-trueconf-bot">
+    </a>
+    <a href="https://pypi.org/project/python-trueconf-bot/">
+        <img src="https://img.shields.io/pypi/pyversions/python-trueconf-bot">
+    </a>
     <a href="https://t.me/trueconf_chat" target="_blank">
         <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
     </a>

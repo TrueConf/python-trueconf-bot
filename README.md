@@ -12,6 +12,12 @@
 <p align="center">This is a lightweight and powerful wrapper for the <a href="https://trueconf.com/docs/chatbot-connector/en/overview/">TrueConf Server Chatbot API</a> which enables quick integration of chatbots into TrueConf solutions.</p>
 
 <p align="center">
+    <a href="https://pypi.org/project/python-trueconf-bot/">
+        <img src="https://img.shields.io/pypi/v/python-trueconf-bot">
+    </a>
+    <a href="https://pypi.org/project/python-trueconf-bot/">
+        <img src="https://img.shields.io/pypi/pyversions/python-trueconf-bot">
+    </a>
     <a href="https://t.me/trueconf_chat" target="_blank">
         <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
     </a>
@@ -33,11 +39,10 @@
 </p>
 
 
-
----
-
 > [!TIP]
 > We were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, so, the transition will be **simple** for developers already familiar with this library.
+
+---
 
 ## 📌 Key Features
 
