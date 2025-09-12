@@ -62,3 +62,5 @@ Issues = "https://github.com/TrueConf/python-trueconf-bot/issues"
 
 [tool.setuptools_scm]
 version_file = "trueconf/_version.py"
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
