@@ -1,7 +1,6 @@
 name: Release to PyPI
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       tag:
@@ -20,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

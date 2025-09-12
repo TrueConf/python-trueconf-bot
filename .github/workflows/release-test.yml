@@ -1,8 +1,12 @@
 name: Release to TestPyPI
 
 on:
-  push:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v1.2.3 or v1.2.3rc1)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,6 +21,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
