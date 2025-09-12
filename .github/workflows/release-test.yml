@@ -5,9 +5,8 @@ on:
     branches:
       - master
     tags:
-      - "v*.*.*-test*"
-      - "v*.*.*-alpha*"
-      - "v*.*.*-beta*"
+      - "v*.*.*a*"
+      - "v*.*.*dev*"
 
 permissions:
   contents: read
@@ -19,6 +18,8 @@ jobs:
     environment: testpypi
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
