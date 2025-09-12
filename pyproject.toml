@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "python-trueconf-bot"
 dynamic = ["version"]
 description = "Lightweight and powerful framework for the TrueConf Server Chatbot API"
-readme = "README.md"
+readme = {file = "README-PyPI.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
 license = "BSD-3-Clause-Clear"
 license-files = ["LICENSE*"]
