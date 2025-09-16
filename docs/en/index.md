@@ -25,7 +25,7 @@ This library is designed to simplify the development of chatbots by providing re
 ### Installation using pip
 
 ```shell
-pip install git+https://github.com/TrueConf/{{product_name}}
+pip install {{product_name}}
 ```
 
 ## Comparison with aiogram

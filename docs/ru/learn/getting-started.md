@@ -10,18 +10,11 @@ source .venv/bin/activate   # Linux / macOS
 
 ## Установка {{product_name}}
 
-Чтобы начать работу с {{product_name}}, установите библиотеку одним из способов:
+Чтобы начать работу с {{product_name}}, установите библиотеку из глобального репозитория PyPI:
 
-1. Из глобального репозитория PyPI:
-
-    ```shell
-    pip install {{product_name}}
-    ```
-2. Из локального собранного пакета (.whl)
-
-    ```shell
-    pip install {{product_name}}.whl
-    ```
+```shell
+pip install {{product_name}}
+```
 
 !!! info
     После установки будут автоматически подтянуты зависимости: `websockets`, `httpx`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.

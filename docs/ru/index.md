@@ -14,7 +14,7 @@
 
 ### Установка через pip
 ```bash
-pip install git+https://github.com/TrueConf/{{product_name}}
+pip install {{product_name}}
 ```
 
 ## Сравнение с aiogram

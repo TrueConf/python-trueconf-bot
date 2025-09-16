@@ -10,18 +10,11 @@ source .venv/bin/activate   # Linux / macOS
 
 ## Installing {{product_name}}
 
-To start working with {{product_name}}, install the library using one of the following methods:
+To begin working with {{product_name}}, install the package from the global PyPI repository:
 
-1. From the global PyPI repository:
-
-   ```shell
-   pip install {{product_name}}
-   ```
-2. From a locally built package (.whl):
-
-   ```shell
-   pip install {{product_name}}.whl
-   ```
+```shell
+pip install {{product_name}}
+```
 
 !!! info
     Upon installation, dependencies will be automatically pulled in: `websockets`, `httpx`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.
