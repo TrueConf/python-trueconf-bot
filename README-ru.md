@@ -85,6 +85,7 @@ if __name__ == "__main__":
 
 1. [Документация API чат-ботов TrueConf Server](https://trueconf.ru/docs/chatbot-connector/ru/overview/)
 2. [Документация python-trueconf-bot](https://trueconf.github.io/python-trueconf-bot/ru/)
+3. [Примеры](examples/README-ru.md)
 
 Все обновления и релизы доступны в репозитории. Следите за статусом сборок и покрытием тестами.
 
