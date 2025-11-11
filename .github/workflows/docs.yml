@@ -13,25 +13,61 @@ jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install docs deps
+      - name: Install docs dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs-material
+          pip install mkdocs-material mike
           if [ -f requirements-docs.txt ]; then pip install -r requirements-docs.txt; fi
 
-      - name: Configure git (gh-deploy)
+      - name: Preflight check (mkdocs.yml has mike plugin)
+        run: |
+          if ! grep -q '^ *- *mike *$' mkdocs.yml && ! grep -q 'plugins:.*mike' mkdocs.yml; then
+            echo "::error::Plugin 'mike' is not enabled in mkdocs.yml (add under plugins: - mike)"
+            exit 1
+          fi
+
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Deploy to gh-pages
+      - name: Determine version label
+        id: ver
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mkdocs gh-deploy --force --remote-branch gh-pages
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            # Например, docs/v1.0.0 -> v1.0.0
+            VERSION="${GITHUB_REF_NAME#docs/}"
+          fi
+          echo "Using version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy docs with mike (update latest alias)
+        if: ${{ github.event.inputs.alias_latest != 'false' }}
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          mike deploy --push --branch gh-pages --update-aliases "$VERSION" latest
+          mike set-default --push --branch gh-pages latest
+
+      - name: Deploy docs with mike (no alias update)
+        if: ${{ github.event.inputs.alias_latest == 'false' }}
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          mike deploy --push --branch gh-pages "$VERSION"

@@ -11,6 +11,7 @@ theme:
   font:
     text: Roboto
     code: Roboto Mono
+  custom_dir: docs/overrides
   palette:
 
     # Palette toggle for automatic mode
@@ -67,6 +68,7 @@ theme:
     - toc.follow
 
 plugins:
+  - mike
   - autorefs:
       resolve_closest: true
   - macros
@@ -198,6 +200,8 @@ extra_css:
   - stylesheets/extra.css
 
 extra:
+  version:
+    provider: mike
   product_name: "python-trueconf-bot"
   generator: false
   analytics:
