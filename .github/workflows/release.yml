@@ -22,6 +22,30 @@ jobs:
           fetch-tags: true
           ref: ${{ github.event.inputs.tag }}
 
+      - name: Show current commit
+        run: git describe --tags --always
+
+      - name: Verify tag matches version
+        run: |
+          python - <<'PY'
+          import tomllib, re, sys
+          tag = "${{ github.event.inputs.tag }}".strip()
+          version = re.sub(r'^v', '', tag)
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+          project_ver = data["project"]["version"]
+          if project_ver != version:
+              print(f"❌ Version mismatch: tag={version}, pyproject={project_ver}")
+              sys.exit(1)
+          else:
+              print(f"✅ Version match: {project_ver}")
+          PY
+      - name: Set version from tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          VERSION="${TAG#v}"
+          sed -i "s/^version = .*/version = \"${VERSION}\"/" pyproject.toml    
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
