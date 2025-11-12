@@ -121,8 +121,8 @@ plugins:
             social:
               - icon: fontawesome/brands/github
                 link: https://github.com/trueconf
-              - icon: fontawesome/brands/whatsapp
-                link: https://chat.whatsapp.com/GY97WBzSgvD1cJG0dWEiGP
+              - icon: fontawesome/brands/discord
+                link: https://discord.gg/v4jqKQpq
               - icon: fontawesome/brands/telegram
                 link: https://t.me/trueconf_chat
               - icon: fontawesome/brands/facebook
@@ -137,6 +137,7 @@ plugins:
             Home: Главная
             Reference: Описание библиотеки
             Examples: Примеры
+            Release Notes: Список изменений
           extra:
             social:
               - icon: fontawesome/brands/github
@@ -155,6 +156,7 @@ nav:
       - learn/filters.md
       - learn/enums.md
       - learn/types.md
+      - learn/files.md
   - Reference:
       - reference/Bot.md
       - reference/Router.md
@@ -164,6 +166,7 @@ nav:
   - Examples:
       - examples/echo_bot.md
       - examples/multibot.md
+  - Release Notes: release_notes.md
 
 
 
@@ -203,6 +206,8 @@ extra:
   version:
     provider: mike
   product_name: "python-trueconf-bot"
+  product_server: "TrueConf Server"
+  product_chatbot: "TrueConf Chatbot Connector"
   generator: false
   analytics:
     provider: google

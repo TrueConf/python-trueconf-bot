@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from mashumaro import DataClassDictMixin
+from trueconf.exceptions import ApiErrorException
 
 
 @dataclass
@@ -20,6 +21,7 @@ class ApiError(DataClassDictMixin):
         201: "Invalid credentials",
         202: "User disabled",
         203: "Credentials expired",
+        204: "Unsupported Credentials",
 
         # Chat Errors
         300: "Internal server error",
@@ -32,7 +34,16 @@ class ApiError(DataClassDictMixin):
         307: "Unknown message",
         308: "File not found",
         309: "User already in chat",
+        310: "File upload failed",
+        311: "File not ready",
+        312: "Role not found",
     }
 
-    def __str__(self):
-        return f"[{self.error_code}] {self._error_messages.get(self.error_code, 'Unknown error')}"
+    def message(self) -> str:
+        return self._error_messages.get(self.error_code, "Unknown error")
+
+    def __str__(self) -> str:
+        return f"[{self.error_code}] {self.message()}"
+
+    def to_exception(self, payload: dict | None = None) -> "ApiErrorException":
+        return ApiErrorException(self.error_code, self.message(), payload)

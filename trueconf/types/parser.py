@@ -9,7 +9,9 @@ from trueconf.types.content.survey import SurveyContent
 from trueconf.types.content.text import TextContent
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
 from trueconf.types.requests.created_channel import CreatedChannel
+from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
 from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
 from trueconf.types.requests.edited_message import EditedMessage
@@ -67,6 +69,12 @@ def parse_update(raw: dict):
 
         case IUM.CREATED_CHANNEL:
             return CreatedChannel.from_dict(raw["payload"])
+
+        case IUM.CREATED_FAVORITES_CHAT:
+            return CreatedFavoritesChat.from_dict(raw["payload"])
+
+        case IUM.CHANGED_PARTICIPANT_ROLE:
+            return ChangedParticipantRole.from_dict(raw["payload"])
 
         case IUM.MESSAGE:
             env_type = MessageType(p.get("type", 0))

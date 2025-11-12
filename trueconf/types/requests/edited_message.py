@@ -16,7 +16,7 @@ class EditedMessage(BoundToBot, DataClassDictMixin):
            This class is used as the event type in handler functions decorated with `@<router>.edited_message()`.
 
        Source:
-           https://trueconf.com/docs/chatbot-connector/en/server-requests/#editMessage
+           https://trueconf.com/docs/chatbot-connector/en/messages/#editMessage
 
        Attributes:
            timestamp (int): Unix timestamp (milliseconds) of when the edit occurred.

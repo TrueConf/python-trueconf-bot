@@ -1,4 +1,5 @@
 from .added_chat_participant import AddedChatParticipant
+from .changed_participant_role import ChangedParticipantRole
 from .created_channel import CreatedChannel
 from .created_group_chat import CreatedGroupChat
 from .created_personal_chat import CreatedPersonalChat
@@ -10,6 +11,7 @@ from .uploading_progress import UploadingProgress
 
 __all__ = [
     'AddedChatParticipant',
+    'ChangedParticipantRole',
     'CreatedChannel',
     'CreatedGroupChat',
     'CreatedPersonalChat',

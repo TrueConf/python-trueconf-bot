@@ -1,17 +1,18 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from trueconf.methods.base import TrueConfMethod
-from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
+from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 
 
 @dataclass
-class AddChatParticipant(TrueConfMethod[AddChatParticipantResponse]):
-    __api_method__ = "addChatParticipant"
-    __returning__ = AddChatParticipantResponse
+class ChangeParticipantRole(TrueConfMethod[ChangeParticipantRoleResponse]):
+    __api_method__ = "changeParticipantRole"
+    __returning__ = ChangeParticipantRoleResponse
 
     chat_id: str
     user_id: str
-    display_history: bool
+    role: str
+
 
     def __post_init__(self):
         super().__init__()
@@ -20,5 +21,5 @@ class AddChatParticipant(TrueConfMethod[AddChatParticipantResponse]):
         return {
             "chatId": self.chat_id,
             "userId": self.user_id,
-            "displayHistory": self.display_history,
+            "role": self.role,
         }

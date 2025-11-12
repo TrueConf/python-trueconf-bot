@@ -3,7 +3,6 @@ import logging
 from asyncio import get_running_loop
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
-from trueconf.exceptions import ApiError as ApiErrorException
 from trueconf.types.responses.api_error import ApiError
 
 logger = logging.getLogger("chat_bot")
@@ -53,25 +52,21 @@ class TrueConfMethod(ABC, Generic[T]):
 
         payload = (resp.get("payload") or {})
 
-        # 2) Ошибка API имеет приоритет
-        if isinstance(payload, dict) and payload.get("errorCode", 0) != 0:
-            return ApiError.from_dict(payload)  # type: ignore[return-value] # type: ignore[return-value]
+        if isinstance(payload, dict) and (payload.get("errorCode", 0) != 0):
+            error =  ApiError.from_dict(payload)  # type: ignore[return-value] # type: ignore[return-value]
+            raise error.to_exception(payload=payload)
 
-        # 1) Кастомный парсер (если класс его предоставляет)
         if hasattr(ret, "parse"):
             return ret.parse(resp)  # type: ignore[return-value]
 
-        # 3) Если просят dict — отдать как есть
         if ret is dict:
             return payload  # type: ignore[return-value]
 
-        # 4) Поддержка mashumaro: есть from_dict -> используем alias-ы
         if hasattr(ret, "from_dict"):
             if isinstance(payload, list):
                 return ret.from_dict({"chats": payload})  # type: ignore[return-value]
             return ret.from_dict(payload)  # type: ignore[return-value]
 
-        # 5) Фоллбек: прямой конструктор (без alias-ов)
         return ret(**payload)  # type: ignore[misc]
 
     async def __call__(self, bot: "ChatBot") -> T:
@@ -99,9 +94,4 @@ class TrueConfMethod(ABC, Generic[T]):
         data = await future
         logger.debug(f"✅ Received response for {self.__api_method__}: {data}")
 
-        result = self._parse_return(data)
-
-        if isinstance(result, ApiError):
-            raise ApiErrorException(str(result))
-
-        return result
+        return self._parse_return(data)

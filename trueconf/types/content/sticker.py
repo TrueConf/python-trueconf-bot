@@ -27,7 +27,8 @@ class Sticker(BoundToBot):
         """
         Returns the direct download URL of the sticker file.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the original sticker file.
@@ -41,7 +42,8 @@ class Sticker(BoundToBot):
         """
         Returns the preview URL of the sticker file, if available.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the preview version of the sticker file.

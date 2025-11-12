@@ -16,7 +16,7 @@ class AddedChatParticipant(BoundToBot, DataClassDictMixin):
         This class is used as the event type in handler functions decorated with `@<router>.added_chat_participant()`.
 
     Source:
-        https://trueconf.com/docs/chatbot-connector/en/server-requests/#addChatParticipant
+        https://trueconf.com/docs/chatbot-connector/en/chats/#addedChatParticipant
 
     Attributes:
         timestamp (int): Unix timestamp (milliseconds) of when the event occurred.

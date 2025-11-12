@@ -17,7 +17,7 @@ class CreatedChannel(BoundToBot, DataClassDictMixin):
         This class is used as the event type in handler functions decorated with `@<router>.created_channel()`.
 
     Source:
-        https://trueconf.com/docs/chatbot-connector/en/server-requests/#createChannel
+        https://trueconf.com/docs/chatbot-connector/en/chats/#createdChannel
 
     Attributes:
         chat_id (str): Unique identifier of the created channel.

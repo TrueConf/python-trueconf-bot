@@ -16,7 +16,7 @@ class RemovedMessage(BoundToBot, DataClassDictMixin):
             This class is used as the event type in handler functions decorated with `@<router>.removed_message()`.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#removeMessage
+            https://trueconf.com/docs/chatbot-connector/en/messages/#removedMessage
 
         Attributes:
             chat_id (str): Unique identifier of the chat from which the message was removed.

@@ -8,4 +8,4 @@ The TrueConf team has prepared an example that demonstrates the use of four bots
 - GPT bot that runs a local LLM model in the background
 
 
-[View repository :fontawesome-solid-arrow-right:](github.com/TrueConf){ .md-button }
+[View repository :fontawesome-solid-arrow-right:](https://github.com/TrueConf/trueconf-chatbot-example){ .md-button }

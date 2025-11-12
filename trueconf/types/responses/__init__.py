@@ -25,6 +25,7 @@ from .remove_chat_participant_response import RemoveChatParticipantResponse
 from .edit_message_response import EditMessageResponse
 from .auth_response_payload import AuthResponsePayload
 from .send_file_response import SendFileResponse
+from .change_participant_role_response import ChangeParticipantRoleResponse
 
 __all__ = [
     'ForwardMessageResponse',
@@ -53,5 +54,6 @@ __all__ = [
     'RemoveChatParticipantResponse',
     'EditMessageResponse',
     'AuthResponsePayload',
-    'SendFileResponse'
+    'SendFileResponse',
+    'ChangeParticipantRoleResponse',
 ]

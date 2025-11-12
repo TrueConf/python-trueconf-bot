@@ -10,7 +10,9 @@ from trueconf.filters.instance_of import InstanceOfFilter
 from trueconf.filters.method import MethodFilter
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
 from trueconf.types.requests.created_channel import CreatedChannel
+from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
 from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
 from trueconf.types.requests.edited_message import EditedMessage
@@ -21,7 +23,7 @@ from trueconf.types.requests.uploading_progress import UploadingProgress
 
 logger = logging.getLogger("chat_bot")
 
-Handler = Callable[[Event], Awaitable[None]]
+Handler = Callable[..., Awaitable[None]]
 FilterLike = Union[Filter, MagicFilter, Callable[[Event], bool], Callable[[Event], Awaitable[bool]], Any]
 
 
@@ -94,6 +96,33 @@ class Router:
         """Register a handler for file uploading progress events."""
         return self._register((InstanceOfFilter(UploadingProgress), *filters))
 
+    def changed_participant_role(self, *filters: FilterLike):
+        """
+            **Requires TrueConf Server 5.5.2+**
+            Registers a handler for participant role change events in chats.
+
+            This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
+            or conference chat. Used with the `ChangedParticipantRole` event type.
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.enums import ChatParticipantRole as role
+                from trueconf.types import ChangedParticipantRole
+
+                @router.changed_participant_role()
+                async def on_role_changed(event: ChangedParticipantRole):
+                    if event.role == role.admin:
+                        print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
+                ```
+            """
+        return self._register((InstanceOfFilter(ChangedParticipantRole), *filters))
+
     def created_personal_chat(self, *filters: FilterLike):
         """Register a handler for personal chat creation events."""
         return self._register((InstanceOfFilter(CreatedPersonalChat), *filters))
@@ -101,6 +130,10 @@ class Router:
     def created_group_chat(self, *filters: FilterLike):
         """Register a handler for group chat creation events."""
         return self._register((InstanceOfFilter(CreatedGroupChat), *filters))
+
+    def created_favorites_chat(self, *filters: FilterLike):
+        """**Requires TrueConf Server 5.5.2+**. Register a handler for favorites chat creation events."""
+        return self._register((InstanceOfFilter(CreatedFavoritesChat), *filters))
 
     def created_channel(self, *filters: FilterLike):
         """Register a handler for channel creation events."""
@@ -130,14 +163,14 @@ class Router:
         """Internal decorator for registering handlers with filters."""
 
         def decorator(func: Handler):
-            if not asyncio.iscoroutinefunction(func):
-                async def async_wrapper(evt: Event):
-                    return func(evt)
+            async def async_wrapper(evt: Event, **kwargs: Any):
+                sig = inspect.signature(func)
+                accepted_params = sig.parameters.keys()
+                filtered_kwargs = {k: v for k, v in kwargs.items() if k in accepted_params}
+                await func(evt, **filtered_kwargs)
 
-                self._handlers.append((filters, async_wrapper))
-                return func
-            self._handlers.append((filters, func))
-            return func
+            self._handlers.append((filters, async_wrapper))
+            return async_wrapper
 
         return decorator
 
@@ -166,18 +199,25 @@ class Router:
                     getattr(f, "__name__", type(f).__name__) if callable(f) else type(f).__name__
                     for f in flts
                 )
-                self._spawn(handler, event, filters_str)
+
+                kwargs: dict[str, Any] = {}
+                for f in flts:
+                    result = await self._apply_filter(f, event)
+                    if isinstance(result, dict):
+                        kwargs.update(result)
+
+                self._spawn(handler, event, filters_str, kwargs)
                 return True
         return False
 
-    def _spawn(self, handler: Handler, event: Event, filters_str: str):
+    def _spawn(self, handler: Handler, event: Event, filters_str: str, kwargs: dict[str, Any]):
         """Internal method to spawn a task for executing the matched handler."""
         name = getattr(handler, "__name__", "<handler>")
         logger.info(f"[router:{self.name}] matched handler={name} filters=[{filters_str}]")
 
         async def _run():
             try:
-                await handler(event)
+                await handler(event, **kwargs)
             except Exception as e:
                 logger.exception(f"Handler {name} failed: {e}")
 
@@ -202,6 +242,6 @@ class Router:
             except Exception:
                 return False
 
-        if isinstance(res, bool):
+        if isinstance(res, (bool, dict)):
             return res
         return bool(res)

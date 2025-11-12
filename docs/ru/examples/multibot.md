@@ -7,4 +7,4 @@
 - мониторинг-бот статистики внешнего сервиса (TrueConf Server);
 - gpt-бот, который в фоне запускает локальную LLM-модель.
 
-[Перейти в репозиторий :fontawesome-solid-arrow-right:](github.com/TrueConf){ .md-button }
+[Перейти в репозиторий :fontawesome-solid-arrow-right:](https://github.com/TrueConf/trueconf-chatbot-example){ .md-button }

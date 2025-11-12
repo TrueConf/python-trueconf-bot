@@ -7,5 +7,5 @@ from trueconf.enums.chat_participant_role import ChatParticipantRole
 
 @dataclass
 class ChatParticipant(DataClassDictMixin):
-    user_id: str = field(metadata={"alias": "id"})
+    user_id: str = field(metadata={"alias": "userId"})
     role: ChatParticipantRole
