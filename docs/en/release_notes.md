@@ -4,7 +4,7 @@ title: Release notes
 
 # List of Changes
 
-## 1.1.0
+## 1.1.1
 
 **Added:**
 
