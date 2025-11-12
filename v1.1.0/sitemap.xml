@@ -15,6 +15,13 @@
         <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0ru/features/"/>
     </url>
     <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/release_notes/</loc>
+        <lastmod>2025-11-12</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/release_notes/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0ru/release_notes/"/>
+    </url>
+    <url>
         <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/examples/echo_bot/</loc>
         <lastmod>2025-11-12</lastmod>
         <changefreq>daily</changefreq>
@@ -34,6 +41,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/learn/enums/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0ru/learn/enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/learn/files/</loc>
+        <lastmod>2025-11-12</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/learn/files/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0ru/learn/files/"/>
     </url>
     <url>
         <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/learn/filters/</loc>
@@ -120,6 +134,13 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0features/"/>
     </url>
     <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/release_notes/</loc>
+        <lastmod>2025-11-12</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/release_notes/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0release_notes/"/>
+    </url>
+    <url>
         <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/examples/echo_bot/</loc>
         <lastmod>2025-11-12</lastmod>
         <changefreq>daily</changefreq>
@@ -139,6 +160,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/learn/enums/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0learn/enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/learn/files/</loc>
+        <lastmod>2025-11-12</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/learn/files/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/v1.1.0learn/files/"/>
     </url>
     <url>
         <loc>https://trueconf.github.io/python-trueconf-bot/v1.1.0/ru/learn/filters/</loc>
