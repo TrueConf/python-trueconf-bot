@@ -19,6 +19,14 @@ from trueconf.types import *
             - "!bot"
             - "!bind"
 
+::: trueconf.types.ChangedParticipantRole
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
 ::: trueconf.types.CreatedChannel
     options:
         filters:
@@ -51,6 +59,39 @@ from trueconf.types import *
             - "!^__"
             - "!bot"
             - "!bind"
+
+::: trueconf.types.InputFile
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
+::: trueconf.types.BufferedInputFile
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
+::: trueconf.types.FSInputFile
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
+::: trueconf.types.URLInputFile
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
 
 ::: trueconf.types.Message
     options:

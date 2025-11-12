@@ -3,13 +3,13 @@ import asyncio
 import contextlib
 import httpx
 import json
-import mimetypes
 import signal
 import ssl
 import tempfile
 import websockets
 from pathlib import Path
-from contextlib import AsyncExitStack
+from aiohttp import ClientSession, ClientTimeout, TCPConnector, FormData
+from async_property import async_cached_property
 from typing import (
     Callable,
     Awaitable,
@@ -28,11 +28,14 @@ from trueconf.dispatcher.dispatcher import Dispatcher
 from trueconf.enums.file_ready_state import FileReadyState
 from trueconf.enums.parse_mode import ParseMode
 from trueconf.enums.survey_type import SurveyType
-from trueconf.exceptions import ApiError
+from trueconf.enums.chat_participant_role import ChatParticipantRole
+from trueconf.exceptions import ApiErrorException
 from trueconf.methods.add_participant_to_chat import AddChatParticipant
 from trueconf.methods.auth import AuthMethod
 from trueconf.methods.base import TrueConfMethod
+from trueconf.methods.change_participant_role import ChangeParticipantRole
 from trueconf.methods.create_channel import CreateChannel
+from trueconf.methods.create_favorites_chat import CreateFavoritesChat
 from trueconf.methods.create_group_chat import CreateGroupChat
 from trueconf.methods.create_p2p_chat import CreateP2PChat
 from trueconf.methods.edit_message import EditMessage
@@ -55,11 +58,13 @@ from trueconf.methods.send_survey import SendSurvey
 from trueconf.methods.subscribe_file_progress import SubscribeFileProgress
 from trueconf.methods.unsubscribe_file_progress import UnsubscribeFileProgress
 from trueconf.methods.upload_file import UploadFile
+from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
-from trueconf.types.responses.api_error import ApiError
+from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 from trueconf.types.responses.create_channel_response import CreateChannelResponse
+from trueconf.types.responses.create_favorites_chat_response import CreateFavoritesChatResponse
 from trueconf.types.responses.create_group_chat_response import CreateGroupChatResponse
 from trueconf.types.responses.create_p2p_chat_response import CreateP2PChatResponse
 from trueconf.types.responses.edit_message_response import EditMessageResponse
@@ -87,7 +92,6 @@ from trueconf.utils import validate_token
 
 T = TypeVar("T")
 
-
 class TokenOpts(TypedDict, total=False):
     web_port: int
     https: bool
@@ -109,7 +113,7 @@ class Bot:
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/connect-and-auth/#websocket-connection-authorization
+            https://trueconf.com/docs/chatbot-connector/en/connect-and-auth/#auth
 
         Args:
             server (str): Address of the TrueConf server.
@@ -147,8 +151,6 @@ class Bot:
         self.verify_ssl = verify_ssl
         self._progress_queues: Dict[str, asyncio.Queue] = {}
 
-        self._domain = None
-
         self._futures: Dict[int, asyncio.Future] = {}
         self._handlers: List[Tuple[dict, Callable[[dict], Awaitable]]] = []
 
@@ -158,12 +160,12 @@ class Bot:
     async def __call__(self, method: TrueConfMethod[T]) -> T:
         return await method(self)
 
-    def __get_domain_name(self):
+    async def __get_domain_name(self):
         url = f"{self._protocol}://{self.server}:{self.port}/api/v4/server"
 
         try:
-            with httpx.Client(verify=False, timeout=5) as client:
-                response = client.get(url)
+            async with httpx.AsyncClient(verify=False, timeout=5) as client:
+                response = await client.get(url)
                 return response.json().get("product").get("display_name")
         except Exception as e:
             loggers.chatbot.error(f"Failed to get server domain_name: {e}")
@@ -180,8 +182,8 @@ class Bot:
 
         return self.__token
 
-    @property
-    def server_name(self) -> str:
+    @async_cached_property
+    async def server_name(self) -> str:
         """
         Returns the domain name of the TrueConf server.
 
@@ -189,9 +191,22 @@ class Bot:
             str: Domain name of the connected server.
         """
 
-        if self._domain is None:
-            self._domain = self.__get_domain_name()
-        return self._domain
+        return await self.__get_domain_name()
+
+    @async_cached_property
+    async def me(self) -> str:
+        """
+        Returns the identifier of the bot's personal (Favorites) chat.
+
+        If the chat does not exist yet, it will be created automatically.
+        The result is cached to prevent redundant API calls.
+
+        Returns:
+            str: Chat ID of the bot's personal Favorites chat.
+        """
+
+        r = await self.create_favorites_chat()
+        return r.chat_id
 
     @classmethod
     def from_credentials(
@@ -208,7 +223,7 @@ class Bot:
         Creates a bot instance using username and password authentication.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/getting-started/#authorization
+            https://trueconf.com/docs/chatbot-connector/en/connect-and-auth/#connect-and-auth
 
         Args:
             server (str): Address of the TrueConf server.
@@ -322,62 +337,87 @@ class Bot:
 
     async def __upload_file_to_server(
             self,
-            file_path: str,
-            preview_path: str | None = None,
-            preview_mimetype: str | None = None,
+            file: InputFile,
+            preview: InputFile | None = None,
+            is_sticker: bool = False,
             verify: bool = True,
             timeout: int = 60,
     ) -> str | None:
         """
-        Uploads a file to the server and returns its temporary identifier (temporalFileId).
+           Uploads a file to the server and returns a temporary file identifier (temporalFileId).
 
-        Source:
-            https://trueconf.com/docs/chatbot-connector/en/files/#uploading-a-file-to-the-file-storage
+           This method is used for uploading attachments to a TrueConf chat: images, documents,
+           stickers, and other file types. The `file` argument must be an instance of a class
+           that inherits from `InputFile`, such as:
 
-        Args:
-            file_path (str): Path to the file to be uploaded.
-            preview_path (bytes | None, optional): Preview data in WebP format (if applicable).
-            preview_mimetype (str, optional): MIME type of the preview, e.g., "image/webp".
-            verify (bool, optional): Whether to verify the SSL certificate. Defaults to True.
-            timeout (int, optional): Upload timeout in seconds. Defaults to 60.
+               - `BufferedInputFile(InputFile)` — from in-memory byte buffer
+               - `FSInputFile(InputFile)` — from a local file
+               - `URLInputFile(InputFile)` — from a remote URL
 
-        Returns:
-            str | None: Temporary file identifier (temporalFileId), or None if the upload failed.
-        """
+           Optionally, a preview file can be attached (for example, for videos or documents).
+           If `is_sticker=True`, the MIME type of the file will be set to `sticker/webp`.
 
-        file = Path(file_path)
-        file_size = file.stat().st_size
-        file_name = file.name
-        file_mimetype = mimetypes.guess_type(file_path)[0]
+           Source:
+                https://trueconf.com/docs/chatbot-connector/en/files/#upload-file-to-server-storage
 
-        res = await self(UploadFile(file_size=file_size))
+           Args:
+               file (InputFile): The primary file to upload.
+               preview (InputFile | None, optional): Optional preview file (default is None).
+               is_sticker (bool, optional): Whether the uploaded file is a sticker (affects MIME type). Defaults to False.
+               verify (bool, optional): Whether to verify the SSL certificate. Defaults to True.
+               timeout (int, optional): Upload timeout in seconds. Defaults to 60.
+
+           Returns:
+               str | None: A temporary file ID (`temporalFileId`) on success, or None if the upload failed.
+           """
+
+        if isinstance(file, URLInputFile):
+            await file.prepare()
+            if preview:
+                await preview.prepare()
+
+        res = await self(UploadFile(file_size=file.file_size))
         upload_task_id = res.upload_task_id
 
         headers = {
             "Upload-Task-Id": upload_task_id,
+
         }
 
+        timeout = ClientTimeout(total=timeout)
+
+        if not verify:
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            connector = TCPConnector(ssl=ssl_context)
+        else:
+            connector = TCPConnector()
+
         try:
+            async with ClientSession(connector=connector, timeout=timeout) as session:
+                data = FormData()
+                data.add_field(
+                    name="file",
+                    value= await file.read(),
+                    filename=file.filename,
+                    content_type="sticker/webp" if is_sticker else file.mimetype,
+                )
 
-            async with AsyncExitStack() as stack:
-                client = await stack.enter_async_context(
-                    httpx.AsyncClient(verify=verify, timeout=httpx.Timeout(timeout)))
+                if preview:
+                    data.add_field(
+                        name="preview",
+                        value = await preview.read(),
+                        filename=preview.filename,
+                        content_type=preview.mimetype
+                    )
 
-                f = stack.enter_context(open(file_path, "rb"))
-                files = {"file": (file_name, f, file_mimetype)}
-
-                if preview_path is not None:
-                    p = stack.enter_context(open(preview_path, "rb"))
-                    files["preview"] = (file_name, p, mimetypes.guess_type(preview_path)[0])
-
-                elif preview_mimetype == "sticker/webp":
-                    files["preview"] = (file_name, f, preview_mimetype)
-
-                response = await client.post(self._url_for_upload_files, headers=headers, files=files)
-            return response.json().get("temporalFileId")
+                async with session.post(self._url_for_upload_files, headers=headers, data=data) as response:
+                     result = await response.json()
+            return result.get("temporalFileId")
         except Exception as e:
             loggers.chatbot.error(f"Failed to upload file to server: {e}")
-            return None
+        return None
 
     async def _send_ws_payload(self, message: dict) -> bool:
         if not self._session:
@@ -392,56 +432,50 @@ class Bot:
 
     async def __connect_and_listen(self):
         ssl_context = ssl._create_unverified_context() if self.https else None
-        uri = f"wss://{self.server}:{self.web_port}/websocket/chat_bot"
+        uri = f"wss://{self.server}:{self.web_port}/websocket/chat_bot" if self.https else f"ws://{self.server}:{self.web_port}/websocket/chat_bot"
 
-        try:
-            async for ws in websockets.connect(
-                    uri, ssl=ssl_context, ping_interval=30, ping_timeout=10
-            ):
-                if self._stop:
-                    break
+        while not self._stop:
+            try:
+                loggers.chatbot.info("⏳ Attempting WebSocket connection...")
+                async with websockets.connect(uri, ssl=ssl_context, ping_interval=30, ping_timeout=10) as ws:
+                    self._ws = ws
+                    loggers.chatbot.info("✅ WebSocket connected")
 
-                self._ws = ws
-                loggers.chatbot.info("✅ WebSocket connected")
+                    if self._session is None:
+                        self._session = WebSocketSession(on_message=self.__on_raw_message)
+                    self._session.attach(ws)
 
-                if self._session is None:
-                    self._session = WebSocketSession(on_message=self.__on_raw_message)
-                self._session.attach(ws)
+                    self.connected_event.set()
+                    self.authorized_event.clear()
 
-                self.connected_event.set()
-                self.authorized_event.clear()
-
-                try:
-                    await self.__authorize()
-                    self.authorized_event.set()
                     try:
-                        await ws.wait_closed()
-                    except asyncio.CancelledError:
-                        loggers.chatbot.info("🛑 Cancellation requested; closing ws")
-                        with contextlib.suppress(Exception):
-                            await ws.close()
+                        await self.__authorize()
+                    except ApiErrorException as e:
+                        loggers.chatbot.error(f"❌ Authorization failed: {e}")
                         raise
 
-                except websockets.exceptions.ConnectionClosed as e:
-                    loggers.chatbot.warning(
-                        f"🔌 Connection closed: {getattr(e, 'code', '?')} - {getattr(e, 'reason', '?')}"
-                    )
-                    continue
-                except asyncio.CancelledError:
-                    loggers.chatbot.info("🛑 Connect loop cancelled")
-                    raise
-                except ApiError as e:
-                    print(e)
-                    await self.shutdown()
-                finally:
-                    self.connected_event.clear()
-                    if self._session:
+                    self.authorized_event.set()
+                    await ws.wait_closed()
+
+            except asyncio.CancelledError:
+                loggers.chatbot.info("🛑 Connect loop cancelled, performing cleanup.")
+                raise
+
+            except websockets.exceptions.ConnectionClosed as e:
+                loggers.chatbot.warning(
+                    f"🔌 Connection closed: {getattr(e, 'code', '?')} – {getattr(e, 'reason', '?')}. Retrying...")
+                self.connected_event.clear()
+                self.authorized_event.clear()
+                await asyncio.sleep(0.5)
+                continue
+
+            finally:
+                self.connected_event.clear()
+                self.authorized_event.clear()
+                if self._session:
+                    with contextlib.suppress(Exception):
                         await self._session.detach()
-                if self._stop:
-                    break
-        except asyncio.CancelledError:
-            loggers.chatbot.info("🛑 connect_and_listen task finished by cancellation")
-            raise
+                self._ws = None
 
     def _register_future(self, id_: int, future):
         loggers.chatbot.debug(f"📬 Registered future for id={id_}")
@@ -497,26 +531,103 @@ class Bot:
         asyncio.create_task(self.__process_message(data))
 
     async def add_participant_to_chat(
-            self, chat_id: str, user_id: str
+            self,
+            chat_id: str,
+            user_id: str,
+            display_history: bool = False
     ) -> AddChatParticipantResponse:
         """
         Adds a participant to the specified chat.
 
+        Optionally allows showing chat history to the newly added participant.
+        The `display_history` parameter is supported **only in TrueConf Server version 5.5.2 and above**.
+
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#adding-a-participant-to-the-chat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#addChatParticipant
 
         Args:
             chat_id (str): Identifier of the chat to add the participant to.
-            user_id (str): Identifier of the user to be added.
+            user_id (str): Identifier of the user to be added. If no domain is specified, the server domain will be used.
+            display_history (bool, optional): Whether to show previous chat history to the participant.
+                **Requires TrueConf Server 5.5.2+**. Defaults to **False**.
 
         Returns:
             AddChatParticipantResponse: Object containing the result of the participant addition.
+
+        Example:
+            ```python
+            await bot.add_participant_to_chat(
+                chat_id="chat123",
+                user_id="user456",
+                display_history=True
+            )
+            ```
         """
 
         if "@" not in user_id:
-            user_id = f"{user_id}@{self.server_name}"
+            user_id = f"{user_id}@{await self.server_name}"
 
-        call = AddChatParticipant(chat_id=chat_id, user_id=user_id)
+        call = AddChatParticipant(chat_id=chat_id, user_id=user_id, display_history=display_history)
+        return await self(call)
+
+    async def change_participant_role(
+            self,
+            chat_id:str,
+            user_id: str,
+            role:str | ChatParticipantRole
+    ) -> ChangeParticipantRoleResponse:
+        """
+        **Requires TrueConf Server 5.5.2+**.
+
+        Changes the role of a participant in the specified group chat.
+
+        This method requires that the bot has **moderator (admin)** or **owner** rights in the chat.
+
+        Supported roles in group chat:
+            - "owner" — group chat owner
+            - "admin" — appointed moderator of the group chat
+            - "user" — regular participant of a group chat
+
+        It is recommended to use the enumeration class for safer role assignment:
+            ```python
+            from trueconf.enums import ChatParticipantRole
+            ```
+
+        For a full list of roles in conference, channel, or Favorites chats, see the documentation:
+
+        Role descriptions:
+            https://trueconf.com/docs/chatbot-connector/en/roles-and-users-rules/#which-roles-has-apis
+
+        Role permissions matrix:
+            https://trueconf.com/docs/chatbot-connector/en/roles-and-users-rules/#roles-rules-group-chats
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#changeParticipantRole
+
+        Args:
+            chat_id (str): Identifier of the chat where the role should be changed.
+            user_id (str): Identifier of the participant whose role is being updated.
+            role (str | ChatParticipantRole): New role to assign. Must be one of the supported roles listed above.
+
+        Returns:
+            ChangeParticipantRoleResponse: Object containing the result of the role change operation.
+
+        Example:
+            ```python
+            from trueconf.enums import ChatParticipantRole as role
+
+            await bot.change_participant_role(
+                chat_id="chat123",
+                user_id="user456",
+                role=role.ADMIN
+            )
+            ```
+        """
+
+        if "@" not in user_id:
+            user_id = f"{user_id}@{await self.server_name}"
+
+        call = ChangeParticipantRole(chat_id=chat_id, user_id=user_id, role=role)
         return await self(call)
 
     async def create_channel(self, title: str) -> CreateChannelResponse:
@@ -524,7 +635,7 @@ class Bot:
         Creates a new channel with the specified title.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#creating-a-channel
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createChannel
 
         Args:
             title (str): Title of the new channel.
@@ -537,12 +648,32 @@ class Bot:
         call = CreateChannel(title=title)
         return await self(call)
 
+    async def create_favorites_chat(self) -> CreateFavoritesChatResponse:
+        """
+        **Requires TrueConf Server 5.5.2+**
+
+        Creates a "Favorites" chat for the current user.
+
+        This type of chat is a personal space accessible only to its owner.
+        It can be used to store notes, upload files, or test bot features in a private context.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createFavoritesChat
+
+        Returns:
+            CreateFavoritesChatResponse: An object containing information about the newly created chat.
+        """
+
+        loggers.chatbot.info(f"✉️ Create favorite chat")
+        call = CreateFavoritesChat()
+        return await self(call)
+
     async def create_group_chat(self, title: str) -> CreateGroupChatResponse:
         """
         Creates a new group chat with the specified title.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#creating-a-group-chat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createGroupChat
 
         Args:
             title (str): Title of the new group chat.
@@ -560,7 +691,7 @@ class Bot:
         Creates a personal (P2P) chat with a user by their identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#creating-a-personal-chat-with-a-user
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createP2PChat
 
         Args:
             user_id (str): Identifier of the user. Can be with or without a domain.
@@ -577,7 +708,7 @@ class Bot:
         loggers.chatbot.info(f"✉️ Create personal chat with name {user_id}")
 
         if "@" not in user_id:
-            user_id = f"{user_id}@{self.server_name}"
+            user_id = f"{user_id}@{await self.server_name}"
 
         call = CreateP2PChat(user_id=user_id)
         return await self(call)
@@ -587,7 +718,7 @@ class Bot:
         Deletes a chat by its identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#deleting-chat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#removeChat
 
         Args:
             chat_id: Identifier of the chat to be deleted.
@@ -659,7 +790,7 @@ class Bot:
         Edits a previously sent message.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#editing-an-existing-message
+            https://trueconf.com/docs/chatbot-connector/en/messages/#editMessage
 
         Args:
             message_id (str): Identifier of the message to be edited.
@@ -685,7 +816,7 @@ class Bot:
         Edits a previously sent survey.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/surveys/#editing-a-poll-message
+            https://trueconf.com/docs/chatbot-connector/en/surveys/#editSurvey
 
         Args:
             message_id (str): Identifier of the message containing the survey to edit.
@@ -713,7 +844,7 @@ class Bot:
         Forwards a message to the specified chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#forwarding-a-message-to-another-chat
+            https://trueconf.com/docs/chatbot-connector/en/messages/#forwardMessage
 
         Args:
             chat_id (str): Identifier of the chat to forward the message to.
@@ -733,7 +864,7 @@ class Bot:
         Retrieves a paginated list of chats available to the bot.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#retrieving-the-list-of-chats
+            https://trueconf.com/docs/chatbot-connector/en/chats/#getChats
 
         Args:
             count (int, optional): Number of chats per page. Defaults to 10.
@@ -757,7 +888,7 @@ class Bot:
         Retrieves information about a chat by its identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#retrieving-chat-information-by-id
+            https://trueconf.com/docs/chatbot-connector/en/chats/#getChatById
 
         Args:
             chat_id (str): Identifier of the chat.
@@ -780,7 +911,7 @@ class Bot:
         Retrieves a paginated list of chat participants.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#retrieving-the-list-of-chat-participants
+            https://trueconf.com/docs/chatbot-connector/en/chats/#getChatParticipants
 
         Args:
             chat_id (str): Identifier of the chat.
@@ -806,7 +937,7 @@ class Bot:
         Retrieves the message history of the specified chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#retrieving-chat-history
+            https://trueconf.com/docs/chatbot-connector/en/messages/#getChatHistory
 
         Args:
             chat_id (str): Identifier of the chat.
@@ -834,7 +965,7 @@ class Bot:
         Retrieves information about a file by its identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Args:
             file_id (str): Identifier of the file.
@@ -853,7 +984,7 @@ class Bot:
         Retrieves a message by its identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#retrieving-a-message-by-its-id
+            https://trueconf.com/docs/chatbot-connector/en/messages/#getMessageById
 
         Args:
             message_id (str): Identifier of the message to retrieve.
@@ -872,7 +1003,7 @@ class Bot:
         Retrieves the display name of a user by their TrueConf ID.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/contacts/#retrieving-the-display-name-of-a-user-by-their-trueconf-id
+            https://trueconf.com/docs/chatbot-connector/en/contacts/#getUserDisplayName
 
         Args:
             user_id (str): User's TrueConf ID. Can be specified with or without a domain.
@@ -882,7 +1013,7 @@ class Bot:
         """
 
         if "@" not in user_id:
-            user_id = f"{user_id}@{self.server_name}"
+            user_id = f"{user_id}@{await self.server_name}"
 
         call = GetUserDisplayName(user_id=user_id)
         return await self(call)
@@ -896,7 +1027,7 @@ class Bot:
         Checks whether the specified user is a participant in the chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#checking-participant-presence-in-chat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#hasChatParticipant
 
         Args:
             chat_id (str): Identifier of the chat.
@@ -907,7 +1038,7 @@ class Bot:
         """
 
         if "@" not in user_id:
-            user_id = f"{user_id}@{self.server_name}"
+            user_id = f"{user_id}@{await self.server_name}"
 
         call = HasChatParticipant(chat_id=chat_id, user_id=user_id)
         return await self(call)
@@ -919,7 +1050,7 @@ class Bot:
         Removes a message by its identifier.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#deleting-a-message
+            https://trueconf.com/docs/chatbot-connector/en/messages/#removeMessage
 
         Args:
             message_id (str): Identifier of the message to be removed.
@@ -940,7 +1071,7 @@ class Bot:
         Removes a participant from the specified chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/chats/#removing-a-participant-from-the-chat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#removeChatParticipant
 
         Args:
             chat_id (str): Identifier of the chat to remove the participant from.
@@ -949,6 +1080,9 @@ class Bot:
         Returns:
             RemoveChatParticipantResponse: Object containing the result of the participant removal.
         """
+
+        if "@" not in user_id:
+            user_id = f"{user_id}@{await self.server_name}"
 
         call = RemoveChatParticipant(chat_id=chat_id, user_id=user_id)
         return await self(call)
@@ -964,7 +1098,7 @@ class Bot:
         Sends a reply to an existing message in the chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#reply-to-an-existing-message
+            https://trueconf.com/docs/chatbot-connector/en/messages/#replyMessage
 
         Args:
             chat_id (str): Identifier of the chat where the reply will be sent.
@@ -1013,32 +1147,51 @@ class Bot:
         await self.authorized_event.wait()
         await self.stopped_event.wait()
 
-    async def send_document(self, chat_id: str, file_path: str) -> SendFileResponse:
+    async def send_document(
+            self,
+            chat_id: str,
+            file: InputFile,
+            caption: str | None = None,
+            parse_mode: ParseMode | str = ParseMode.TEXT,
+    ) -> SendFileResponse:
         """
-        Sends a document to the specified chat.
+        Sends a document or any arbitrary file to the specified chat.
 
-        Files of any format are supported. A preview is automatically generated for the following file types:
-        .jpg, .jpeg, .png, .webp, .bmp, .gif, .tiff, .pdf
+        This method supports all file types, including images.
+        However, images sent via this method will be transferred **in original, uncompressed form**.
+        If you want to send a compressed image with preview support, use `send_photo()` instead.
 
-        Source:
-            https://trueconf.com/docs/chatbot-connector/en/files/#file-transfer
+        The file must be provided as an instance of one of the `InputFile` subclasses:
+        `FSInputFile`, `BufferedInputFile`, or `URLInputFile`.
 
         Args:
-            chat_id (str): Identifier of the chat to send the document to.
-            file_path (str): Path to the document file.
+            chat_id (str): The identifier of the chat to which the document will be sent.
+            file (InputFile): The file to be uploaded. Must be a subclass of `InputFile`.
+            caption (str | None): Optional caption text to be sent with the file.
+            parse_mode (ParseMode | str): Text formatting mode (e.g., Markdown, HTML, or plain text).
 
         Returns:
-            SendFileResponse: Object containing the result of the file upload.
+            SendFileResponse: An object containing the result of the file upload.
+
+        Example:
+            ```python
+            await bot.send_document(
+                chat_id="a1s2d3f4f5g6",
+                file=FSInputFile("report.pdf"),
+                caption="📄 Annual report **for 2025**",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            ```
         """
 
         loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
 
         temporal_file_id = await self.__upload_file_to_server(
-            file_path=file_path,
+            file=file,
             verify=self.verify_ssl,
         )
 
-        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id)
+        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
         return await self(call)
 
     async def send_message(
@@ -1051,7 +1204,7 @@ class Bot:
         Sends a message to the specified chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/messages/#sending-a-text-message-in-chat
+            https://trueconf.com/docs/chatbot-connector/en/messages/#sendMessage
 
         Args:
             chat_id (str): Identifier of the chat to send the message to.
@@ -1067,65 +1220,102 @@ class Bot:
         call = SendMessage(chat_id=chat_id, text=text, parse_mode=parse_mode)
         return await self(call)
 
-    async def send_photo(self, chat_id: str, file_path: str, preview_path: str | None) -> SendFileResponse:
+    async def send_photo(
+            self,
+            chat_id: str,
+            file: InputFile,
+            preview: InputFile | None,
+            caption: str | None = None,
+            parse_mode: ParseMode | str = ParseMode.TEXT
+    ) -> SendFileResponse:
         """
-        Sends a photo to the specified chat with preview (optional).
+        Sends a photo to the specified chat, with optional caption and preview support.
 
-        Supported image formats: .jpg, .jpeg, .png, .webp, .bmp, .gif, .tiff
+        This method is recommended when sending **compressed images with preview** support.
+        If you want to send uncompressed images or arbitrary files, use `send_document()` instead.
+
+        The file must be provided as an instance of one of the `InputFile` subclasses:
+        `FSInputFile`, `BufferedInputFile`, or `URLInputFile`.
+
+        Supported image formats include:
+        `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.gif`, `.tiff`
 
         Source:
             https://trueconf.com/docs/chatbot-connector/en/files/#file-transfer
 
         Args:
-            chat_id (str): Identifier of the chat to send the photo to.
-            file_path (str): Path to the image file.
-            preview_path (str | None): Path to the preview image.
+            chat_id (str): Identifier of the chat to which the photo will be sent.
+            file (InputFile): The photo file to upload. Must be a subclass of `InputFile`.
+            preview (InputFile | None): Optional preview image. Must also be an `InputFile` if provided.
+            caption (str | None): Optional caption to be sent along with the image.
+            parse_mode (ParseMode | str): Formatting mode for the caption (e.g., Markdown, HTML, plain text).
 
         Returns:
-            SendFileResponse: Object containing the result of the file upload.
+            SendFileResponse: An object containing the result of the file upload.
 
-        Examples:
-            >>> bot.send_photo(chat_id="a1s2d3f4f5g6", file_path="/path/to/image.jpg", preview_path="/path/to/preview.webp")
+        Example:
+            ```python
+            await bot.send_photo(
+                chat_id="a1s2d3f4f5g6",
+                file=FSInputFile("image.jpg"),
+                preview=FSInputFile("image_preview.webp"),
+                caption="Here's our **team** photo 📸",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            ```
         """
 
         loggers.chatbot.info(f"✉️ Sending photo to {chat_id}")
 
         temporal_file_id = await self.__upload_file_to_server(
-            file_path=file_path,
-            preview_path=preview_path,
+            file=file,
+            preview=preview,
             verify=self.verify_ssl,
         )
 
-        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id)
+        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
         return await self(call)
 
-    async def send_sticker(
-            self, chat_id: str, file_path: str
-    ) -> SendFileResponse:
+    async def send_sticker(self, chat_id: str, file: InputFile) -> SendFileResponse:
         """
-        Sends a WebP-format sticker to the specified chat.
+        Sends a sticker in WebP format to the specified chat.
+
+        The file must have a MIME type of `'image/webp'`, otherwise a `TypeError`
+        will be raised. The file must be an instance of one of the `InputFile` subclasses:
+        `FSInputFile`, `BufferedInputFile`, or `URLInputFile`.
+
+        A preview is automatically generated from the source file, as required
+        for sticker uploads in TrueConf.
 
         Source:
             https://trueconf.com/docs/chatbot-connector/en/files/#file-transfer
 
         Args:
-            chat_id (str): Identifier of the chat to send the sticker to.
-            file_path (str): Path to the sticker file in WebP format.
+            chat_id (str): Identifier of the chat to which the sticker will be sent.
+            file (InputFile): The sticker file in WebP format. Must be a subclass of `InputFile`.
 
         Returns:
-            SendFileResponse: Object containing the result of the file upload.
+            SendFileResponse: An object containing the result of the file upload.
 
         Raises:
-            TypeError: If the file does not have the MIME type 'image/webp'.
+            TypeError: If the file's MIME type is not `'image/webp'`.
+
+        Example:
+            ```python
+            await bot.send_sticker(chat_id="user123", file=FSInputFile("sticker.webp"))
+            ```
         """
 
-        if mimetypes.guess_type(file_path)[0] != "image/webp":
+        if file.mimetype != "image/webp":
             raise TypeError("File type not supported. File type must be 'image/webp'")
 
         loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
 
         temporal_file_id = await self.__upload_file_to_server(
-            file_path=file_path, preview_mimetype="sticker/webp", verify=self.verify_ssl
+            file=file,
+            preview=file.clone(),
+            is_sticker=True,
+            verify=self.verify_ssl
         )
 
         call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id)
@@ -1143,7 +1333,7 @@ class Bot:
         Sends a survey to the specified chat.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/surveys/#sending-a-poll-message-in-chat
+            https://trueconf.com/docs/chatbot-connector/en/surveys/#sendSurvey
 
         Args:
             chat_id (str): Identifier of the chat to send the survey to.
@@ -1180,7 +1370,6 @@ class Bot:
         Returns:
             None
         """
-
         if self._connect_task and not self._connect_task.done():
             return
         self._stop = False
@@ -1191,6 +1380,7 @@ class Bot:
         Gracefully shuts down the bot, cancels the connection task, and closes active sessions.
 
         This method:
+
         - Cancels the connection task if it is still active;
         - Closes the WebSocket session or `self.session` if they are open;
         - Clears the connection and authorization events;
@@ -1229,7 +1419,7 @@ class Bot:
         Subscribes to file transfer progress updates.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/files/#subscription-to-file-upload-progress-on-the-server
+            https://trueconf.com/docs/chatbot-connector/en/files/#subscribeFileProgress
 
         Args:
             file_id (str): Identifier of the file.
@@ -1252,7 +1442,7 @@ class Bot:
         Unsubscribes from receiving file upload progress events.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/files/#unsubscribe-from-receiving-upload-event-notifications
+            https://trueconf.com/docs/chatbot-connector/en/files/#unsubscribeFileProgress
 
         Args:
             file_id (str): Identifier of the file.

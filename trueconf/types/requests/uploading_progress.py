@@ -15,7 +15,7 @@ class UploadingProgress(BoundToBot, DataClassDictMixin):
             This class is used as the event type in handler functions decorated with `@<router>.uploading_progress()`.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#uploadingProgress
+            https://trueconf.com/docs/chatbot-connector/en/files/#uploadingProgress
 
         Attributes:
             file_id (str): Unique identifier of the file being uploaded.

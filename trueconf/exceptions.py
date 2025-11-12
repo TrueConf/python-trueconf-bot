@@ -13,5 +13,9 @@ class InvalidGrantError(TrueConfChatBotError):
     pass
 
 
-class ApiError(TrueConfChatBotError):
-    pass
+class ApiErrorException(TrueConfChatBotError):
+    def __init__(self, code: int, detail: str, payload: dict | None = None):
+        super().__init__(f"[{code}] {detail}")
+        self.code = code
+        self.detail = detail
+        self.payload = payload or {}

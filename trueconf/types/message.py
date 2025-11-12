@@ -34,7 +34,7 @@ class Message(BoundToBot, DataClassDictMixin):
         media files).
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#sendMessage
+            https://trueconf.com/docs/chatbot-connector/en/messages/#sendMessage
 
         Attributes:
             timestamp (int): Unix timestamp of the message.
@@ -409,3 +409,40 @@ class Message(BoundToBot, DataClassDictMixin):
             message_id=self.message_id,
             for_all=for_all,
         )
+
+    async def save_to_favorites(self, copy: bool = False) -> object:
+        """
+        Saves the current message to the bot's "Favorites" chat.
+
+        By default, the message is **forwarded** to the bot's personal Favorites chat.
+        If `copy=True`, the message will be **copied** instead — only for text messages.
+
+        Use this method to store important messages, logs, or media content in the bot’s private space.
+
+        Notes:
+            - The Favorites chat is created automatically on first use.
+            - `copy=True` only works for text messages and does **not** preserve metadata (like replies or sender info).
+            - Non-text messages with `copy=True` will be ignored with a warning.
+
+        Args:
+            copy (bool, optional): If True, copies the message instead of forwarding it.
+                Defaults to False.
+
+        Returns:
+            SendMessageResponse | ForwardMessageResponse | None:
+            Result of sending or forwarding the message. Returns `None` if copying is not supported for the message type.
+
+        Example:
+            ```python
+            @router.message()
+            async def on_message(msg: Message):
+                await msg.save_to_favorites()           # forwards message
+                await msg.save_to_favorites(copy=True)  # copies if possible
+            ```
+        """
+
+        if copy:
+            return await self.copy_to(await self.bot.me)
+        else:
+            return await self.forward(await self.bot.me)
+

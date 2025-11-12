@@ -17,7 +17,7 @@ class CreatedGroupChat(BoundToBot, DataClassDictMixin):
             This class is used as the event type in handler functions decorated with `@<router>.created_group_chat()`.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#createGroupChat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createdGroupChat
 
         Attributes:
             chat_id (str): Unique identifier of the group chat.

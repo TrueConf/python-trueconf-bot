@@ -17,7 +17,7 @@ class CreatedPersonalChat(BoundToBot, DataClassDictMixin):
             This class is used as the event type in handler functions decorated with `@<router>.created_personal_chat()`.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#createP2PChat
+            https://trueconf.com/docs/chatbot-connector/en/chats/#createdP2PChat
 
         Attributes:
             chat_id (str): Unique identifier of the personal chat.

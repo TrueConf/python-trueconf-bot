@@ -27,7 +27,8 @@ class Video(BoundToBot):
         """
         Returns the direct download URL of the video file.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the original video file.
@@ -41,7 +42,8 @@ class Video(BoundToBot):
         """
         Returns the preview URL of the video file, if available.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the preview version of the video file.

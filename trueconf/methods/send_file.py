@@ -12,6 +12,8 @@ class SendFile(TrueConfMethod[SendFileResponse]):
 
     chat_id: str
     temporal_file_id: str
+    text: str = None
+    parse_mode: str = None
 
     def __post_init__(self):
         super().__init__()
@@ -21,5 +23,9 @@ class SendFile(TrueConfMethod[SendFileResponse]):
             "chatId": self.chat_id,
             "content": {
                 "temporalFileId": self.temporal_file_id,
+                "caption":{
+                    "text": self.text,
+                    "parseMode": self.parse_mode,
+                }
             }
         }

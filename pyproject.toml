@@ -45,8 +45,14 @@ dependencies = [
     "httpx",
     "mashumaro",
     "aiofiles",
-    "magic-filter"
+    "magic-filter",
+    "aiohttp",
+    "async-property"
 ]
+
+[project.optional-dependencies]
+python-magic = ["python-magic>=0.4.27"]
+
 
 [tool.setuptools]
 packages = ["trueconf"]

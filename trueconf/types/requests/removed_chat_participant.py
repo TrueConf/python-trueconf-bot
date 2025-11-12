@@ -16,7 +16,7 @@ class RemovedChatParticipant(BoundToBot, DataClassDictMixin):
             This class is used as the event type in handler functions decorated with `@<router>.removed_chat_participant()`.
 
         Source:
-            https://trueconf.com/docs/chatbot-connector/en/server-requests/#removeChatParticipant
+            https://trueconf.com/docs/chatbot-connector/en/chats/#removedChatParticipant
 
         Attributes:
             timestamp (int): Unix timestamp (milliseconds) of when the event occurred.

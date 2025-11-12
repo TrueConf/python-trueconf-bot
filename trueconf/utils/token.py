@@ -23,8 +23,8 @@ def get_auth_token(
     params = {
         "client_id": "chat_bot",
         "grant_type": "password",
-        "username": username,
-        "password": password,
+        "username": str(username),
+        "password": str(password)
     }
     with Client(timeout=timeout, verify=verify) as client:
         r = client.post(url, json=params)

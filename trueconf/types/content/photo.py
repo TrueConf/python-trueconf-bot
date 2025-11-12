@@ -27,7 +27,8 @@ class Photo(BoundToBot):
         """
         Returns the direct download URL of the image file.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the original image file.
@@ -41,7 +42,8 @@ class Photo(BoundToBot):
         """
         Returns the preview URL of the image file, if available.
 
-        Source: https://trueconf.com/docs/chatbot-connector/en/files/#retrieving-file-information-and-downloading-the-file
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileInfo
 
         Returns:
             str: A URL pointing to the preview version of the image file.
