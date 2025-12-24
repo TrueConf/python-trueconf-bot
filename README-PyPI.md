@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TrueConf/python-trueconf-bot/master/assets/logo.svg" type="image/svg">
-      <img width="150" src="https://raw.githubusercontent.com/TrueConf/python-trueconf-bot/master/assets/logo.svg" type="image/svg">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TrueConf/.github/refs/heads/main/logos/logo-dark.svg">
+      <img width="150" alt="trueconf" src="https://raw.githubusercontent.com/TrueConf/.github/refs/heads/main/logos/logo.svg">
     </picture>
   </a>
 </p>
@@ -19,10 +19,10 @@
         <img src="https://img.shields.io/pypi/pyversions/python-trueconf-bot">
     </a>
     <a href="https://t.me/trueconf_chat" target="_blank">
-        <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
+        <img src="https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white" />
     </a>
-    <a href="https://chat.whatsapp.com/GY97WBzSgvD1cJG0dWEiGP">
-        <img src="https://img.shields.io/badge/whatsapp-commiunity-gree?style=flat-square&logo=whatsapp" />
+    <a href="https://discord.gg/2gJ4VUqATZ">
+        <img src="https://img.shields.io/badge/Discord-%235865F2.svg?&logo=discord&logoColor=white" />
     </a>
     <a href="#">
         <img src="https://img.shields.io/github/stars/trueconf/python-trueconf-bot?style=social" />

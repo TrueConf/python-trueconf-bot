@@ -1,8 +1,8 @@
 <p align="center">
-  <a href="https://trueconf.com" target="_blank" rel="noopener noreferrer">
+  <a href="https://trueconf.ru" target="_blank" rel="noopener noreferrer">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="assets/logo-cyrillic.svg" type="image/svg">
-      <img width="150" src="assets/logo-cyrillic.svg" type="image/svg">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TrueConf/.github/refs/heads/main/logos/logo-cyrillic-dark.svg">
+      <img width="150" alt="trueconf" src="https://raw.githubusercontent.com/TrueConf/.github/refs/heads/main/logos/logo-cyrillic.svg">
     </picture>
   </a>
 </p>
@@ -18,11 +18,8 @@
     <a href="https://pypi.org/project/python-trueconf-bot/">
         <img src="https://img.shields.io/pypi/pyversions/python-trueconf-bot">
     </a>
-    <a href="https://t.me/trueconf_chat" target="_blank">
-        <img src="https://img.shields.io/badge/telegram-group-blue?style=flat-square&logo=telegram" />
-    </a>
-    <a href="https://chat.whatsapp.com/GY97WBzSgvD1cJG0dWEiGP">
-        <img src="https://img.shields.io/badge/whatsapp-commiunity-gree?style=flat-square&logo=whatsapp" />
+    <a href="https://t.me/trueconf_talks" target="_blank">
+        <img src="https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white" />
     </a>
     <a href="#">
         <img src="https://img.shields.io/github/stars/trueconf/python-trueconf-bot?style=social" />
