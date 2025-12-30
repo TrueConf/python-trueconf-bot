@@ -22,21 +22,21 @@ if TYPE_CHECKING:
     from trueconf.client.bot import Bot
 
 
-def detect_mimetype(data: bytes, filename: str = "") -> str:
-    mimetype = guess_type(filename or "")[0]
-    if not mimetype and magic:
+def detect_mime_type(data: bytes, file_name: str = "") -> str:
+    mime_type = guess_type(file_name or "")[0]
+    if not mime_type and magic:
         try:
-            mimetype = magic.from_buffer(data, mime=True)
+            mime_type = magic.from_buffer(data, mime=True)
         except Exception as e:
-            loggers.chatbot.debug(f"Failed to detect mimetype via magic: {e}")
-    return mimetype or "application/octet-stream"
+            loggers.chatbot.debug(f"Failed to detect mime_type via magic: {e}")
+    return mime_type or "application/octet-stream"
 
-def filename_from_url(url: str) -> str:
+def file_name_from_url(url: str) -> str:
     path = urlparse(url).path
     return Path(unquote(path)).name
 
-def filename_from_content_disposition(header: str) -> str | None:
-    match = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^\";]+)"?', header)
+def file_name_from_content_disposition(header: str) -> str | None:
+    match = re.search(r'file_name\*?=(?:UTF-8\'\')?"?([^\";]+)"?', header)
     if match:
         return unquote(match.group(1))
     return None
@@ -61,9 +61,9 @@ class InputFile(ABC):
         https://trueconf.com/docs/chatbot-connector/en/files/#upload-file-to-server-storage
 
     Args:
-        filename (str | None): Name of the file to display when sending.
+        file_name (str | None): Name of the file to display when sending.
         file_size (int | None): File size in bytes (optional).
-        mimetype (str | None): MIME type of the file. Can be detected automatically.
+        mime_type (str | None): MIME type of the file. Can be detected automatically.
 
     Abstract Methods:
         read(): Asynchronously reads the file content.
@@ -78,14 +78,14 @@ class InputFile(ABC):
 
     def __init__(
             self,
-            filename: Optional[str] = None,
+            file_name: Optional[str] = None,
             file_size: Optional[int] = None,
-            mimetype: Optional[str] = None,
+            mime_type: Optional[str] = None,
     ):
 
-        self.filename = filename
+        self.file_name = file_name
         self.file_size = file_size
-        self.mimetype = mimetype
+        self.mime_type = mime_type
 
 
     @abstractmethod
@@ -106,7 +106,7 @@ class BufferedInputFile(InputFile):
 
     Example:
         ```python
-        file = BufferedInputFile(file=data_bytes, filename="example.txt")
+        file = BufferedInputFile(file=data_bytes, file_name="example.txt")
         await bot.send_document(chat_id="...", file=file)
         ```
 
@@ -117,27 +117,27 @@ class BufferedInputFile(InputFile):
     def __init__(
             self,
             file: bytes,
-            filename: str,
+            file_name: str,
             file_size: Optional[int] = None,
-            mimetype: Optional[str] = None,
+            mime_type: Optional[str] = None,
     ):
         """
         Initializes a file from a bytes buffer.
 
         Args:
             file (bytes): Raw file content in bytes.
-            filename (str): The name of the file.
+            file_name (str): The name of the file.
             file_size (Optional[int]): Size of the file in bytes. Auto-detected if not specified.
-            mimetype (Optional[str]): MIME type of the file. Auto-detected if not specified.
+            mime_type (Optional[str]): MIME type of the file. Auto-detected if not specified.
         """
 
         if file_size is None:
             file_size = len(file)
-        if mimetype is None:
-            mimetype = detect_mimetype(file, filename)
+        if mime_type is None:
+            mime_type = detect_mime_type(file, file_name)
 
 
-        super().__init__(filename=filename, file_size=file_size, mimetype=mimetype)
+        super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
 
         self.data = file
 
@@ -145,9 +145,9 @@ class BufferedInputFile(InputFile):
     def from_file(
         cls,
         path: Union[str, Path],
-        filename: Optional[str] = None,
+        file_name: Optional[str] = None,
         file_size: Optional[int] = None,
-        mimetype: Optional[str] = None,
+        mime_type: Optional[str] = None,
     ) -> BufferedInputFile:
         """
         Creates a `BufferedInputFile` from a file on disk.
@@ -157,25 +157,25 @@ class BufferedInputFile(InputFile):
 
         Args:
             path (str | Path): Path to the local file.
-            filename (Optional[str]): File name to propagate. Defaults to the name extracted from path.
+            file_name (Optional[str]): File name to propagate. Defaults to the name extracted from path.
             file_size (Optional[int]): File size in bytes. Auto-detected if not specified.
-            mimetype (Optional[str]): MIME type of the file. Auto-detected if not specified.
+            mime_type (Optional[str]): MIME type of the file. Auto-detected if not specified.
 
         Returns:
             BufferedInputFile: A new instance ready for upload.
         """
-        if filename is None:
-            filename = os.path.basename(path)
+        if file_name is None:
+            file_name = os.path.basename(path)
         with open(path, "rb") as f:
             data = f.read()
 
         if file_size is None:
             file_size = len(data)
 
-        if mimetype is None:
-            mimetype = detect_mimetype(data, filename)
+        if mime_type is None:
+            mime_type = detect_mime_type(data, file_name)
 
-        return cls(data, filename=filename, file_size=file_size, mimetype=mimetype)
+        return cls(data, file_name=file_name, file_size=file_size, mime_type=mime_type)
 
     async def read(self):
         """
@@ -200,9 +200,9 @@ class BufferedInputFile(InputFile):
 
         return BufferedInputFile(
             file=self.data,
-            filename=self.filename,
+            file_name=self.file_name,
             file_size=self.file_size,
-            mimetype=self.mimetype,
+            mime_type=self.mime_type,
         )
 
 
@@ -222,37 +222,37 @@ class FSInputFile(InputFile):
     def __init__(
         self,
         path: Union[str, Path],
-        filename: Optional[str] = None,
+        file_name: Optional[str] = None,
         file_size: Optional[int] = None,
-        mimetype: Optional[str] = None,
+        mime_type: Optional[str] = None,
     ):
         """
         Initializes an `FSInputFile` instance from a local file.
 
-        If not provided, `filename`, `file_size`, and `mimetype` are automatically detected:
+        If not provided, `file_name`, `file_size`, and `mime_type` are automatically detected:
 
-        - `filename` is extracted from the file path.
+        - `file_name` is extracted from the file path.
         - `file_size` is determined via `os.path.getsize()`.
-        - `mimetype` is detected from the first 2048 bytes of the file content (using `python-magic` if available).
+        - `mime_type` is detected from the first 2048 bytes of the file content (using `python-magic` if available).
 
         Args:
             path (str | Path): Path to the local file.
-            filename (Optional[str]): File name to be propagated in the upload.
+            file_name (Optional[str]): File name to be propagated in the upload.
             file_size (Optional[int]): File size in bytes.
-            mimetype (Optional[str]): File MIME type.
+            mime_type (Optional[str]): File MIME type.
         """
-        if filename is None:
-            filename = os.path.basename(path)
+        if file_name is None:
+            file_name = os.path.basename(path)
 
         if file_size is None:
             file_size = os.path.getsize(path)
 
-        if mimetype is None:
+        if mime_type is None:
             with open(path, "rb") as f:
                 head = f.read(2048)
-                mimetype = detect_mimetype(head, filename)
+                mime_type = detect_mime_type(head, file_name)
 
-        super().__init__(filename=filename, file_size=file_size, mimetype=mimetype)
+        super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
 
         self.path = path
 
@@ -278,9 +278,9 @@ class FSInputFile(InputFile):
         """
         return FSInputFile(
             path=self.path,
-            filename=self.filename,
+            file_name=self.file_name,
             file_size=self.file_size,
-            mimetype=self.mimetype,
+            mime_type=self.mime_type,
         )
 
 
@@ -301,9 +301,9 @@ class URLInputFile(InputFile):
         self,
         url: str,
         headers: Optional[Dict[str, Any]] = None,
-        filename: Optional[str] = None,
+        file_name: Optional[str] = None,
         file_size: Optional[int] = None,
-        mimetype: Optional[str] = None,
+        mime_type: Optional[str] = None,
         timeout: int = 30,
     ):
         """
@@ -312,12 +312,12 @@ class URLInputFile(InputFile):
         Args:
             url (str): URL of the file to download.
             headers (Optional[Dict[str, Any]]): Optional HTTP headers for the request.
-            filename (Optional[str]): Optional file name to propagate in the upload.
+            file_name (Optional[str]): Optional file name to propagate in the upload.
             file_size (Optional[int]): Optional file size in bytes.
-            mimetype (Optional[str]): Optional MIME type of the file.
+            mime_type (Optional[str]): Optional MIME type of the file.
             timeout (int): Timeout (in seconds) for the HTTP request.
         """
-        super().__init__(filename=filename, file_size=file_size, mimetype=mimetype)
+        super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
         if headers is None:
             headers = {}
 
@@ -338,15 +338,15 @@ class URLInputFile(InputFile):
         Raises:
             ValueError: If the server does not provide a valid `Content-Length`.
         """
-        if self.file_size is not None and self.mimetype is not None:
+        if self.file_size is not None and self.mime_type is not None:
             return
 
         async with AsyncClient() as client:
             async with client.stream("HEAD", self.url, headers=self.headers, timeout=self.timeout) as response:
-                if self.mimetype is None:
+                if self.mime_type is None:
                     content_type = response.headers.get("Content-Type")
                     if content_type:
-                        self.mimetype = content_type.split(";")[0].strip()
+                        self.mime_type = content_type.split(";")[0].strip()
 
                 content_length = response.headers.get("Content-Length")
                 if content_length and content_length.isdigit():
@@ -355,9 +355,9 @@ class URLInputFile(InputFile):
                     raise ValueError("Server did not provide Content-Length, unable to determine file size.")
 
                 content_disp = response.headers.get("Content-Disposition", "")
-                self.filename = (
-                        filename_from_content_disposition(content_disp)
-                        or filename_from_url(self.url)
+                self.file_name = (
+                        file_name_from_content_disposition(content_disp)
+                        or file_name_from_url(self.url)
                 )
         return
 
@@ -396,7 +396,7 @@ class URLInputFile(InputFile):
         return URLInputFile(
             url=self.url,
             headers=self.headers.copy(),
-            filename=self.filename,
+            file_name=self.file_name,
             timeout=self.timeout,
         )
 
