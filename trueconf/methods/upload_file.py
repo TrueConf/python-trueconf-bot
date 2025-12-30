@@ -11,6 +11,7 @@ class UploadFile(TrueConfMethod[UploadFileResponse]):
     __returning__ = UploadFileResponse
 
     file_size: int
+    file_name: str
 
     def __post_init__(self):
         super().__init__()
@@ -18,4 +19,5 @@ class UploadFile(TrueConfMethod[UploadFileResponse]):
     def payload(self):
         return {
             "fileSize": self.file_size,
+            "fileName": self.file_name,
         }
