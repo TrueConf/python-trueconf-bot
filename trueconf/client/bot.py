@@ -376,7 +376,7 @@ class Bot:
             if preview:
                 await preview.prepare()
 
-        res = await self(UploadFile(file_size=file.file_size))
+        res = await self(UploadFile(file_size=file.file_size, file_name=file.file_name))
         upload_task_id = res.upload_task_id
 
         headers = {
@@ -400,16 +400,16 @@ class Bot:
                 data.add_field(
                     name="file",
                     value= await file.read(),
-                    filename=file.filename,
-                    content_type="sticker/webp" if is_sticker else file.mimetype,
+                    filename=file.file_name,
+                    content_type="sticker/webp" if is_sticker else file.mime_type,
                 )
 
                 if preview:
                     data.add_field(
                         name="preview",
                         value = await preview.read(),
-                        filename=preview.filename,
-                        content_type=preview.mimetype
+                        filename=preview.file_name,
+                        content_type=preview.mime_type
                     )
 
                 async with session.post(self._url_for_upload_files, headers=headers, data=data) as response:
@@ -1306,7 +1306,7 @@ class Bot:
             ```
         """
 
-        if file.mimetype != "image/webp":
+        if file.mime_type != "image/webp":
             raise TypeError("File type not supported. File type must be 'image/webp'")
 
         loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
