@@ -46,6 +46,7 @@ from trueconf.methods.get_chat_history import GetChatHistory
 from trueconf.methods.get_chat_participants import GetChatParticipants
 from trueconf.methods.get_chats import GetChats
 from trueconf.methods.get_file_info import GetFileInfo
+from trueconf.methods.get_file_upload_limits import GetFileUploadLimits
 from trueconf.methods.get_message_by_id import GetMessageById
 from trueconf.methods.get_user_display_name import GetUserDisplayName
 from trueconf.methods.has_chat_participant import HasChatParticipant
@@ -61,6 +62,7 @@ from trueconf.methods.upload_file import UploadFile
 from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
+from trueconf.types.responses import GetFileUploadLimitsResponse
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 from trueconf.types.responses.create_channel_response import CreateChannelResponse
@@ -975,6 +977,33 @@ class Bot:
         """
 
         call = GetFileInfo(file_id=file_id)
+        return await self(call)
+
+    async def get_file_info_upload_limits(self) -> GetFileUploadLimitsResponse:
+        """
+        Returns the current file upload limits configured on the TrueConf Server.
+
+        Useful for validating outgoing files in advance (e.g., checking maximum
+        file size and allowed types/extensions).
+
+        Notes:
+            Requires TrueConf Server 5.5.3 or later.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileUploadLimits
+
+        Returns:
+            GetFileUploadLimitsResponse: Object describing upload constraints
+            (e.g., maximum file size, allowed types/extensions).
+
+        Example:
+            ```python
+            limits = await bot.get_file_info_upload_limits()
+            # Use `limits` fields to validate a file before uploading
+            ```
+            """
+
+        call = GetFileUploadLimits()
         return await self(call)
 
     async def get_message_by_id(
