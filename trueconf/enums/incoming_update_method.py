@@ -9,6 +9,7 @@ class IncomingUpdateMethod(str, Enum):
     CREATED_GROUP_CHAT = "createGroupChat"
     CREATED_PERSONAL_CHAT = "createP2PChat"
     CREATED_FAVORITES_CHAT = "createFavoritesChat"
+    EDITED_CHAT_TITLE = "editChatTitle"
     EDITED_MESSAGE = "editMessage"
     REMOVED_CHAT_PARTICIPANT = "removeChatParticipant"
     REMOVED_MESSAGE = "removeMessage"

@@ -16,6 +16,7 @@ from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
 from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
+from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.edited_message import EditedMessage
 from trueconf.types.requests.removed_chat import RemovedChat
 from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
@@ -155,6 +156,37 @@ class Router:
     def removed_chat(self, *filters: FilterLike):
         """Register a handler when a chat is removed."""
         return self._register((InstanceOfFilter(RemovedChat), *filters))
+
+    def edited_chat_title(self, *filters: FilterLike):
+        """
+        Registers a handler for chat title edit events.
+
+        Use this as a decorator to subscribe to the event fired when a chat's title
+        is updated. The handler will receive an `EditedChatTitle` event object.
+
+        Notes:
+            Requires TrueConf Server 5.5.3 or later.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/server-requests/#editChatTitle
+
+        Args:
+            *filters (FilterLike): Optional filters applied before invoking the handler
+                (e.g., by `chat_id` or other attributes).
+
+        Returns:
+            Callable: A decorator that registers an asynchronous event handler.
+
+        Example:
+            ```python
+            from trueconf.types import EditedChatTitle
+
+            @router.edited_chat_title()
+            async def on_title_changed(event: EditedChatTitle):
+                print(f"Chat {event.chat_id} → new title: {event.title}")
+            ```
+            """
+        return self._register((InstanceOfFilter(EditedChatTitle), *filters))
 
     def edited_message(self, *filters: FilterLike):
         """Register a handler for message edit events."""

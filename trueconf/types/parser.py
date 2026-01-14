@@ -11,6 +11,7 @@ from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
 from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
 from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
+from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
@@ -55,6 +56,9 @@ def parse_update(raw: dict):
 
         case IUM.REMOVED_CHAT:
             return RemovedChat.from_dict(raw["payload"])
+
+        case IUM.EDITED_CHAT_TITLE:
+            return EditedChatTitle.from_dict(raw["payload"])
 
         case IUM.EDITED_MESSAGE:
             return EditedMessage.from_dict(raw["payload"])
