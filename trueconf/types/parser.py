@@ -10,6 +10,7 @@ from trueconf.types.content.text import TextContent
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
 from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
+from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
 from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
@@ -75,6 +76,9 @@ def parse_update(raw: dict):
 
         case IUM.CHANGED_PARTICIPANT_ROLE:
             return ChangedParticipantRole.from_dict(raw["payload"])
+
+        case IUM.CHANGED_FILE_UPLOAD_LIMITS:
+            return ChangedFileUploadLimits.from_dict(raw["payload"])
 
         case IUM.MESSAGE:
             env_type = MessageType(p.get("type", 0))

@@ -1,4 +1,5 @@
 from .added_chat_participant import AddedChatParticipant
+from .changed_file_upload_limits import ChangedFileUploadLimits
 from .changed_participant_role import ChangedParticipantRole
 from .created_channel import CreatedChannel
 from .created_group_chat import CreatedGroupChat
@@ -11,6 +12,7 @@ from .uploading_progress import UploadingProgress
 
 __all__ = [
     'AddedChatParticipant',
+    'ChangedFileUploadLimits',
     'ChangedParticipantRole',
     'CreatedChannel',
     'CreatedGroupChat',

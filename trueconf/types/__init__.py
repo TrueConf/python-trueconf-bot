@@ -1,5 +1,6 @@
 from .message import Message
 from .requests.added_chat_participant import AddedChatParticipant
+from .requests.changed_file_upload_limits import ChangedFileUploadLimits
 from .requests.changed_participant_role import ChangedParticipantRole
 from .requests.created_channel import CreatedChannel
 from .requests.created_group_chat import CreatedGroupChat
@@ -18,6 +19,7 @@ from .input_file import URLInputFile
 
 __all__ = [
     "AddedChatParticipant",
+    "ChangedFileUploadLimits",
     "ChangedParticipantRole",
     "CreatedChannel",
     "CreatedGroupChat",

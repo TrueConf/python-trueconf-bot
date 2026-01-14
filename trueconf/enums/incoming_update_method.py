@@ -4,6 +4,7 @@ from enum import Enum
 class IncomingUpdateMethod(str, Enum):
     ADDED_CHAT_PARTICIPANT = "addChatParticipant"
     CHANGED_PARTICIPANT_ROLE = "changeParticipantRole"
+    CHANGED_FILE_UPLOAD_LIMITS = "getFileUploadLimits"
     CREATED_CHANNEL = "createChannel"
     CREATED_GROUP_CHAT = "createGroupChat"
     CREATED_PERSONAL_CHAT = "createP2PChat"
