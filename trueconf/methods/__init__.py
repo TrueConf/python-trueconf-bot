@@ -6,6 +6,7 @@ from trueconf.methods.base import TrueConfMethod
 from .create_channel import CreateChannel
 from .create_group_chat import CreateGroupChat
 from .create_p2p_chat import CreateP2PChat
+from .edit_chat_title import EditChatTitle
 from .edit_message import EditMessage
 from .edit_survey import EditSurvey
 from .forward_message import ForwardMessage
@@ -37,6 +38,7 @@ __all__ = [
     'ForwardMessage',
     'SendMessage',
     'CreateChannel',
+    'EditChatTitle',
     'EditMessage',
     'GetChatHistory',
     'GetChatParticipants',

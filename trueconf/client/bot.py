@@ -38,6 +38,7 @@ from trueconf.methods.create_channel import CreateChannel
 from trueconf.methods.create_favorites_chat import CreateFavoritesChat
 from trueconf.methods.create_group_chat import CreateGroupChat
 from trueconf.methods.create_p2p_chat import CreateP2PChat
+from trueconf.methods.edit_chat_title import EditChatTitle
 from trueconf.methods.edit_message import EditMessage
 from trueconf.methods.edit_survey import EditSurvey
 from trueconf.methods.forward_message import ForwardMessage
@@ -69,6 +70,7 @@ from trueconf.types.responses.create_channel_response import CreateChannelRespon
 from trueconf.types.responses.create_favorites_chat_response import CreateFavoritesChatResponse
 from trueconf.types.responses.create_group_chat_response import CreateGroupChatResponse
 from trueconf.types.responses.create_p2p_chat_response import CreateP2PChatResponse
+from trueconf.types.responses.edit_chat_title_response import EditChatTitleResponse
 from trueconf.types.responses.edit_message_response import EditMessageResponse
 from trueconf.types.responses.edit_survey_response import EditSurveyResponse
 from trueconf.types.responses.forward_message_response import ForwardMessageResponse
@@ -784,6 +786,35 @@ class Bot:
             dest_path=dest_path,
             verify=self.verify_ssl
         )
+
+    async def edit_chat_title(self, chat_id: str, title: str) -> EditChatTitleResponse:
+        """
+        Updates the display title of the specified chat.
+
+        Use this method to set a new visible name for a chat (e.g., a group chat or channel).
+
+        Notes:
+            Requires TrueConf Server 5.5.3 or later.
+            The bot must have sufficient permissions in the chat (e.g., owner or admin/moderator).
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#editChatTitle
+
+        Args:
+            chat_id (str): Identifier of the chat whose title should be updated.
+            title (str): New title for the chat.
+
+        Returns:
+            EditChatTitleResponse: Object containing the result of the title update.
+
+        Example:
+            ```python
+            await bot.edit_chat_title(chat_id="a1s2d3f4f5g6", title="Project Alpha – Team")
+            ```
+        """
+
+        call = EditChatTitle(chat_id=chat_id, title=title)
+        return await self(call)
 
     async def edit_message(
             self, message_id: str, text: str, parse_mode: ParseMode | str = ParseMode.TEXT
