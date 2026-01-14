@@ -19,6 +19,7 @@ class MessageType(int, Enum):
     PLAIN_MESSAGE = 200
     FORWARDED_MESSAGE = 201
     ATTACHMENT = 202
+    LOCATION = 203
     SURVEY = 204
 
     async def __call__(self, event: Any) -> bool:

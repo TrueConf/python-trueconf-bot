@@ -5,6 +5,7 @@ from trueconf.enums.message_type import MessageType
 from trueconf.enums.update_type import UpdateType
 from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
 from trueconf.types.content.attachment import AttachmentContent
+from trueconf.types.content.location import Location
 from trueconf.types.content.survey import SurveyContent
 from trueconf.types.content.text import TextContent
 from trueconf.types.message import Message
@@ -27,13 +28,19 @@ T = TypeVar("T")
 
 
 def _content_factory(env_type: MessageType, raw: dict):
-    if env_type == MessageType.PLAIN_MESSAGE:
-        return TextContent.from_dict(raw)
-    if env_type == MessageType.ATTACHMENT:
-        return AttachmentContent.from_dict(raw)
-    if env_type == MessageType.SURVEY:
-        return SurveyContent.from_dict(raw)
-    return None
+    match env_type:
+        case MessageType.FORWARDED_MESSAGE:
+            return Message.from_dict(raw)
+        case MessageType.PLAIN_MESSAGE:
+            return TextContent.from_dict(raw)
+        case MessageType.ATTACHMENT:
+            return AttachmentContent.from_dict(raw)
+        case MessageType.SURVEY:
+            return SurveyContent.from_dict(raw)
+        case MessageType.LOCATION:
+            return Location.from_dict(raw)
+        case _:
+            return None
 
 
 def parse_update(raw: dict):
