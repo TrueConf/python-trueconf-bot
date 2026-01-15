@@ -47,12 +47,10 @@ dependencies = [
     "aiofiles",
     "magic-filter",
     "aiohttp",
-    "async-property"
+    "async-property",
+    "python-magic>=0.4.27 ; sys_platform != 'win32'",
+    "python-magic-bin>=0.4.27 ; sys_platform == 'win32'",
 ]
-
-[project.optional-dependencies]
-python-magic = ["python-magic>=0.4.27"]
-
 
 [tool.setuptools]
 packages = ["trueconf"]

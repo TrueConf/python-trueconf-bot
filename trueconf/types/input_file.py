@@ -5,22 +5,51 @@ import re
 import os
 import aiofiles
 from urllib.parse import urlparse, unquote
-from pathlib import Path
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, Union, Self
+from typing import Any, Dict, Optional, Union, Self
 from mimetypes import guess_type
 from trueconf import loggers
 from httpx import AsyncClient
 
 try:
     import magic
-except ImportError:
-    magic = None
-
-if TYPE_CHECKING:
-    from trueconf.client.bot import Bot
-
+except ImportError as e:
+    raise ImportError(
+        "python-magic couldn't load the system dependency 'libmagic'.\n"
+        "\n"
+        "To fix this error you need to install a native (C) library in your OS.\n"
+        "\n"
+        "Install examples:\n"
+        "  - macOS:   brew install libmagic\n"
+        "  - Linux:   sudo apt install libmagic1\n"
+        "  - Windows: pip install python-magic-bin\n"
+        "\n"
+        "Also see docs:\n"
+        "  https://trueconf.github.io/python-trueconf-bot/latest/learn/files/#mime-detection-with-python-magic\n"
+    ) from e
+    # import platform
+    # os_name = platform.system().lower()
+    # match os_name:
+    #     case "windows":
+    #         print("⚠️ Required python-magic-bin is missing")
+    #         print("Install via pip:")
+    #         print("\tpip install python-magic-bin")
+    #         print("Then reinstall the package")
+    #     case "linux":
+    #         print("⚠️ Required libmagic library is missing")
+    #         print("Install via apt:")
+    #         print("\tsudo apt install libmagic1")
+    #         print("Then reinstall the package")
+    #     case "darwin":
+    #         print("⚠️ Required libmagic library is missing")
+    #         print("Install via Homebrew:")
+    #         print("\tbrew install libmagic")
+    #         print("Then reinstall the package")
+    #         ...
+    #     case _:
+    #         print("⚠️ Required libmagic library is missing")
+    # # raise Exception("Required system dependency libmagic is not installed")
 
 def detect_mime_type(data: bytes, file_name: str = "") -> str:
     mime_type = guess_type(file_name or "")[0]
