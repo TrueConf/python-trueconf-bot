@@ -112,6 +112,7 @@ class Bot:
             verify_ssl: bool = True,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
+            receive_system_messages: bool = False,
     ):
         """
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -128,6 +129,7 @@ class Bot:
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
+            receive_system_messages (bool, optional): Whether to receive system messages on connection. Defaults to False.
 
         Note:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
@@ -149,6 +151,7 @@ class Bot:
         self._protocol = "https" if self.https else "http"
         self.port = 443 if self.https else self.web_port
         self.receive_unread_messages = receive_unread_messages
+        self.receive_system_messages = receive_system_messages
         self._url_for_upload_files = (
             f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files"
         )
@@ -220,6 +223,7 @@ class Bot:
             password: str,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
+            receive_system_messages: bool = False,
             verify_ssl: bool = True,
             **token_opts: Unpack[TokenOpts],
     ) -> Self:
@@ -235,6 +239,7 @@ class Bot:
             password (str): Password for authentication.
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
+            receive_system_messages (bool, optional): Whether to receive system messages on connection. Defaults to False.
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
             **token_opts: Additional options passed to the token request, such as `web_port` and `https`.
 
@@ -249,13 +254,14 @@ class Bot:
         if not token:
             raise RuntimeError("Failed to obtain token")
         return cls(
-            server,
-            token,
-            web_port=token_opts.get("web_port", 443),
-            https=token_opts.get("https", True),
+            server=server,
+            token=token,
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
+            receive_system_messages=receive_system_messages,
             verify_ssl=verify_ssl,
+            web_port=token_opts.get("web_port", 443),
+            https=token_opts.get("https", True),
         )
 
     async def __wait_upload_complete(
@@ -495,7 +501,9 @@ class Bot:
         loggers.chatbot.info("🚀 Starting authorization")
 
         call = AuthMethod(
-            token=self.__token, receive_unread_messages=self.receive_unread_messages
+            token=self.__token,
+            receive_unread_messages=self.receive_unread_messages,
+
         )
         loggers.chatbot.info(f"🛠 Created AuthMethod with id={call.id}")
         result = await self(call)
