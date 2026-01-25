@@ -17,10 +17,10 @@ from typing import (
     List,
     Tuple,
     TypeVar,
-    Self,
     TypedDict,
-    Unpack
 )
+
+from typing_extensions import Self, Unpack
 
 from trueconf import loggers
 from trueconf.client.session import WebSocketSession

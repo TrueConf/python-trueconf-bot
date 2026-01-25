@@ -27,7 +27,7 @@ keywords = [
 ]
 
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: AsyncIO",
     "Typing :: Typed",
@@ -47,7 +47,8 @@ dependencies = [
     "aiofiles",
     "magic-filter",
     "aiohttp",
-    "async-property"
+    "async-property",
+    "typing_extensions>=4.15.0",
 ]
 
 [project.optional-dependencies]

@@ -18,6 +18,9 @@
     <a href="https://pypi.org/project/python-trueconf-bot/">
         <img src="https://img.shields.io/pypi/pyversions/python-trueconf-bot">
     </a>
+    <a href="https://pypi.org/project/python-trueconf-bot/">
+        <img src="https://static.pepy.tech/personalized-badge/python-trueconf-bot?period=total&units=NONE&left_color=GREY&right_color=BRIGHTGREEN&left_text=Downloads" alt="PyPI Downloads">
+    </a>
     <a href="https://t.me/trueconf_chat" target="_blank">
         <img src="https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white" />
     </a>
