@@ -5,10 +5,10 @@ import re
 import os
 import aiofiles
 from urllib.parse import urlparse, unquote
-from pathlib import Path
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, Union, Self
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing_extensions import Self
 from mimetypes import guess_type
 from trueconf import loggers
 from httpx import AsyncClient
