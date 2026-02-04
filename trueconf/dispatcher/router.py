@@ -58,16 +58,12 @@ class Router:
         If you have multiple routers, use `.include_router()` to add them to a parent router.
         """
 
-    def __init__(self, name: str | None = None, stop_on_first: bool = True):
+    def __init__(self, name: str | None = None, allow_child_on_event: bool = False):
 
         self.name = name or hex(id(self))
-        self.stop_on_first = stop_on_first
+        self.allow_child_on_event = allow_child_on_event
         self._handlers: List[Tuple[Tuple[FilterLike, ...], Handler]] = []
         self._subrouters: List["Router"] = []
-
-    def include_router(self, router: "Router") -> None:
-        """Include a child router for hierarchical event routing."""
-        self._subrouters.append(router)
 
     def _iter_all(self) -> List["Router"]:
         """Return a list of this router and all nested subrouters recursively."""
@@ -75,89 +71,6 @@ class Router:
         for child in self._subrouters:
             out.extend(child._iter_all())
         return out
-
-    def event(self, method: str, *filters: FilterLike):
-        """
-            Register a handler for a generic event type, filtered by method name.
-
-            Examples:
-                >>> @r.event(F.method == "SendMessage")
-                >>> async def handle_message(msg: Message): ...
-
-        """
-        mf = MethodFilter(method)
-        return self._register((mf, *filters))
-
-    def message(self, *filters: FilterLike):
-        """Register a handler for incoming `Message` events."""
-        return self._register((InstanceOfFilter(Message), *filters))
-
-    def uploading_progress(self, *filters: FilterLike):
-        """Register a handler for file uploading progress events."""
-        return self._register((InstanceOfFilter(UploadingProgress), *filters))
-
-    def changed_participant_role(self, *filters: FilterLike):
-        """
-            **Requires TrueConf Server 5.5.2+**
-            Registers a handler for participant role change events in chats.
-
-            This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
-            or conference chat. Used with the `ChangedParticipantRole` event type.
-
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
-
-            Returns:
-                Callable: A decorator function for registering the handler.
-
-            Example:
-                ```python
-                from trueconf.enums import ChatParticipantRole as role
-                from trueconf.types import ChangedParticipantRole
-
-                @router.changed_participant_role()
-                async def on_role_changed(event: ChangedParticipantRole):
-                    if event.role == role.admin:
-                        print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
-                ```
-            """
-        return self._register((InstanceOfFilter(ChangedParticipantRole), *filters))
-
-    def created_personal_chat(self, *filters: FilterLike):
-        """Register a handler for personal chat creation events."""
-        return self._register((InstanceOfFilter(CreatedPersonalChat), *filters))
-
-    def created_group_chat(self, *filters: FilterLike):
-        """Register a handler for group chat creation events."""
-        return self._register((InstanceOfFilter(CreatedGroupChat), *filters))
-
-    def created_favorites_chat(self, *filters: FilterLike):
-        """**Requires TrueConf Server 5.5.2+**. Register a handler for favorites chat creation events."""
-        return self._register((InstanceOfFilter(CreatedFavoritesChat), *filters))
-
-    def created_channel(self, *filters: FilterLike):
-        """Register a handler for channel creation events."""
-        return self._register((InstanceOfFilter(CreatedChannel), *filters))
-
-    def added_chat_participant(self, *filters: FilterLike):
-        """Register a handler when a participant is added to a chat."""
-        return self._register((InstanceOfFilter(AddedChatParticipant), *filters))
-
-    def removed_chat_participant(self, *filters: FilterLike):
-        """Register a handler when a participant is removed from a chat."""
-        return self._register((InstanceOfFilter(RemovedChatParticipant), *filters))
-
-    def removed_chat(self, *filters: FilterLike):
-        """Register a handler when a chat is removed."""
-        return self._register((InstanceOfFilter(RemovedChat), *filters))
-
-    def edited_message(self, *filters: FilterLike):
-        """Register a handler for message edit events."""
-        return self._register((InstanceOfFilter(EditedMessage), *filters))
-
-    def removed_message(self, *filters: FilterLike):
-        """Register a handler for message deletion events."""
-        return self._register((InstanceOfFilter(RemovedMessage), *filters))
 
     def _register(self, filters: Tuple[FilterLike, ...]):
         """Internal decorator for registering handlers with filters."""
@@ -245,3 +158,90 @@ class Router:
         if isinstance(res, (bool, dict)):
             return res
         return bool(res)
+
+    def include_router(self, router: "Router") -> None:
+        """Include a child router for hierarchical event routing."""
+        self._subrouters.append(router)
+
+    def event(self, method: str, *filters: FilterLike):
+        """
+            Register a handler for a generic event type, filtered by method name.
+
+            Examples:
+                >>> @r.event(F.method == "SendMessage")
+                >>> async def handle_message(msg: Message): ...
+
+        """
+        mf = MethodFilter(method)
+        return self._register((mf, *filters))
+
+    def message(self, *filters: FilterLike):
+        """Register a handler for incoming `Message` events."""
+        return self._register((InstanceOfFilter(Message), *filters))
+
+    def uploading_progress(self, *filters: FilterLike):
+        """Register a handler for file uploading progress events."""
+        return self._register((InstanceOfFilter(UploadingProgress), *filters))
+
+    def changed_participant_role(self, *filters: FilterLike):
+        """
+            **Requires TrueConf Server 5.5.2+**
+            Registers a handler for participant role change events in chats.
+
+            This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
+            or conference chat. Used with the `ChangedParticipantRole` event type.
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.enums import ChatParticipantRole as role
+                from trueconf.types import ChangedParticipantRole
+
+                @router.changed_participant_role()
+                async def on_role_changed(event: ChangedParticipantRole):
+                    if event.role == role.admin:
+                        print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
+                ```
+            """
+        return self._register((InstanceOfFilter(ChangedParticipantRole), *filters))
+
+    def created_personal_chat(self, *filters: FilterLike):
+        """Register a handler for personal chat creation events."""
+        return self._register((InstanceOfFilter(CreatedPersonalChat), *filters))
+
+    def created_group_chat(self, *filters: FilterLike):
+        """Register a handler for group chat creation events."""
+        return self._register((InstanceOfFilter(CreatedGroupChat), *filters))
+
+    def created_favorites_chat(self, *filters: FilterLike):
+        """**Requires TrueConf Server 5.5.2+**. Register a handler for favorites chat creation events."""
+        return self._register((InstanceOfFilter(CreatedFavoritesChat), *filters))
+
+    def created_channel(self, *filters: FilterLike):
+        """Register a handler for channel creation events."""
+        return self._register((InstanceOfFilter(CreatedChannel), *filters))
+
+    def added_chat_participant(self, *filters: FilterLike):
+        """Register a handler when a participant is added to a chat."""
+        return self._register((InstanceOfFilter(AddedChatParticipant), *filters))
+
+    def removed_chat_participant(self, *filters: FilterLike):
+        """Register a handler when a participant is removed from a chat."""
+        return self._register((InstanceOfFilter(RemovedChatParticipant), *filters))
+
+    def removed_chat(self, *filters: FilterLike):
+        """Register a handler when a chat is removed."""
+        return self._register((InstanceOfFilter(RemovedChat), *filters))
+
+    def edited_message(self, *filters: FilterLike):
+        """Register a handler for message edit events."""
+        return self._register((InstanceOfFilter(EditedMessage), *filters))
+
+    def removed_message(self, *filters: FilterLike):
+        """Register a handler for message deletion events."""
+        return self._register((InstanceOfFilter(RemovedMessage), *filters))
