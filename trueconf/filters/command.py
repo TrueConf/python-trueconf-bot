@@ -63,7 +63,8 @@ class Command:
 
         return {"command": command_obj}
 
-    def extract_command(self, text: str) -> CommandObject:
+    @staticmethod
+    def extract_command(text: str) -> CommandObject:
         try:
             full_command, *args = text.split(maxsplit=1)
         except ValueError:

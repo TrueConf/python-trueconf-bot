@@ -49,8 +49,15 @@ class Dispatcher:
             Returns:
                 None
         """
-        for root in self.routers:
-            for r in root._iter_all():
-                handled = await r._feed(event)
-                if handled:
-                    return
+
+        async def progress_router(router, count = 0):
+            handled = await router._feed(event)
+            if count < 0 or count >= len(router._subrouters):
+                return
+            if (not handled) or (handled and router.allow_child_on_event):
+                subrouter = router._subrouters[count]
+                return await progress_router(subrouter, count=len(router._subrouters) - 1)
+            return
+
+        for router in self.routers:
+            await progress_router(router)
