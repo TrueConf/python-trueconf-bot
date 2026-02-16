@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/features/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/features/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/features/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/release_notes/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/release_notes/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/release_notes/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/examples/echo_bot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/examples/multibot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/examples/multibot/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/examples/multibot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/enums/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/enums/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/files/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/files/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/files/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/filters/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/filters/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/filters/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/getting-started/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/parse-messages/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/learn/types/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/learn/types/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/learn/types/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/Bot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/Bot/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/Bot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/Dispatcher/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/Enums/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/Enums/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/Enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/Router/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/Router/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/Router/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/reference/Types/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master/reference/Types/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/masterru/reference/Types/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/master"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/features/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/features/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterfeatures/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/release_notes/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/release_notes/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterrelease_notes/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/examples/echo_bot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/examples/echo_bot/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterexamples/echo_bot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/examples/multibot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/examples/multibot/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterexamples/multibot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/enums/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/enums/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/files/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/files/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/files/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/filters/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/filters/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/filters/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/getting-started/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/getting-started/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/parse-messages/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/parse-messages/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/parse-messages/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/learn/types/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/learn/types/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterlearn/types/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Bot/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Bot/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/Bot/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Dispatcher/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Dispatcher/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/Dispatcher/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Enums/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Enums/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/Enums/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Router/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Router/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/Router/"/>
+    </url>
+    <url>
+        <loc>https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Types/</loc>
+        <lastmod>2026-02-16</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://trueconf.github.io/python-trueconf-bot/master/ru/reference/Types/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://trueconf.github.io/python-trueconf-bot/masterreference/Types/"/>
+    </url>
+</urlset>
