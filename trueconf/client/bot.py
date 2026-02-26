@@ -1143,9 +1143,11 @@ class Bot:
                 pass
 
         await self.start()
-        await self.connected_event.wait()
-        await self.authorized_event.wait()
-        await self.stopped_event.wait()
+        if self._connect_task:
+            try:
+                await self._connect_task
+            except asyncio.CancelledError:
+                pass
 
     async def send_document(
             self,
@@ -1373,6 +1375,9 @@ class Bot:
         if self._connect_task and not self._connect_task.done():
             return
         self._stop = False
+        self.stopped_event.clear()
+        self.connected_event.clear()
+        self.authorized_event.clear()
         self._connect_task = asyncio.create_task(self.__connect_and_listen())
 
     async def shutdown(self) -> None:
@@ -1410,7 +1415,6 @@ class Bot:
             self.authorized_event.clear()
             loggers.chatbot.info("🛑 ChatBot stopped")
             self.stopped_event.set()
-            # sys.exit()
 
     async def subscribe_file_progress(
             self, file_id: str
