@@ -5,4 +5,4 @@ from mashumaro import DataClassDictMixin
 
 @dataclass
 class RemoveChatResponse(DataClassDictMixin):
-    chat_id: str = field(metadata={"alias": "chatId"})
+    pass
