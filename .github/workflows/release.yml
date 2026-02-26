@@ -1,33 +1,25 @@
 name: Release to PyPI
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to release (e.g. v1.2.3 or v1.2.3rc1)"
-        required: true
-        type: string
+  release:
+    types: [published]
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ github.event.inputs.tag }}
-
-      - name: Show current commit
-        run: git describe --tags --always
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Set version from tag
         run: |
-          TAG="${{ github.event.inputs.tag }}"
+          TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
           sed -i "s/^version = .*/version = \"${VERSION}\"/" pyproject.toml    
 
@@ -41,36 +33,18 @@ jobs:
           pip install build
           python -m build
 
-      - name: Upload artifacts
+      - name: Upload artifacts to Actions
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
 
-  publish-stable:
-    needs: build
-    runs-on: ubuntu-latest
-    if: ${{ !contains(github.ref, '-') }}
-    environment: pypi
-    steps:
-      - uses: actions/download-artifact@v4
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: dist
-          path: dist
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish stable to PyPI (Trusted Publisher)
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-  publish-prerelease:
-    needs: build
-    runs-on: ubuntu-latest
-    if: ${{ contains(github.ref, '-rc') || contains(github.ref, '-a') || contains(github.ref, '-b') }}
-    environment: pypi
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Publish pre-release to PyPI (Trusted Publisher)
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
