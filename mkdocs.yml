@@ -81,6 +81,7 @@ plugins:
 
               # basic
               show_source: false
+              show_bases: false
               show_root_heading: true
               show_if_no_docstring: true
               inherited_members: true
