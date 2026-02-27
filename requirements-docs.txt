@@ -6,6 +6,7 @@ click==8.3.1
 colorama==0.4.6
 csscompressor==0.9.5
 ghp-import==2.1.0
+griffe-typingdoc==0.3.1
 griffelib==2.0.0
 hjson==3.1.0
 htmlmin2==0.1.13
@@ -42,6 +43,7 @@ requests==2.32.5
 six==1.17.0
 super_collections==0.6.2
 termcolor==3.3.0
+typing_extensions==4.15.0
 urllib3==2.6.3
 verspec==0.1.0
 watchdog==6.0.0
