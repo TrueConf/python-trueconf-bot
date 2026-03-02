@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tkinter import N
 
 import io
 import re
@@ -7,11 +8,12 @@ import aiofiles
 from urllib.parse import urlparse, unquote
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 from typing_extensions import Self
 from mimetypes import guess_type
 from trueconf import loggers
 from httpx import AsyncClient
+import warnings
 
 try:
     import magic
@@ -29,36 +31,14 @@ except ImportError as e:
         "Also see docs:\n"
         "  https://trueconf.github.io/python-trueconf-bot/latest/learn/files/#mime-detection-with-python-magic\n"
     ) from e
-    # import platform
-    # os_name = platform.system().lower()
-    # match os_name:
-    #     case "windows":
-    #         print("⚠️ Required python-magic-bin is missing")
-    #         print("Install via pip:")
-    #         print("\tpip install python-magic-bin")
-    #         print("Then reinstall the package")
-    #     case "linux":
-    #         print("⚠️ Required libmagic library is missing")
-    #         print("Install via apt:")
-    #         print("\tsudo apt install libmagic1")
-    #         print("Then reinstall the package")
-    #     case "darwin":
-    #         print("⚠️ Required libmagic library is missing")
-    #         print("Install via Homebrew:")
-    #         print("\tbrew install libmagic")
-    #         print("Then reinstall the package")
-    #         ...
-    #     case _:
-    #         print("⚠️ Required libmagic library is missing")
-    # # raise Exception("Required system dependency libmagic is not installed")
 
 def detect_mime_type(data: bytes, file_name: str = "") -> str:
     mime_type = guess_type(file_name or "")[0]
     if not mime_type and magic:
         try:
             mime_type = magic.from_buffer(data, mime=True)
-        except Exception as e:
-            loggers.chatbot.debug(f"Failed to detect mime_type via magic: {e}")
+        except Exception as error:
+            loggers.chatbot.debug(f"Failed to detect mime_type via magic: {error}")
     return mime_type or "application/octet-stream"
 
 def file_name_from_url(url: str) -> str:
@@ -70,7 +50,6 @@ def file_name_from_content_disposition(header: str) -> str | None:
     if match:
         return unquote(match.group(1))
     return None
-
 
 class InputFile(ABC):
     """
@@ -91,7 +70,7 @@ class InputFile(ABC):
         https://trueconf.com/docs/chatbot-connector/en/files/#upload-file-to-server-storage
 
     Args:
-        file_name (str | None): Name of the file to display when sending.
+        file_name (str): Name of the file to display when sending.
         file_size (int | None): File size in bytes (optional).
         mime_type (str | None): MIME type of the file. Can be detected automatically.
 
@@ -108,11 +87,10 @@ class InputFile(ABC):
 
     def __init__(
             self,
-            file_name: Optional[str] = None,
-            file_size: Optional[int] = None,
-            mime_type: Optional[str] = None,
+            file_name: str | None = None,
+            file_size: int | None = None,
+            mime_type: str | None = None,
     ):
-
         self.file_name = file_name
         self.file_size = file_size
         self.mime_type = mime_type
@@ -147,25 +125,44 @@ class BufferedInputFile(InputFile):
     def __init__(
             self,
             file: bytes,
-            file_name: str,
-            file_size: Optional[int] = None,
-            mime_type: Optional[str] = None,
+            file_name: str | None = None,
+            file_size: int | None = None,
+            mime_type: str | None = None,
+            **kwargs
     ):
         """
         Initializes a file from a bytes buffer.
 
         Args:
             file (bytes): Raw file content in bytes.
-            file_name (str): The name of the file.
-            file_size (Optional[int]): Size of the file in bytes. Auto-detected if not specified.
-            mime_type (Optional[str]): MIME type of the file. Auto-detected if not specified.
+            file_name (str, optional): The name of the file.
+            file_size (int, optional): Size of the file in bytes. Auto-detected if not specified.
+            mime_type (str, optional): MIME type of the file. Auto-detected if not specified.
         """
+
+        if 'filename' in kwargs:
+            warnings.warn(
+                "'filename' is deprecated; use 'file_name' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            file_name = file_name or kwargs.pop('filename')
+
+        if 'mimetype' in kwargs:
+            warnings.warn(
+                "'mimetype' is deprecated; use 'mime_type' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            mime_type = mime_type or kwargs.pop('mimetype')
+
+        if file_name is None:
+            raise TypeError("BufferedInputFile.__init__() missing 1 required argument: 'file_name'")
 
         if file_size is None:
             file_size = len(file)
         if mime_type is None:
             mime_type = detect_mime_type(file, file_name)
-
 
         super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
 
@@ -174,10 +171,11 @@ class BufferedInputFile(InputFile):
     @classmethod
     def from_file(
         cls,
-        path: Union[str, Path],
-        file_name: Optional[str] = None,
-        file_size: Optional[int] = None,
-        mime_type: Optional[str] = None,
+        path: str | Path,
+        file_name: str | None = None,
+        file_size: int  | None= None,
+        mime_type: str  | None= None,
+        **kwargs
     ) -> BufferedInputFile:
         """
         Creates a `BufferedInputFile` from a file on disk.
@@ -187,13 +185,30 @@ class BufferedInputFile(InputFile):
 
         Args:
             path (str | Path): Path to the local file.
-            file_name (Optional[str]): File name to propagate. Defaults to the name extracted from path.
-            file_size (Optional[int]): File size in bytes. Auto-detected if not specified.
-            mime_type (Optional[str]): MIME type of the file. Auto-detected if not specified.
+            file_name (str, optional): File name to propagate. Defaults to the name extracted from path.
+            file_size (int, optional): File size in bytes. Auto-detected if not specified.
+            mime_type (str, optional): MIME type of the file. Auto-detected if not specified.
 
         Returns:
             BufferedInputFile: A new instance ready for upload.
         """
+
+        if 'filename' in kwargs:
+            warnings.warn(
+                "'filename' is deprecated; use 'file_name' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            file_name = file_name or kwargs.pop('filename')
+
+        if 'mimetype' in kwargs:
+            warnings.warn(
+                "'mimetype' is deprecated; use 'mime_type' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            mime_type = mime_type or kwargs.pop('mimetype')
+
         if file_name is None:
             file_name = os.path.basename(path)
         with open(path, "rb") as f:
@@ -251,10 +266,11 @@ class FSInputFile(InputFile):
     """
     def __init__(
         self,
-        path: Union[str, Path],
-        file_name: Optional[str] = None,
-        file_size: Optional[int] = None,
-        mime_type: Optional[str] = None,
+        path: str | Path,
+        file_name: str  | None = None,
+        file_size: int  | None= None,
+        mime_type: str  | None= None,
+        **kwargs
     ):
         """
         Initializes an `FSInputFile` instance from a local file.
@@ -267,10 +283,28 @@ class FSInputFile(InputFile):
 
         Args:
             path (str | Path): Path to the local file.
-            file_name (Optional[str]): File name to be propagated in the upload.
-            file_size (Optional[int]): File size in bytes.
-            mime_type (Optional[str]): File MIME type.
+            file_name (str, optional): File name to be propagated in the upload.
+            file_size (int, optional): File size in bytes.
+            mime_type (str, optional): File MIME type.
         """
+
+        if 'filename' in kwargs:
+            warnings.warn(
+                "'filename' is deprecated; use 'file_name' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            file_name = file_name or kwargs.pop('filename')
+
+        if 'mimetype' in kwargs:
+            warnings.warn(
+                "'mimetype' is deprecated; use 'mime_type' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            mime_type = mime_type or kwargs.pop('mimetype')
+
+
         if file_name is None:
             file_name = os.path.basename(path)
 
@@ -330,11 +364,12 @@ class URLInputFile(InputFile):
     def __init__(
         self,
         url: str,
-        headers: Optional[Dict[str, Any]] = None,
-        file_name: Optional[str] = None,
-        file_size: Optional[int] = None,
-        mime_type: Optional[str] = None,
+        headers: Dict[str, Any] | None = None,
+        file_name: str | None = None,
+        file_size: int | None = None,
+        mime_type: str | None = None,
         timeout: int = 30,
+        **kwargs
     ):
         """
         Initializes a `URLInputFile` instance from a remote URL.
@@ -342,11 +377,28 @@ class URLInputFile(InputFile):
         Args:
             url (str): URL of the file to download.
             headers (Optional[Dict[str, Any]]): Optional HTTP headers for the request.
-            file_name (Optional[str]): Optional file name to propagate in the upload.
-            file_size (Optional[int]): Optional file size in bytes.
-            mime_type (Optional[str]): Optional MIME type of the file.
+            file_name (str, optional): Optional file name to propagate in the upload.
+            file_size (int, optional): Optional file size in bytes.
+            mime_type (str, optional): Optional MIME type of the file.
             timeout (int): Timeout (in seconds) for the HTTP request.
         """
+
+        if 'filename' in kwargs:
+            warnings.warn(
+                "'filename' is deprecated; use 'file_name' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            file_name = file_name or kwargs.pop('filename')
+
+        if 'mimetype' in kwargs:
+            warnings.warn(
+                "'mimetype' is deprecated; use 'mime_type' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            mime_type = mime_type or kwargs.pop('mimetype')
+
         super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
         if headers is None:
             headers = {}
