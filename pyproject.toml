@@ -27,7 +27,7 @@ keywords = [
 ]
 
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: AsyncIO",
     "Typing :: Typed",
@@ -48,6 +48,7 @@ dependencies = [
     "magic-filter",
     "aiohttp",
     "async-property",
+    "typing_extensions>=4.15.0",
     "python-magic>=0.4.27 ; sys_platform != 'win32'",
     "python-magic-bin>=0.4.27 ; sys_platform == 'win32'",
 ]

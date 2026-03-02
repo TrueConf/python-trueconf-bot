@@ -110,7 +110,7 @@ async def handle_id(message: Message):
     await bot.send_message(chat_id=message.chat_id, text=f"Your ID: {message.author.id}")
 
 try:
-    asyncio.run(bot.start())
+    asyncio.run(bot.run())
 except KeyboardInterrupt:
     sys.exit(0)
 except asyncio.CancelledError:
