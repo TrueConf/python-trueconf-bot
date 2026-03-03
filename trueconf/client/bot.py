@@ -171,7 +171,7 @@ class Bot:
         url = f"{self._protocol}://{self.server}:{self.port}/api/v4/server"
 
         try:
-            async with httpx.AsyncClient(verify=False, timeout=5) as client:
+            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
                 response = await client.get(url)
                 return response.json().get("product").get("display_name")
         except Exception as e:
@@ -297,7 +297,6 @@ class Bot:
             url: str,
             file_name: str,
             dest_path: str | Path | None = None,
-            verify: bool | None = None,
             timeout: int = 60,
             chunk_size: int = 64 * 1024,
     ) -> bytes | None:
@@ -310,7 +309,6 @@ class Bot:
         Args:
             url: Direct download URL.
             dest_path: Destination path; if None, a NamedTemporaryFile will be created and returned.
-            verify: SSL verification flag; defaults to self.verify_ssl.
             timeout: Request timeout (seconds).
             chunk_size: Stream chunk size in bytes.
 
@@ -322,7 +320,7 @@ class Bot:
         v = self.verify_ssl if verify is None else verify
 
         try:
-            async with httpx.AsyncClient(verify=v, timeout=httpx.Timeout(timeout)) as client:
+            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
                     if dest_path is None:
@@ -351,7 +349,6 @@ class Bot:
             file: InputFile,
             preview: InputFile | None = None,
             is_sticker: bool = False,
-            verify: bool = True,
             timeout: int = 60,
     ) -> str | None:
         """
@@ -375,7 +372,6 @@ class Bot:
                file (InputFile): The primary file to upload.
                preview (InputFile | None, optional): Optional preview file (default is None).
                is_sticker (bool, optional): Whether the uploaded file is a sticker (affects MIME type). Defaults to False.
-               verify (bool, optional): Whether to verify the SSL certificate. Defaults to True.
                timeout (int, optional): Upload timeout in seconds. Defaults to 60.
 
            Returns:
@@ -397,7 +393,7 @@ class Bot:
 
         timeout = ClientTimeout(total=timeout)
 
-        if not verify:
+        if not self.verify_ssl:
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
@@ -768,7 +764,6 @@ class Bot:
                 url=info.download_url,
                 file_name=info.name,
                 dest_path=dest_path,
-                verify=self.verify_ssl
             )
 
         if info.ready_state == FileReadyState.NOT_AVAILABLE:
@@ -792,8 +787,7 @@ class Bot:
         return await self.__download_file_from_server(
             url=info.download_url,
             file_name=info.name,
-            dest_path=dest_path,
-            verify=self.verify_ssl
+            dest_path=dest_path
         )
 
     async def edit_chat_title(self, chat_id: str, title: str) -> EditChatTitleResponse:
@@ -1259,7 +1253,6 @@ class Bot:
 
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
-            verify=self.verify_ssl,
         )
 
         call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
@@ -1341,7 +1334,6 @@ class Bot:
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
             preview=preview,
-            verify=self.verify_ssl,
         )
 
         call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
@@ -1385,8 +1377,7 @@ class Bot:
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
             preview=file.clone(),
-            is_sticker=True,
-            verify=self.verify_ssl
+            is_sticker=True
         )
 
         call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id)
