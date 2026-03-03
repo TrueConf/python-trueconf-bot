@@ -185,3 +185,4 @@ trueconf/_version.py
 
 .venv*
 venv*
+gitignore
