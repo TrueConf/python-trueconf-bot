@@ -317,8 +317,6 @@ class Bot:
             Path | None: Path to saved file, or None on error.
         """
 
-        v = self.verify_ssl if verify is None else verify
-
         try:
             async with httpx.AsyncClient(verify=self.verify_ssl, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
