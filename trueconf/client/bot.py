@@ -300,7 +300,7 @@ class Bot:
             verify: bool | None = None,
             timeout: int = 60,
             chunk_size: int = 64 * 1024,
-    ) -> Path | None:
+    ) -> bytes | None:
 
         """
         Asynchronously download file by URL and save it to disk.
@@ -321,23 +321,24 @@ class Bot:
 
         v = self.verify_ssl if verify is None else verify
 
-        if dest_path is None:
-            tmp = tempfile.NamedTemporaryFile(prefix="tc_dl_", suffix=file_name, delete=False)
-            dest = Path(tmp.name)
-            tmp.close()
-        else:
-            dest = Path(dest_path) / file_name
-            dest.parent.mkdir(parents=True, exist_ok=True)
-
         try:
             async with httpx.AsyncClient(verify=v, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
-                    async with aiofiles.open(dest, "wb") as f:
+                    if dest_path is None:
+                        chunks = []
                         async for chunk in resp.aiter_bytes(chunk_size):
-                            if chunk:
+                            chunks.append(chunk)
+                        return b"".join(chunks)
+
+                    else:
+                        dest = Path(dest_path) / file_name
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+
+                        async with aiofiles.open(dest, "wb") as f:
+                            async for chunk in resp.aiter_bytes(chunk_size):
                                 await f.write(chunk)
-            return dest
+                        return None
         except Exception as e:
             loggers.chatbot.error(f"Failed to download file from {url}: {e}")
             with contextlib.suppress(Exception):
