@@ -1,5 +1,4 @@
 from __future__ import annotations
-from tkinter import N
 
 import io
 import re
@@ -369,6 +368,7 @@ class URLInputFile(InputFile):
         file_size: int | None = None,
         mime_type: str | None = None,
         timeout: int = 30,
+        verify_ssl = True,
         **kwargs
     ):
         """
@@ -406,6 +406,7 @@ class URLInputFile(InputFile):
         self.url = url
         self.headers = headers
         self.timeout = timeout
+        self.verify_ssl = verify_ssl
 
     async def prepare(self):
         """
@@ -423,7 +424,7 @@ class URLInputFile(InputFile):
         if self.file_size is not None and self.mime_type is not None:
             return
 
-        async with AsyncClient() as client:
+        async with AsyncClient(verify=self.verify_ssl) as client:
             async with client.stream("HEAD", self.url, headers=self.headers, timeout=self.timeout) as response:
                 if self.mime_type is None:
                     content_type = response.headers.get("Content-Type")
@@ -437,10 +438,11 @@ class URLInputFile(InputFile):
                     raise ValueError("Server did not provide Content-Length, unable to determine file size.")
 
                 content_disp = response.headers.get("Content-Disposition", "")
-                self.file_name = (
-                        file_name_from_content_disposition(content_disp)
-                        or file_name_from_url(self.url)
-                )
+                if self.file_name is None:
+                    self.file_name = (
+                            file_name_from_content_disposition(content_disp)
+                            or file_name_from_url(self.url)
+                    )
         return
 
     async def read(self):
@@ -452,7 +454,7 @@ class URLInputFile(InputFile):
         Returns:
             bytes: File content.
         """
-        async with AsyncClient() as client:
+        async with AsyncClient(verify=self.verify_ssl) as client:
             data = bytearray()
             async with client.stream(
                     "GET",
@@ -480,5 +482,6 @@ class URLInputFile(InputFile):
             headers=self.headers.copy(),
             file_name=self.file_name,
             timeout=self.timeout,
+            verify_ssl=self.verify_ssl,
         )
 
