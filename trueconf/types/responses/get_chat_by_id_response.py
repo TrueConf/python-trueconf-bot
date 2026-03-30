@@ -10,4 +10,4 @@ class GetChatByIdResponse(DataClassDictMixin):
     title: str
     chat_type: int = field(metadata={"alias": "chatType"})
     unread_messages: int = field(metadata={"alias": "unreadMessages"})
-    last_message: LastMessage = field(metadata={"alias": "lastMessage"})
+    last_message: LastMessage | None = field(default=None, metadata={"alias": "lastMessage"})
