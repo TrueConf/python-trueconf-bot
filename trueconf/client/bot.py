@@ -426,7 +426,13 @@ class Bot:
             return False
 
     async def __connect_and_listen(self):
-        ssl_context = ssl._create_unverified_context() if self.https else None
+        ssl_context = None
+        if self.https:
+            if self.verify_ssl:
+                ssl_context = ssl.create_default_context()
+            else:
+                ssl_context = ssl._create_unverified_context()
+
         uri = f"wss://{self.server}:{self.web_port}/websocket/chat_bot" if self.https else f"ws://{self.server}:{self.web_port}/websocket/chat_bot"
 
         while not self._stop:
