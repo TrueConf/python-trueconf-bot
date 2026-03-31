@@ -7,6 +7,7 @@ import signal
 import ssl
 import tempfile
 import websockets
+import warnings
 from pathlib import Path
 from aiohttp import ClientSession, ClientTimeout, TCPConnector, FormData
 from async_property import async_cached_property
@@ -337,7 +338,7 @@ class Bot:
             preview: InputFile | None = None,
             is_sticker: bool = False,
             timeout: int = 60,
-    ) -> str | None:
+    ) -> str:
         """
            Uploads a file to the server and returns a temporary file identifier (temporalFileId).
 
@@ -390,7 +391,7 @@ class Bot:
 
         try:
             async with ClientSession(connector=connector, timeout=timeout) as session:
-                data = FormData()
+                data = FormData(quote_fields=False)
                 data.add_field(
                     name="file",
                     value= await file.read(),
@@ -1103,6 +1104,12 @@ class Bot:
             SendMessageResponse: Object containing the result of the message delivery.
         """
 
+        warnings.warn(
+            "reply_message is deprecated, use send_message(..., reply_message_id=...) instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         call = SendMessage(
             chat_id=chat_id,
             reply_message_id=message_id,
@@ -1147,6 +1154,7 @@ class Bot:
             file: InputFile,
             caption: str | None = None,
             parse_mode: ParseMode | str = ParseMode.TEXT,
+            reply_message_id: str | None = None
     ) -> SendFileResponse:
         """
         Sends a document or any arbitrary file to the specified chat.
@@ -1163,6 +1171,7 @@ class Bot:
             file (InputFile): The file to be uploaded. Must be a subclass of `InputFile`.
             caption (str | None): Optional caption text to be sent with the file.
             parse_mode (ParseMode | str): Text formatting mode (e.g., Markdown, HTML, or plain text).
+            reply_message_id (str, optional): Optional identifier of the message to which this message is a reply.
 
         Returns:
             SendFileResponse: An object containing the result of the file upload.
@@ -1184,14 +1193,21 @@ class Bot:
             file=file,
         )
 
-        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
+        call = SendFile(
+            chat_id=chat_id,
+            temporal_file_id=temporal_file_id,
+            text=caption,
+            parse_mode=parse_mode,
+            reply_message_id=reply_message_id
+        )
         return await self(call)
 
     async def send_message(
             self,
             chat_id: str,
             text: str,
-            parse_mode: ParseMode | str = ParseMode.TEXT
+            parse_mode: ParseMode | str = ParseMode.TEXT,
+            reply_message_id: str | None = None
     ) -> SendMessageResponse:
         """
         Sends a message to the specified chat.
@@ -1204,13 +1220,19 @@ class Bot:
             text (str): Text content of the message.
             parse_mode (ParseMode | str, optional): Text formatting mode.
                 Defaults to plain text.
+            reply_message_id (str, optional): Optional identifier of the message to which this message is a reply.
 
         Returns:
             SendMessageResponse: Object containing the result of the message delivery.
         """
 
         loggers.chatbot.info(f"✉️ Sending message to {chat_id}")
-        call = SendMessage(chat_id=chat_id, text=text, parse_mode=parse_mode)
+        call = SendMessage(
+            chat_id=chat_id,
+            text=text,
+            parse_mode=parse_mode,
+            reply_message_id=reply_message_id
+        )
         return await self(call)
 
     async def send_photo(
@@ -1219,7 +1241,8 @@ class Bot:
             file: InputFile,
             preview: InputFile | None,
             caption: str | None = None,
-            parse_mode: ParseMode | str = ParseMode.TEXT
+            parse_mode: ParseMode | str = ParseMode.TEXT,
+            reply_message_id: str | None = None
     ) -> SendFileResponse:
         """
         Sends a photo to the specified chat, with optional caption and preview support.
@@ -1242,6 +1265,7 @@ class Bot:
             preview (InputFile | None): Optional preview image. Must also be an `InputFile` if provided.
             caption (str | None): Optional caption to be sent along with the image.
             parse_mode (ParseMode | str): Formatting mode for the caption (e.g., Markdown, HTML, plain text).
+            reply_message_id (str, optional): Optional identifier of the message to which this message is a reply.
 
         Returns:
             SendFileResponse: An object containing the result of the file upload.
@@ -1265,10 +1289,21 @@ class Bot:
             preview=preview,
         )
 
-        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id, text=caption, parse_mode=parse_mode)
+        call = SendFile(
+            chat_id=chat_id,
+            temporal_file_id=temporal_file_id,
+            text=caption,
+            parse_mode=parse_mode,
+            reply_message_id=reply_message_id
+        )
         return await self(call)
 
-    async def send_sticker(self, chat_id: str, file: InputFile) -> SendFileResponse:
+    async def send_sticker(
+            self,
+            chat_id: str,
+            file: InputFile,
+            reply_message_id: str | None = None
+    ) -> SendFileResponse:
         """
         Sends a sticker in WebP format to the specified chat.
 
@@ -1285,6 +1320,7 @@ class Bot:
         Args:
             chat_id (str): Identifier of the chat to which the sticker will be sent.
             file (InputFile): The sticker file in WebP format. Must be a subclass of `InputFile`.
+            reply_message_id (str, optional): Optional identifier of the message to which this message is a reply.
 
         Returns:
             SendFileResponse: An object containing the result of the file upload.
@@ -1309,7 +1345,11 @@ class Bot:
             is_sticker=True
         )
 
-        call = SendFile(chat_id=chat_id, temporal_file_id=temporal_file_id)
+        call = SendFile(
+            chat_id=chat_id,
+            temporal_file_id=temporal_file_id,
+            reply_message_id=reply_message_id
+        )
         return await self(call)
 
     async def send_survey(
@@ -1317,7 +1357,7 @@ class Bot:
             chat_id: str,
             title: str,
             survey_campaign_id: str,
-            reply_message_id: str = None,
+            reply_message_id: str | None = None,
             survey_type: SurveyType = SurveyType.NON_ANONYMOUS,
     ) -> SendSurveyResponse:
         """
@@ -1330,7 +1370,7 @@ class Bot:
             chat_id (str): Identifier of the chat to send the survey to.
             title (str): Title of the survey displayed in the chat.
             survey_campaign_id (str): Identifier of the survey campaign.
-            reply_message_id (str, optional): Identifier of the message being replied to.
+            reply_message_id (str, optional): Optional identifier of the message to which this message is a reply.
             survey_type (SurveyType, optional): Type of the survey (anonymous or non-anonymous). Defaults to non-anonymous.
 
         Returns:
