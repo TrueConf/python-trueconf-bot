@@ -341,11 +341,12 @@ class Message(BoundToBot, DataClassDictMixin):
 
     async def reply(self, text: str, parse_mode: ParseMode | str = ParseMode.HTML) -> object:
         """
-        Shortcut for the [`reply_message`][trueconf.Bot.reply_message] method of the bot instance. Use this method to send a reply message to the current chat.
+        Shortcut for the [`send_message`][trueconf.Bot.send_message] method.
+        Sends a reply to this message in the current chat.
 
         Automatically fills the following attributes:
-            - `chat_id`
-            - `reply_message_id`
+            - `chat_id`: Current chat identifier.
+            - `reply_message_id`: ID of the current message.
 
         Source: https://trueconf.com/docs/chatbot-connector/en/messages/#replyMessage
 
@@ -357,11 +358,127 @@ class Message(BoundToBot, DataClassDictMixin):
             SendMessageResponse: Object containing the result of the message delivery.
         """
 
-        return await self.bot.reply_message(
+        return await self.bot.send_message(
             chat_id=self.chat_id,
-            message_id=self.message_id,
+            reply_message_id=self.message_id,
             text=text,
             parse_mode=parse_mode,
+        )
+
+    async def reply_photo(
+            self,
+            file: InputFile,
+            preview: InputFile | None,
+            caption: str | None = None,
+            parse_mode: ParseMode | str = ParseMode.TEXT,
+
+    ) -> object:
+        """
+        Shortcut for the [`send_photo`][trueconf.Bot.send_photo] method of the bot instance.
+        Sends a photo as a reply to the current message in this chat.
+
+        Automatically fills the following attributes:
+            - `chat_id`: Current chat identifier.
+            - `reply_message_id`: ID of the current message.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#sending-an-image
+
+        Args:
+            file (InputFile): The photo file to upload. Must be a subclass of `InputFile`.
+            preview (InputFile | None): Optional preview image. Must also be an `InputFile` if provided.
+            caption (str | None): Optional caption to be sent along with the image.
+            parse_mode (ParseMode | str): Formatting mode for the caption (e.g., Markdown, HTML, plain text).
+            reply_message_id (str | None): Optional identifier of the message to which this message is a reply.
+
+        Returns:
+            SendFileResponse: Object containing the result of the photo upload.
+
+        Examples:
+            >>> @<router>.message()
+            >>> async def on_message(message:Message):
+            >>>     await message.answer_photo(file=FSInputFile("sticker.webp"), preview=FSInputFile("sticker.webp"))
+        """
+
+        return await self.bot.send_photo(
+            chat_id=self.chat_id,
+            file=file,
+            caption=caption,
+            preview=preview,
+            parse_mode=parse_mode,
+            reply_message_id=self.message_id
+        )
+
+    async def reply_document(
+            self,
+            file: InputFile,
+            caption: str | None = None,
+            parse_mode: ParseMode | str = ParseMode.TEXT
+    ) -> object:
+        """
+        Shortcut for the [`send_document`][trueconf.Bot.send_document] method of the bot instance.
+        Sends a document as a reply to the current message in this chat.
+
+        Automatically fills the following attributes:
+            - `chat_id`: Current chat identifier.
+            - `reply_message_id`: ID of the current message.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#working-with-files
+
+        Args:
+            file (InputFile): The file to be uploaded. Must be a subclass of `InputFile`.
+            caption (str | None): Optional caption text to be sent with the file.
+            parse_mode (ParseMode | str): Text formatting mode (e.g., Markdown, HTML, or plain text).
+
+        Returns:
+            SendFileResponse: Object containing the result of the document upload.
+
+        Examples:
+            >>> @<router>.message()
+            >>> async def on_message(message:Message):
+            >>>     await message.answer_document(file=FSInputFile("sticker.webp"))
+        """
+
+        return await self.bot.send_document(
+            chat_id=self.chat_id,
+            file=file,
+            caption=caption,
+            parse_mode=parse_mode,
+            reply_message_id=self.message_id
+        )
+
+    async def reply_sticker(
+            self,
+            file: InputFile
+    ) -> object:
+        """
+        Shortcut for the [`send_sticker`][trueconf.Bot.send_sticker] method of the bot instance.
+        Sends a sticker as a reply to the current message in this chat.
+
+        Automatically fills the following attributes:
+            - `chat_id`: Current chat identifier.
+            - `reply_message_id`: ID of the current message.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#upload-file-to-server-storage
+
+        Args:
+            file (InputFile): The sticker file in WebP format. Must be a subclass of `InputFile`.
+
+        Returns:
+            SendFileResponse: Object containing the result of the sticker delivery.
+
+        Examples:
+            >>> @<router>.message()
+            >>> async def on_message(message:Message):
+            >>>     await message.answer_sticker(file=FSInputFile("sticker.webp"))
+        """
+
+        return await self.bot.send_sticker(
+            chat_id=self.chat_id,
+            file=file,
+            reply_message_id=self.message_id
         )
 
     async def forward(self, chat_id: str) -> object:
