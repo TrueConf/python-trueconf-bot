@@ -5,9 +5,9 @@ import httpx
 import json
 import signal
 import ssl
-import tempfile
 import websockets
 import warnings
+import random
 from pathlib import Path
 from aiohttp import ClientSession, ClientTimeout, TCPConnector, FormData
 from async_property import async_cached_property
@@ -107,13 +107,15 @@ class Bot:
             self,
             server: str,
             token: str,
-            web_port: int = 443,
-            https: bool = True,
-            debug: bool = False,
-            verify_ssl: bool = True,
+            *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
-            receive_system_messages: bool = False,
+            verify_ssl: bool = True,
+            web_port: int = 443,
+            https: bool = True,
+            ws_max_retries: int = 5,
+            ws_max_delay: int = 60,
+            debug: bool = False,
     ):
         """
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -124,13 +126,15 @@ class Bot:
         Args:
             server (str): Address of the TrueConf server.
             token (str): Bot authorization token.
-            web_port (int, optional): WebSocket connection port. Defaults to 443.
-            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
-            debug (bool, optional): Enables debug mode. Defaults to False.
-            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
-            receive_system_messages (bool, optional): Whether to receive system messages on connection. Defaults to False.
+            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            web_port (int, optional): WebSocket connection port. Defaults to 443.
+            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
+            ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
+            ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
+            debug (bool, optional): Enables debug mode. Defaults to False.
 
         Note:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
@@ -140,28 +144,28 @@ class Bot:
 
         self.server = server
         self.__token = token
+        self.dp = dispatcher or Dispatcher()
+        self.receive_unread_messages = receive_unread_messages
+        self.verify_ssl = verify_ssl
         self.web_port = web_port
         self.https = https
+        self._ws_max_retries = ws_max_retries
+        self._ws_max_delay = ws_max_delay
         self.debug = debug
+
         self.connected_event = asyncio.Event()
         self.authorized_event = asyncio.Event()
         self._session: WebSocketSession | None = None
         self._connect_task: asyncio.Task | None = None
         self.stopped_event = asyncio.Event()
-        self.dp = dispatcher or Dispatcher()
         self._protocol = "https" if self.https else "http"
         self.port = 443 if self.https else self.web_port
-        self.receive_unread_messages = receive_unread_messages
-        self.receive_system_messages = receive_system_messages
         self._url_for_upload_files = (
             f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files"
         )
-        self.verify_ssl = verify_ssl
         self._progress_queues: Dict[str, asyncio.Queue] = {}
-
         self._futures: Dict[int, asyncio.Future] = {}
         self._handlers: List[Tuple[dict, Callable[[dict], Awaitable]]] = []
-
         self._stop = False
         self._ws = None
 
@@ -222,11 +226,14 @@ class Bot:
             server: str,
             username: str,
             password: str,
+            *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
-            receive_system_messages: bool = False,
             verify_ssl: bool = True,
-            **token_opts: Unpack[TokenOpts],
+            web_port: int = 443,
+            https: bool = True,
+            ws_max_retries: int = 5,
+            ws_max_delay: int = 60,
     ) -> Self:
         """
         Creates a bot instance using username and password authentication.
@@ -238,11 +245,14 @@ class Bot:
             server (str): Address of the TrueConf server.
             username (str): Username for authentication.
             password (str): Password for authentication.
+            * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
-            receive_system_messages (bool, optional): Whether to receive system messages on connection. Defaults to False.
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
-            **token_opts: Additional options passed to the token request, such as `web_port` and `https`.
+            web_port (int, optional): WebSocket connection port. Defaults to 443.
+            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
+            ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
+            ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
 
         Returns:
             Bot: An authorized bot instance.
@@ -255,14 +265,15 @@ class Bot:
         if not token:
             raise RuntimeError("Failed to obtain token")
         return cls(
-            server=server,
-            token=token,
+            server,
+            token,
+            web_port=web_port,
+            https=https,
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
-            receive_system_messages=receive_system_messages,
             verify_ssl=verify_ssl,
-            web_port=token_opts.get("web_port", 443),
-            https=token_opts.get("https", True),
+            ws_max_delay=ws_max_delay,
+            ws_max_retries=ws_max_retries
         )
 
     async def __wait_upload_complete(
@@ -438,6 +449,9 @@ class Bot:
 
     async def __connect_and_listen(self):
         ssl_context = None
+        delay = 1
+        retry_count = 0
+
         if self.https:
             if self.verify_ssl:
                 ssl_context = ssl.create_default_context()
@@ -448,8 +462,12 @@ class Bot:
 
         while not self._stop:
             try:
+                if delay > 1 or retry_count > 0:
+                    await asyncio.sleep(delay)
                 loggers.chatbot.info("⏳ Attempting WebSocket connection...")
                 async with websockets.connect(uri, ssl=ssl_context, ping_interval=30, ping_timeout=10) as ws:
+                    delay = 1
+                    retry_count = 0
                     self._ws = ws
                     loggers.chatbot.info("✅ WebSocket connected")
 
@@ -473,12 +491,36 @@ class Bot:
                 loggers.chatbot.info("🛑 Connect loop cancelled, performing cleanup.")
                 raise
 
-            except websockets.exceptions.ConnectionClosed as e:
-                loggers.chatbot.warning(
-                    f"🔌 Connection closed: {getattr(e, 'code', '?')} – {getattr(e, 'reason', '?')}. Retrying...")
+            except (websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidStatus, OSError) as e:
                 self.connected_event.clear()
                 self.authorized_event.clear()
-                await asyncio.sleep(0.5)
+
+                if isinstance(e, websockets.exceptions.ConnectionClosed):
+                    close_info = e.rcvd or e.sent
+                    code = close_info.code if close_info else "?"
+                    reason = close_info.reason if close_info else "no reason"
+                    reason = f"Code: {code} ({reason})"
+                else:
+                    reason = str(e)
+
+                delay = min(delay * 2, self._ws_max_delay) + random.uniform(0, 1)
+                msg = f"🔌 Connection issue: {reason}. Retrying in {delay:.1f}s..."
+                loggers.chatbot.warning(msg)
+                print(msg)
+                continue
+
+            except websockets.exceptions.InvalidURI as e:
+                retry_count += 1
+                self.connected_event.clear()
+
+                if retry_count > self._ws_max_retries:
+                    loggers.chatbot.error(f"❌ Critical network error: {e}. Check your URI/IP. Giving up.")
+                    raise ConnectionError(f"Failed to connect after {self._ws_max_retries} attempts: {e}") from e
+
+                delay = 5
+                msg = f"⚠️ Cant reach server: {e}. Attempt {retry_count}/{self._ws_max_retries}. Retrying in {delay}s..."
+                loggers.chatbot.warning(msg)
+                print(msg)
                 continue
 
             finally:
