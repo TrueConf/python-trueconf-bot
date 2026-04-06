@@ -97,11 +97,6 @@ from trueconf.utils import validate_token
 
 T = TypeVar("T")
 
-class TokenOpts(TypedDict, total=False):
-    web_port: int
-    https: bool
-
-
 class Bot:
     def __init__(
             self,
@@ -111,7 +106,7 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             verify_ssl: bool = True,
-            web_port: int = 443,
+            web_port: int | None = None,
             https: bool = True,
             ws_max_retries: int = 5,
             ws_max_delay: int = 60,
@@ -147,7 +142,6 @@ class Bot:
         self.dp = dispatcher or Dispatcher()
         self.receive_unread_messages = receive_unread_messages
         self.verify_ssl = verify_ssl
-        self.web_port = web_port
         self.https = https
         self._ws_max_retries = ws_max_retries
         self._ws_max_delay = ws_max_delay
@@ -159,10 +153,10 @@ class Bot:
         self._connect_task: asyncio.Task | None = None
         self.stopped_event = asyncio.Event()
         self._protocol = "https" if self.https else "http"
-        self.port = 443 if self.https else self.web_port
-        self._url_for_upload_files = (
-            f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files"
-        )
+        if web_port is None:
+            self.port = 443 if self.https else 4309
+        else:
+            self.port = web_port
         self._progress_queues: Dict[str, asyncio.Queue] = {}
         self._futures: Dict[int, asyncio.Future] = {}
         self._handlers: List[Tuple[dict, Callable[[dict], Awaitable]]] = []
@@ -173,11 +167,9 @@ class Bot:
         return await method(self)
 
     async def __get_domain_name(self):
-        url = f"{self._protocol}://{self.server}:{self.port}/api/v4/server"
-
         try:
             async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
-                response = await client.get(url)
+                response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
                 return response.json().get("product").get("display_name")
         except Exception as e:
             loggers.chatbot.error(f"Failed to get server domain_name: {e}")
@@ -230,7 +222,7 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             verify_ssl: bool = True,
-            web_port: int = 443,
+            web_port: int | None = None,
             https: bool = True,
             ws_max_retries: int = 5,
             ws_max_delay: int = 60,
@@ -429,7 +421,11 @@ class Bot:
                         content_type=preview.mime_type
                     )
 
-                async with session.post(self._url_for_upload_files, headers=headers, data=data) as response:
+                async with session.post(
+                        url=f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files",
+                        headers=headers,
+                        data=data
+                ) as response:
                      result = await response.json()
             return result.get("temporalFileId")
         except Exception as e:
@@ -453,19 +449,25 @@ class Bot:
         retry_count = 0
 
         if self.https:
+            ws_protocol = "wss"
             if self.verify_ssl:
                 ssl_context = ssl.create_default_context()
             else:
                 ssl_context = ssl._create_unverified_context()
-
-        uri = f"wss://{self.server}:{self.web_port}/websocket/chat_bot" if self.https else f"ws://{self.server}:{self.web_port}/websocket/chat_bot"
+        else:
+            ws_protocol = "ws"
 
         while not self._stop:
             try:
                 if delay > 1 or retry_count > 0:
                     await asyncio.sleep(delay)
                 loggers.chatbot.info("⏳ Attempting WebSocket connection...")
-                async with websockets.connect(uri, ssl=ssl_context, ping_interval=30, ping_timeout=10) as ws:
+                async with websockets.connect(
+                        uri=f"{ws_protocol}://{self.server}:{self.port}/websocket/chat_bot",
+                        ssl=ssl_context,
+                        ping_interval=30,
+                        ping_timeout=10
+                ) as ws:
                     delay = 1
                     retry_count = 0
                     self._ws = ws
