@@ -175,6 +175,15 @@ class Bot:
             loggers.chatbot.error(f"Failed to get server domain_name: {e}")
             return None
 
+    async def __get_server_version(self):
+        try:
+            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
+                response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
+                return response.json().get("product").get("version")
+        except Exception as e:
+            loggers.chatbot.error(f"Failed to get server version: {e}")
+            return None
+
     @property
     def token(self) -> str:
         """
@@ -196,6 +205,33 @@ class Bot:
         """
 
         return await self.__get_domain_name()
+
+    @async_cached_property
+    async def server_version(self) -> str:
+        """
+        Returns the domain name of the TrueConf server.
+
+        Returns:
+            str: Domain name of the connected server.
+        """
+
+        return await self.__get_server_version()
+
+    async def check_version(self):
+        current_version = await self.server_version
+        v = tuple(map(int, current_version.split('.')[:3]))
+
+        if v < (5, 5, 0):
+            raise RuntimeError(
+                f"Error: Server version {current_version} is too old. "
+                "Chatbots are not supported (version 5.5.0+ required)."
+            )
+        if v >= (5, 5, 3):
+            raise RuntimeError(
+                f"\n[!] Server version {current_version} requires library v1.2.0.\n"
+                "Please install the stable release or the latest beta using the following command:\n"
+                'uv pip install --pre "python-trueconf-bot>=1.2.0b0"'
+            )
 
     @async_cached_property
     async def me(self) -> str:
@@ -1515,6 +1551,7 @@ class Bot:
         Returns:
             None
         """
+        await self.check_version()
         if self._connect_task and not self._connect_task.done():
             return
         self._stop = False

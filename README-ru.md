@@ -42,7 +42,22 @@
 > При разработке мы вдохновлялись популярной библиотекой [aiogram](https://github.com/aiogram/aiogram/), поэтому разработчикам,
 > знакомым с ней, переход будет **простым** и **безболезненным**.
 
-## Ключевые возможности
+---
+
+## 📦 Совместимость версий
+| Версия сервера TrueConf | Требуемая версия библиотеки |
+|:------------------------|:---------------------------|
+| < 5.5.0                 | ❌ Не поддерживается                         |
+| 5.5.0 — 5.5.2           | v1.1.x                     |
+| \>= 5.5.3               | **v1.2.0** (или выше)      |
+
+> [!IMPORTANT] 
+> Если вы используете сервер версии **5.5.3** или выше, вам необходимо обновить библиотеку. Если стабильный релиз еще не доступен, установите последнюю бету:
+> ```bash
+> uv pip install --pre "python-trueconf-bot>=1.2.0b0"
+> ```
+
+## 📌 Ключевые возможности
 
 - Простая интеграция с [API чат-ботов TrueConf Server](https://trueconf.ru/docs/chatbot-connector/ru/overview/);
 - Быстрый старт с пакетом `python-trueconf-bot`;
@@ -52,7 +67,7 @@
 > [!IMPORTANT]
 > Функционал чат-ботов поддерживается начиная с версии TrueConf Server 5.5, а также в TrueConf Enterprise и TrueConf Server Free.
 
-## Пример бота
+## 🚀 Пример бота
 
 ```python
 import asyncio
@@ -81,7 +96,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Документация и поддержка
+## 📚 Документация и поддержка
 
 1. [Документация API чат-ботов TrueConf Server](https://trueconf.ru/docs/chatbot-connector/ru/overview/)
 2. [Документация python-trueconf-bot](https://trueconf.github.io/python-trueconf-bot/ru/)
