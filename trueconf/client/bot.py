@@ -1177,7 +1177,10 @@ class Bot:
         return await self(call)
 
     async def remove_participant_from_chat(
-            self, chat_id: str, user_id: str
+            self,
+            chat_id: str,
+            user_id: str,
+            clear_history: bool = False
     ) -> RemoveChatParticipantResponse:
         """
         Removes a participant from the specified chat.
@@ -1188,6 +1191,7 @@ class Bot:
         Args:
             chat_id (str): Identifier of the chat to remove the participant from.
             user_id (str): Identifier of the user to be removed.
+            clear_history (bool, optional): If True, the chat history will be cleared for the removed participant. Defaults to False.
 
         Returns:
             RemoveChatParticipantResponse: Object containing the result of the participant removal.
@@ -1196,7 +1200,7 @@ class Bot:
         if "@" not in user_id:
             user_id = f"{user_id}@{await self.server_name}"
 
-        call = RemoveChatParticipant(chat_id=chat_id, user_id=user_id)
+        call = RemoveChatParticipant(chat_id=chat_id, user_id=user_id, clear_history=clear_history)
         return await self(call)
 
     async def reply_message(
