@@ -226,11 +226,12 @@ class Bot:
                 f"Error: Server version {current_version} is too old. "
                 "Chatbots are not supported (version 5.5.0+ required)."
             )
-        if v >= (5, 5, 3):
+
+        if (5, 5, 0) <= v <= (5, 5, 2):
             raise RuntimeError(
-                f"\n[!] Server version {current_version} requires library v1.2.0.\n"
-                "Please install the stable release or the latest beta using the following command:\n"
-                'uv pip install --pre "python-trueconf-bot>=1.2.0b0"'
+                f"\n[!] Server version {current_version} is incompatible with the current library.\n"
+                "Please install version v1.1.x using the following command:\n"
+                'uv pip install "python-trueconf-bot>=1.1.0,<1.2.0"'
             )
 
     @async_cached_property
