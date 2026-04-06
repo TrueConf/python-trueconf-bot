@@ -40,6 +40,23 @@
 > 
 > We were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, so, the transition will be **simple** for developers already familiar with this library.
 
+---
+
+## 📦 Version Compatibility
+
+| TrueConf Server Version | Required Library Version |
+|:------------------------|:-------------------------|
+| < 5.5.0                 | ❌ Not supported         |
+| 5.5.0 — 5.5.2           | v1.1.x                   |
+| >= 5.5.3                | **v1.2.0** (or higher)   |
+
+> ⚠️ IMPORTANT
+> 
+> If you are using server version **5.5.3** or higher, you must upgrade the library. If the stable release is not yet available, install the latest beta:
+> ```bash
+> uv pip install --pre "python-trueconf-bot>=1.2.0b0"
+> ```
+
 ## 📌 Key Features
 
 * Easy integration with the [TrueConf Server Chatbot API](https://trueconf.com/docs/chatbot-connector/en/overview/)
