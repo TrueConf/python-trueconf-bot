@@ -303,46 +303,48 @@ class Bot:
             dest_path: str | Path | None = None,
             timeout: int = 60,
             chunk_size: int = 64 * 1024,
-    ) -> bytes | None:
+    ) -> bytes | Path | None:
 
         """
-        Asynchronously download file by URL and save it to disk.
+        Asynchronously download a file from the server by URL.
 
-        If `dest_path` isn't provided, a temporary file will be created (similar to aiogram.File.download()).
-
-        Args:
-            url: Direct download URL.
-            dest_path: Destination path; if None, a NamedTemporaryFile will be created and returned.
-            timeout: Request timeout (seconds).
-            chunk_size: Stream chunk size in bytes.
-
+         Args:
+            url (str): Direct download URL.
+            file_name (str): Name of the file to be saved.
+            dest_path (str | Path | None): Destination path on disk.
+                If None, the file will be downloaded into memory. Defaults to None.
+            timeout (int): Request timeout in seconds. Defaults to 60.
+            chunk_size (int): Stream chunk size in bytes. Defaults to 65536 (64 KB).
 
         Returns:
-            Path | None: Path to saved file, or None on error.
+            bytes | Path | None:
+                - bytes: if `dest_path` is None (file in memory).
+                - Path: if the file was successfully saved to disk.
+                - None: if an error occurred during download or saving.
         """
-
+        dest = None
         try:
             async with httpx.AsyncClient(verify=self.verify_ssl, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
+
                     if dest_path is None:
                         chunks = []
                         async for chunk in resp.aiter_bytes(chunk_size):
                             chunks.append(chunk)
                         return b"".join(chunks)
 
-                    else:
-                        dest = Path(dest_path) / file_name
-                        dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest = Path(dest_path) / file_name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
 
-                        async with aiofiles.open(dest, "wb") as f:
-                            async for chunk in resp.aiter_bytes(chunk_size):
-                                await f.write(chunk)
-                        return None
+                    async with aiofiles.open(dest, "wb") as f:
+                        async for chunk in resp.aiter_bytes(chunk_size):
+                            await f.write(chunk)
+                    return dest
         except Exception as e:
             loggers.chatbot.error(f"Failed to download file from {url}: {e}")
-            with contextlib.suppress(Exception):
-                if dest.exists():
+            if dest and dest.exists():
+                with contextlib.suppress(Exception):
                     dest.unlink()
             return None
 
@@ -351,7 +353,7 @@ class Bot:
             file: InputFile,
             preview: InputFile | None = None,
             is_sticker: bool = False,
-            timeout: int = 60,
+            timeout: float = 60.0,
     ) -> str:
         """
            Uploads a file to the server and returns a temporary file identifier (temporalFileId).
@@ -374,7 +376,7 @@ class Bot:
                file (InputFile): The primary file to upload.
                preview (InputFile | None, optional): Optional preview file (default is None).
                is_sticker (bool, optional): Whether the uploaded file is a sticker (affects MIME type). Defaults to False.
-               timeout (int, optional): Upload timeout in seconds. Defaults to 60.
+               timeout (float, optional): Upload timeout in seconds. Defaults to 60.
 
            Returns:
                str | None: A temporary file ID (`temporalFileId`) on success, or None if the upload failed.
@@ -393,8 +395,6 @@ class Bot:
 
         }
 
-        timeout = ClientTimeout(total=timeout)
-
         if not self.verify_ssl:
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
@@ -404,7 +404,7 @@ class Bot:
             connector = TCPConnector()
 
         try:
-            async with ClientSession(connector=connector, timeout=timeout) as session:
+            async with ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
                 data = FormData(quote_fields=False)
                 data.add_field(
                     name="file",
@@ -788,50 +788,41 @@ class Bot:
         call = RemoveChat(chat_id=chat_id)
         return await self(call)
 
-    async def download_file_by_id(self, file_id, dest_path: str = None) -> Path | None:
+    async def download_file_by_id(self, file_id, dest_path: str | Path | None = None) ->  bytes | Path | None:
         """
         Downloads a file by its ID, waiting for the upload to complete if necessary.
 
-        If the file is already in the READY state, it will be downloaded immediately.
-        If the file is in the NOT_AVAILABLE state, the method will exit without downloading.
-        In other cases, the bot will wait for the upload to finish and then attempt to download the file.
+        If `dest_path` is provided, the file is saved to disk and the Path is returned.
+        If `dest_path` is None, the file content is returned as bytes.
 
         Args:
             file_id (str): Unique identifier of the file on the server.
-            dest_path (str, optional): Path where the file should be saved.
-                If not specified, a temporary file will be created using `NamedTemporaryFile`
-                (with prefix `tc_dl_`, suffix set to the original file name, and `delete=False` to keep the file on disk).
+            dest_path (str | Path, optional): Path where the file should be saved.
 
         Returns:
-            Path | None: Path to the downloaded file, or None if the download failed.
+            bytes | Path | None: File content (bytes), path to file (Path), or None if failed.
         """
 
         info = await self.get_file_info(file_id)
-
-        if info.ready_state == FileReadyState.READY:
-            return await self.__download_file_from_server(
-                url=info.download_url,
-                file_name=info.name,
-                dest_path=dest_path,
-            )
 
         if info.ready_state == FileReadyState.NOT_AVAILABLE:
             loggers.chatbot.warning(f"File {file_id} is NOT_AVAILABLE")
             return None
 
-        ok = await self.__wait_upload_complete(file_id, expected_size=info.size, timeout=None)
-        if not ok:
-            loggers.chatbot.error(f"Wait upload complete failed for {file_id}")
-            return None
+        if info.ready_state != FileReadyState.READY:
+            ok = await self.__wait_upload_complete(file_id, expected_size=info.size, timeout=None)
+            if not ok:
+                loggers.chatbot.error(f"Wait upload complete failed for {file_id}")
+                return None
 
-        for _ in range(20):
-            info = await self.get_file_info(file_id)
-            if info.ready_state == FileReadyState.READY:
-                break
-            await asyncio.sleep(1)
-        else:
-            loggers.chatbot.warning(f"File {file_id} didn’t reach READY in time")
-            return None
+            for _ in range(20):
+                info = await self.get_file_info(file_id)
+                if info.ready_state == FileReadyState.READY:
+                    break
+                await asyncio.sleep(1)
+            else:
+                loggers.chatbot.warning(f"File {file_id} didn’t reach READY in time")
+                return None
 
         return await self.__download_file_from_server(
             url=info.download_url,
