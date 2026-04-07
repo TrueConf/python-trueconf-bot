@@ -4,12 +4,13 @@ import io
 import re
 import os
 import aiofiles
+import filetype
 from urllib.parse import urlparse, unquote
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Optional
 from typing_extensions import Self
-from mimetypes import guess_type
+from mimetypes import guess_type, guess_extension
 from trueconf import loggers
 from httpx import AsyncClient
 import warnings
@@ -32,8 +33,14 @@ except ImportError as e:
     ) from e
 
 def detect_mime_type(data: bytes, file_name: str = "") -> str:
-    mime_type = guess_type(file_name or "")[0]
-    if not mime_type and magic:
+    mime_type, _ = guess_type(file_name) if file_name else (None, None)
+
+    if not mime_type or mime_type == "application/octet-stream":
+        kind = filetype.guess(data)
+        if kind:
+            mime_type = kind.mime
+
+    if (not mime_type or mime_type == "application/octet-stream") and magic:
         try:
             mime_type = magic.from_buffer(data, mime=True)
         except Exception as error:
@@ -90,6 +97,11 @@ class InputFile(ABC):
             file_size: int | None = None,
             mime_type: str | None = None,
     ):
+
+        if not guess_type(file_name)[0]:
+            if ext := guess_extension(mime_type):
+                file_name = file_name+ext
+
         self.file_name = file_name
         self.file_size = file_size
         self.mime_type = mime_type
