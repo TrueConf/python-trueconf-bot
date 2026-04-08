@@ -215,7 +215,89 @@ F.text.upper().in_({"FOO", "BAR"}) # message.text.upper() in {"FOO", "BAR"}
 F.text.len() == 5                  # len(message.text) == 5
 ```
 
+## Building Custom Filters
+
+You can build custom filters to fine-tune your event-handling logic. This allows you to move condition checks—such as verifying whether a user exists in the database or checking access permissions—into a separate, reusable component.
+
+**Implementation requirements:**
+
+* **Class-based structure:** A custom filter must be implemented as a class. This makes it possible to preserve state, such as filter settings, when the filter is initialized.
+* **`__call__` method:** The class must implement a `__call__` method. Without it, the class instance will not be considered callable, and the filter will not work.
+* **Return value:** The `__call__` method must return `True` if the event matches the filter conditions, or `False` if the event should be ignored by the handler.
+
+```python
+from typing import Any
+
+class MyFilter:
+    """
+    This filter checks whether a user belongs 
+    to the specified group via the server API.
+    """
+
+    def __init__(self, target_group: str):
+        # Store the required group when creating the instance
+        self.target_group = target_group
+
+    async def __call__(self, event: Any) -> bool:
+        user = getattr(event, "from_user", None)
+        if not user:
+            return False
+
+        user_id = user.id
+        # Perform the check, for example via an API call
+        user_info: dict = await server_api.get_user(user_id)
+        groups = user_info.get("groups", [])
+
+        # Make sure to return True or False
+        return any(group.get("id") == self.target_group for group in groups)
+```
+
+Once the filter class is defined, you can use it in handler decorators exactly the same way as the built-in **Command** or **F** filters. When registering a handler, simply pass an instance of your class as an argument.
+
+```python hl_lines="8"
+from aiogram import Router, Message
+# Import your filter class
+from my_filters import MyFilter
+
+router = Router()
+
+# Attach the filter in the same way as Command or F
+@router.message(MyFilter(target_group="0032"))
+async def my_handler(message: Message):
+    await message.answer("Access granted: you belong to the required group!")
+```
+
+When a message is received, the bot will use the class instance, call its `__call__` method, and, if it returns `True`, execute the handler code.
+
 ## Combining Filters
+
+In **python-trueconf-bot**, you can combine multiple filters within a single handler. By default, when filters are separated by commas, they use **AND** logic—the handler will run only if **all** filters return `True`.
+
+**Command and a custom filter**
+
+You can restrict access to a specific command by using your own filter. The handler will run only if the message is the specified command **and** your filter returns `True`.
+
+```python
+# Triggers if the /admin command is received 
+# AND the user belongs to group "0032"
+@r.message(Command("admin"), InGroupFilter(target_group="0032"))
+async def admin_panel(message: Message):
+    await message.answer("Welcome to the admin panel!")
+```
+
+**MagicFilter (F) and a custom filter**
+
+Combine message-content checks with your own access rules. For example, you can react to a specific word in the text only for users from certain groups:
+
+```python
+# Triggers if the text contains "help"
+# AND the user belongs to the "support" group
+@r.message(F.text.contains("help"), InGroupFilter(target_group="0003"))
+async def support_handler(message: Message):
+    await message.answer("The support team has been notified of your request.")
+```
+
+### Combining Command Arguments and MagicFilter
 
 Combining **Command** and **MagicFilter** is a common and recommended practice:
 **Command** parses the command and creates a **CommandObject**, while `magic`
