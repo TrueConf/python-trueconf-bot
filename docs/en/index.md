@@ -42,7 +42,7 @@ pip install {{product_name}}
 | Transport           | HTTPS + long polling / webhook                 | Asynchronous WebSocket                                                                    |
 | Working with files  | `bot.get_file(...)` + `bot.download_file(...)` | `message.photo.download()`, `message.document.download()`, `bot.download_file_by_id(...)` |
 
-## ## LLM Files
+## LLM Files
 
 - [llms.txt](https://trueconf.github.io/python-trueconf-bot/master/llms.txt)
 - [llms-full.txt](https://trueconf.github.io/python-trueconf-bot/master/llms-full.txt)
