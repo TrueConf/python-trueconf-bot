@@ -1,0 +1,25 @@
+# Python TrueConf Bot SDK
+## INDEX
+- [Python Library for TrueConf Chatbot Connector ⚓︎](https://trueconf.github.io/python-trueconf-bot/master)
+- [Features ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/features/)
+- [Learn](#learn)
+  - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started/)
+  - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages/)
+  - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters/)
+  - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums/)
+  - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/types/)
+  - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/files/)
+- [Reference](#reference)
+  - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Bot/)
+  - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Router/)
+  - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher/)
+  - [Enums](https://trueconf.github.io/python-trueconf-bot/master/reference/Enums/)
+  - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Types/)
+  - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Responses/)
+- [Examples](#examples)
+  - [Echo bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot/)
+  - [Multibot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/multibot/)
+- [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/release_notes/)
+
+## CONTENT
+See `llms-full.txt` for the complete rendered documentation.
