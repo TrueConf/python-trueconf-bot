@@ -10,6 +10,7 @@ from trueconf.types.content.survey import SurveyContent
 from trueconf.types.content.remove_participant import RemoveParticipant
 from trueconf.types.content.forward_message import ForwardMessage
 from trueconf.types.content.chat_created import ParticipantRoleContent
+from trueconf.types.content.edit_chat_title import EditChatTitleContent
 
 
 @dataclass
@@ -18,7 +19,15 @@ class LastMessage(DataClassDictMixin):
     timestamp: int
     author: EnvelopeAuthor
     type: MessageType
-    content: Union[TextContent, AttachmentContent, SurveyContent, ParticipantRoleContent, RemoveParticipant, ForwardMessage]
+    content: Union[
+        TextContent,
+        AttachmentContent,
+        SurveyContent,
+        ParticipantRoleContent,
+        RemoveParticipant,
+        ForwardMessage,
+        EditChatTitleContent
+    ]
 
     @property
     def content_type(self) -> MessageType:
