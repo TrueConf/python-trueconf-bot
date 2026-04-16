@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
 - **Version:** v1.1.9
-- **Generated:** 2026-04-16T14:47:07+00:00
+- **Generated:** 2026-04-16T14:59:39+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -237,6 +237,12 @@ pip install python-trueconf-bot
 | JSON → Python | Pydantic models | Mashumaro dataclasses |
 | Transport | HTTPS + long polling / webhook | Asynchronous WebSocket |
 | Working with files | `bot.get_file(...)` + `bot.download_file(...)` | `message.photo.download()`, `message.document.download()`, `bot.download_file_by_id(...)` |
+
+## ## LLM Files⚓︎
+
+- llms.txt
+
+- llms-full.txt
 
 ---
 
