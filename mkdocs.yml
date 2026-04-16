@@ -3,7 +3,12 @@ site_description: TrueConf Chatbot Library for Python 3 with Websocket & Asyncio
 site_author: TrueConf LLC
 repo_url: https://github.com/trueconf/python-trueconf-bot/
 site_url: https://trueconf.github.io/python-trueconf-bot/
-copyright: Copyright &copy; 2025 – TrueConf LLC. All rights reserved.
+copyright: >
+  Copyright &copy; 2026 – TrueConf LLC. All rights reserved
+  |
+  <a href="https://trueconf.github.io/python-trueconf-bot/master/llms.txt">llms.txt</a>
+  |
+  <a href="https://trueconf.github.io/python-trueconf-bot/master/llms-full.txt">llms-full.txt</a>
 
 theme:
   language: en

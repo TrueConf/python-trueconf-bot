@@ -35,4 +35,8 @@ pip install {{product_name}}
 - TrueConf API становится «человеческим»: вместо JSON-словарей вы работаете с Python-классами.
 - Вы получаете удобный инструмент для интеграции ботов в корпоративные чаты TrueConf.
 
+## Документация для ИИ (LLM) 
+
+- [llms.txt](https://trueconf.github.io/python-trueconf-bot/master/llms.txt)
+- [llms-full.txt](https://trueconf.github.io/python-trueconf-bot/master/llms-full.txt)
 
