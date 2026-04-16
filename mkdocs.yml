@@ -215,3 +215,6 @@ extra:
   analytics:
     provider: google
     property: G-HYJY7RVTQR
+
+hooks:
+  - docs/hooks/llms_txt.py
