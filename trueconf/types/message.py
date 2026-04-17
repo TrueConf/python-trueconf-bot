@@ -10,7 +10,6 @@ from trueconf.types.content.survey import SurveyContent
 from trueconf.types.content.remove_participant import RemoveParticipant
 from trueconf.types.content.forward_message import ForwardMessage
 from trueconf.types.content.chat_created import ParticipantRoleContent
-from trueconf.types.content.edit_chat_title import EditChatTitleContent
 from trueconf.types.content.photo import Photo
 from trueconf.types.content.video import Video
 from trueconf.types.content.sticker import Sticker
@@ -76,14 +75,7 @@ class Message(BoundToBot, DataClassDictMixin):
     author: EnvelopeAuthor
     box: EnvelopeBox
     content: Union[
-        TextContent,
-        AttachmentContent,
-        SurveyContent,
-        ParticipantRoleContent,
-        RemoveParticipant,
-        ForwardMessage,
-        EditChatTitleContent
-    ]
+        TextContent, AttachmentContent, SurveyContent, ParticipantRoleContent, RemoveParticipant, ForwardMessage]
     message_id: str = field(metadata={"alias": "messageId"})
     chat_id: str = field(metadata={"alias": "chatId"})
     is_edited: bool = field(metadata={"alias": "isEdited"})
