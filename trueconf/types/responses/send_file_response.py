@@ -8,3 +8,4 @@ class SendFileResponse(DataClassDictMixin):
     timestamp: int
     chat_id: str = field(metadata={"alias": "chatId"})
     message_id: str = field(metadata={"alias": "messageId"})
+    file_id: str = field(metadata={"alias": "fileId"})
