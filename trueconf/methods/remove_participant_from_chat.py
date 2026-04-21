@@ -12,6 +12,7 @@ class RemoveChatParticipant(TrueConfMethod[RemoveChatParticipantResponse]):
 
     chat_id: str
     user_id: str
+    clear_history: bool
 
     def __post_init__(self):
         super().__init__()
@@ -19,5 +20,6 @@ class RemoveChatParticipant(TrueConfMethod[RemoveChatParticipantResponse]):
     def payload(self):
         return {
             "chatId": self.chat_id,
-            "userId": self.user_id
+            "userId": self.user_id,
+            "clearHistory": self.clear_history
         }

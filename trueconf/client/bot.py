@@ -5,9 +5,9 @@ import httpx
 import json
 import signal
 import ssl
-import tempfile
 import websockets
 import warnings
+import random
 from pathlib import Path
 from aiohttp import ClientSession, ClientTimeout, TCPConnector, FormData
 from async_property import async_cached_property
@@ -17,11 +17,10 @@ from typing import (
     Dict,
     List,
     Tuple,
-    TypeVar,
-    TypedDict,
+    TypeVar
 )
 
-from typing_extensions import Self, Unpack
+from typing_extensions import Self
 
 from trueconf import loggers
 from trueconf.client.session import WebSocketSession
@@ -30,15 +29,17 @@ from trueconf.enums.file_ready_state import FileReadyState
 from trueconf.enums.parse_mode import ParseMode
 from trueconf.enums.survey_type import SurveyType
 from trueconf.enums.chat_participant_role import ChatParticipantRole
-from trueconf.exceptions import ApiErrorException
 from trueconf.methods.add_participant_to_chat import AddChatParticipant
 from trueconf.methods.auth import AuthMethod
 from trueconf.methods.base import TrueConfMethod
 from trueconf.methods.change_participant_role import ChangeParticipantRole
+from trueconf.methods.clear_chat_history import ClearChatHistory
 from trueconf.methods.create_channel import CreateChannel
 from trueconf.methods.create_favorites_chat import CreateFavoritesChat
 from trueconf.methods.create_group_chat import CreateGroupChat
 from trueconf.methods.create_p2p_chat import CreateP2PChat
+from trueconf.methods.edit_chat_avatar import EditChatAvatar
+from trueconf.methods.edit_chat_title import EditChatTitle
 from trueconf.methods.edit_message import EditMessage
 from trueconf.methods.edit_survey import EditSurvey
 from trueconf.methods.forward_message import ForwardMessage
@@ -47,6 +48,7 @@ from trueconf.methods.get_chat_history import GetChatHistory
 from trueconf.methods.get_chat_participants import GetChatParticipants
 from trueconf.methods.get_chats import GetChats
 from trueconf.methods.get_file_info import GetFileInfo
+from trueconf.methods.get_file_upload_limits import GetFileUploadLimits
 from trueconf.methods.get_message_by_id import GetMessageById
 from trueconf.methods.get_user_display_name import GetUserDisplayName
 from trueconf.methods.has_chat_participant import HasChatParticipant
@@ -62,12 +64,17 @@ from trueconf.methods.upload_file import UploadFile
 from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
+from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
+from trueconf.types.responses import GetFileUploadLimitsResponse
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
+from trueconf.types.responses.clear_chat_history_response import ClearChatHistoryResponse
 from trueconf.types.responses.create_channel_response import CreateChannelResponse
 from trueconf.types.responses.create_favorites_chat_response import CreateFavoritesChatResponse
 from trueconf.types.responses.create_group_chat_response import CreateGroupChatResponse
 from trueconf.types.responses.create_p2p_chat_response import CreateP2PChatResponse
+from trueconf.types.responses.edit_chat_avatar_response import EditChatAvatarResponse
+from trueconf.types.responses.edit_chat_title_response import EditChatTitleResponse
 from trueconf.types.responses.edit_message_response import EditMessageResponse
 from trueconf.types.responses.edit_survey_response import EditSurveyResponse
 from trueconf.types.responses.forward_message_response import ForwardMessageResponse
@@ -90,25 +97,34 @@ from trueconf.types.responses.unsubscribe_file_progress_response import Unsubscr
 from trueconf.utils import generate_secret_for_survey
 from trueconf.utils import get_auth_token
 from trueconf.utils import validate_token
+from trueconf.utils.split_text import visible_len
+
+from trueconf.exceptions import (
+    ApiErrorException,
+    ChannelTitleTooLongError,
+    GroupTitleTooLongError,
+    TextMessageTooLongError,
+    FileCaptionTooLongError,
+    FileSizeTooLargeError,
+    InvalidFileExtensionError
+)
 
 T = TypeVar("T")
-
-class TokenOpts(TypedDict, total=False):
-    web_port: int
-    https: bool
-
 
 class Bot:
     def __init__(
             self,
             server: str,
             token: str,
-            web_port: int = 443,
-            https: bool = True,
-            debug: bool = False,
-            verify_ssl: bool = True,
+            *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
+            verify_ssl: bool = True,
+            web_port: int | None = None,
+            https: bool = True,
+            ws_max_retries: int = 5,
+            ws_max_delay: int = 60,
+            debug: bool = False,
     ):
         """
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -119,12 +135,15 @@ class Bot:
         Args:
             server (str): Address of the TrueConf server.
             token (str): Bot authorization token.
-            web_port (int, optional): WebSocket connection port. Defaults to 443.
-            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
-            debug (bool, optional): Enables debug mode. Defaults to False.
-            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
+            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            web_port (int, optional): WebSocket connection port. Defaults to 443.
+            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
+            ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
+            ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
+            debug (bool, optional): Enables debug mode. Defaults to False.
 
         Note:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
@@ -134,52 +153,75 @@ class Bot:
 
         self.server = server
         self.__token = token
-        self.web_port = web_port
+        self.dp = dispatcher or Dispatcher()
+        self.receive_unread_messages = receive_unread_messages
+        self.verify_ssl = verify_ssl
         self.https = https
+        self._ws_max_retries = ws_max_retries
+        self._ws_max_delay = ws_max_delay
         self.debug = debug
+
         self.connected_event = asyncio.Event()
         self.authorized_event = asyncio.Event()
         self._session: WebSocketSession | None = None
         self._connect_task: asyncio.Task | None = None
         self.stopped_event = asyncio.Event()
-        self.dp = dispatcher or Dispatcher()
         self._protocol = "https" if self.https else "http"
-        self.port = 443 if self.https else self.web_port
-        self.receive_unread_messages = receive_unread_messages
-        self._url_for_upload_files = (
-            f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files"
-        )
-        self.verify_ssl = verify_ssl
+        if web_port is None:
+            self.port = 443 if self.https else 4309
+        else:
+            self.port = web_port
         self._progress_queues: Dict[str, asyncio.Queue] = {}
-
         self._futures: Dict[int, asyncio.Future] = {}
         self._handlers: List[Tuple[dict, Callable[[dict], Awaitable]]] = []
-
         self._stop = False
         self._ws = None
 
+        self.max_file_size: int | None = None
+        self.file_extension_filter_mode: str | None = None
+        self.file_extensions_list: set | None = None
+
+        loggers.chatbot.info(
+            f"Bot initialized: server={server}:{self.port}, protocol={self._protocol}, "
+            f"verify_ssl={verify_ssl}, ws_max_retries={ws_max_retries}, ws_max_delay={ws_max_delay}, "
+            f"receive_unread={receive_unread_messages}"
+        )
+
     async def __call__(self, method: TrueConfMethod[T]) -> T:
-        return await method(self)
+        loggers.chatbot.info(f"📤 API call: {type(method).__name__}(id={method.id})")
+        try:
+            result = await method(self)
+            loggers.chatbot.info(
+                f"✅ API response: {type(method).__name__}(id={method.id})"
+            )
+            return result
+        except Exception as e:
+            loggers.chatbot.error(
+                f"❌ API error: {type(method).__name__}(id={method.id}): {e}"
+            )
+            raise
 
     async def __get_domain_name(self):
-        url = f"{self._protocol}://{self.server}:{self.port}/api/v4/server"
-
         try:
             async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
-                response = await client.get(url)
-                return response.json().get("product").get("display_name")
+                response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
+                domain_name = response.json().get("product").get("display_name")
+                loggers.chatbot.info(f"🌐 Server domain_name resolved: {domain_name}")
+                return domain_name
         except Exception as e:
             loggers.chatbot.error(f"Failed to get server domain_name: {e}")
             return None
 
     async def __get_server_version(self):
-        try:
-            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
-                response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
-                return response.json().get("product").get("version")
-        except Exception as e:
-            loggers.chatbot.error(f"Failed to get server version: {e}")
-            return None
+            try:
+                async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
+                    response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
+                    version = response.json().get("product").get("version")
+                    loggers.chatbot.info(f"📦 Server version resolved: {version}")
+                    return version
+            except Exception as e:
+                loggers.chatbot.error(f"Failed to get server version: {e}")
+                return None
 
     @property
     def token(self) -> str:
@@ -223,12 +265,19 @@ class Bot:
                 f"Error: Server version {current_version} is too old. "
                 "Chatbots are not supported (version 5.5.0+ required)."
             )
+
+        if (5, 5, 0) <= v <= (5, 5, 2):
+            raise RuntimeError(
+                f"\n[!] Server version {current_version} is incompatible with the current library.\n"
+                "Please install version v1.1.x using the following command:\n"
+                'uv pip install "python-trueconf-bot>=1.1.0,<1.2.0"'
+            )
+
         if v >= (5, 5, 3):
             raise RuntimeError(
                 f"\n[!] Server version {current_version} requires library v1.2.0.\n"
                 "Please install the stable release or the latest beta using the following command:\n"
-                'uv pip install --pre "python-trueconf-bot>=1.2.0b0"'
-            )
+                'uv pip install --pre "python-trueconf-bot==1.2.0"')
 
     @async_cached_property
     async def me(self) -> str:
@@ -251,10 +300,14 @@ class Bot:
             server: str,
             username: str,
             password: str,
+            *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             verify_ssl: bool = True,
-            **token_opts: Unpack[TokenOpts],
+            web_port: int | None = None,
+            https: bool = True,
+            ws_max_retries: int = 5,
+            ws_max_delay: int = 60,
     ) -> Self:
         """
         Creates a bot instance using username and password authentication.
@@ -266,10 +319,14 @@ class Bot:
             server (str): Address of the TrueConf server.
             username (str): Username for authentication.
             password (str): Password for authentication.
+            * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
-            **token_opts: Additional options passed to the token request, such as `web_port` and `https`.
+            web_port (int, optional): WebSocket connection port. Defaults to 443.
+            https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
+            ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
+            ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
 
         Returns:
             Bot: An authorized bot instance.
@@ -278,17 +335,21 @@ class Bot:
             RuntimeError: If the token could not be obtained.
         """
 
+        loggers.chatbot.info(f"🔑 Obtaining auth token for user={username} @ {server}")
         token = get_auth_token(server, username, password, verify=verify_ssl)
         if not token:
+            loggers.chatbot.error(f"❌ Failed to obtain token for user={username} @ {server}")
             raise RuntimeError("Failed to obtain token")
         return cls(
             server,
             token,
-            web_port=token_opts.get("web_port", 443),
-            https=token_opts.get("https", True),
+            web_port=web_port,
+            https=https,
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
             verify_ssl=verify_ssl,
+            ws_max_delay=ws_max_delay,
+            ws_max_retries=ws_max_retries
         )
 
     async def __wait_upload_complete(
@@ -326,45 +387,54 @@ class Bot:
             dest_path: str | Path | None = None,
             timeout: int = 60,
             chunk_size: int = 64 * 1024,
-    ) -> Path | None:
+    ) -> bytes | Path | None:
 
         """
-        Asynchronously download file by URL and save it to disk.
+        Asynchronously download a file from the server by URL.
 
-        If `dest_path` isn't provided, a temporary file will be created (similar to aiogram.File.download()).
-
-        Args:
-            url: Direct download URL.
-            dest_path: Destination path; if None, a NamedTemporaryFile will be created and returned.
-            timeout: Request timeout (seconds).
-            chunk_size: Stream chunk size in bytes.
-
+         Args:
+            url (str): Direct download URL.
+            file_name (str): Name of the file to be saved.
+            dest_path (str | Path | None): Destination path on disk.
+                If None, the file will be downloaded into memory. Defaults to None.
+            timeout (int): Request timeout in seconds. Defaults to 60.
+            chunk_size (int): Stream chunk size in bytes. Defaults to 65536 (64 KB).
 
         Returns:
-            Path | None: Path to saved file, or None on error.
+            bytes | Path | None:
+                - bytes: if `dest_path` is None (file in memory).
+                - Path: if the file was successfully saved to disk.
+                - None: if an error occurred during download or saving.
         """
-
-        if dest_path is None:
-            tmp = tempfile.NamedTemporaryFile(prefix="tc_dl_", suffix=file_name, delete=False)
-            dest = Path(tmp.name)
-            tmp.close()
-        else:
-            dest = Path(dest_path) / file_name
-            dest.parent.mkdir(parents=True, exist_ok=True)
-
+        dest = None
+        loggers.chatbot.info(f"⬇️ Downloading file: {file_name} from {url}")
+        if dest_path:
+            loggers.chatbot.info(f"⬇️ Destination: {dest_path}")
         try:
             async with httpx.AsyncClient(verify=self.verify_ssl, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
+
+                    if dest_path is None:
+                        chunks = []
+                        async for chunk in resp.aiter_bytes(chunk_size):
+                            chunks.append(chunk)
+                        result_data = b"".join(chunks)
+                        loggers.chatbot.info(f"⬇️ Downloaded {len(result_data)} bytes into memory")
+                        return result_data
+
+                    dest = Path(dest_path) / file_name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+
                     async with aiofiles.open(dest, "wb") as f:
                         async for chunk in resp.aiter_bytes(chunk_size):
-                            if chunk:
-                                await f.write(chunk)
-            return dest
+                            await f.write(chunk)
+                    loggers.chatbot.info(f"⬇️ File saved to: {dest}")
+                    return dest
         except Exception as e:
             loggers.chatbot.error(f"Failed to download file from {url}: {e}")
-            with contextlib.suppress(Exception):
-                if dest.exists():
+            if dest and dest.exists():
+                with contextlib.suppress(Exception):
                     dest.unlink()
             return None
 
@@ -373,7 +443,7 @@ class Bot:
             file: InputFile,
             preview: InputFile | None = None,
             is_sticker: bool = False,
-            timeout: int = 60,
+            timeout: float = 60.0,
     ) -> str:
         """
            Uploads a file to the server and returns a temporary file identifier (temporalFileId).
@@ -396,26 +466,25 @@ class Bot:
                file (InputFile): The primary file to upload.
                preview (InputFile | None, optional): Optional preview file (default is None).
                is_sticker (bool, optional): Whether the uploaded file is a sticker (affects MIME type). Defaults to False.
-               timeout (int, optional): Upload timeout in seconds. Defaults to 60.
+               timeout (float, optional): Upload timeout in seconds. Defaults to 60.
 
            Returns:
                str | None: A temporary file ID (`temporalFileId`) on success, or None if the upload failed.
            """
 
+        loggers.chatbot.info(f"📤 Uploading file: {file.file_name} ({file.file_size} bytes)")
         if isinstance(file, URLInputFile):
             await file.prepare()
             if preview:
                 await preview.prepare()
 
-        res = await self(UploadFile(file_size=file.file_size))
+        res = await self(UploadFile(file_size=file.file_size, file_name=file.file_name))
+        loggers.chatbot.info(f"📤 Upload task created: {res.upload_task_id}")
         upload_task_id = res.upload_task_id
 
         headers = {
             "Upload-Task-Id": upload_task_id,
-
         }
-
-        timeout = ClientTimeout(total=timeout)
 
         if not self.verify_ssl:
             ssl_context = ssl.create_default_context()
@@ -426,29 +495,33 @@ class Bot:
             connector = TCPConnector()
 
         try:
-            async with ClientSession(connector=connector, timeout=timeout) as session:
+            async with ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
                 data = FormData(quote_fields=False)
                 data.add_field(
                     name="file",
                     value= await file.read(),
-                    filename=file.filename,
-                    content_type="sticker/webp" if is_sticker else file.mimetype,
+                    filename=file.file_name,
+                    content_type="sticker/webp" if is_sticker else file.mime_type,
                 )
 
                 if preview:
                     data.add_field(
                         name="preview",
                         value = await preview.read(),
-                        filename=preview.filename,
-                        content_type=preview.mimetype
+                        filename=preview.file_name,
+                        content_type=preview.mime_type
                     )
 
-                async with session.post(self._url_for_upload_files, headers=headers, data=data) as response:
-                     result = await response.json()
+                async with session.post(
+                        url=f"{self._protocol}://{self.server}:{self.port}/bridge/api/client/v1/files",
+                        headers=headers,
+                        data=data
+                ) as response:
+                    result = await response.json()
+            loggers.chatbot.info(f"✅ File uploaded successfully: temporalFileId={result.get('temporalFileId')}")
             return result.get("temporalFileId")
         except Exception as e:
             loggers.chatbot.error(f"Failed to upload file to server: {e}")
-        return None
 
     async def _send_ws_payload(self, message: dict) -> bool:
         if not self._session:
@@ -463,18 +536,31 @@ class Bot:
 
     async def __connect_and_listen(self):
         ssl_context = None
+        delay = 1
+        retry_count = 0
+
         if self.https:
+            ws_protocol = "wss"
             if self.verify_ssl:
                 ssl_context = ssl.create_default_context()
             else:
                 ssl_context = ssl._create_unverified_context()
-
-        uri = f"wss://{self.server}:{self.web_port}/websocket/chat_bot" if self.https else f"ws://{self.server}:{self.web_port}/websocket/chat_bot"
+        else:
+            ws_protocol = "ws"
 
         while not self._stop:
             try:
+                if delay > 1 or retry_count > 0:
+                    await asyncio.sleep(delay)
                 loggers.chatbot.info("⏳ Attempting WebSocket connection...")
-                async with websockets.connect(uri, ssl=ssl_context, ping_interval=30, ping_timeout=10) as ws:
+                async with websockets.connect(
+                        uri=f"{ws_protocol}://{self.server}:{self.port}/websocket/chat_bot",
+                        ssl=ssl_context,
+                        ping_interval=30,
+                        ping_timeout=10
+                ) as ws:
+                    delay = 1
+                    retry_count = 0
                     self._ws = ws
                     loggers.chatbot.info("✅ WebSocket connected")
 
@@ -498,12 +584,36 @@ class Bot:
                 loggers.chatbot.info("🛑 Connect loop cancelled, performing cleanup.")
                 raise
 
-            except websockets.exceptions.ConnectionClosed as e:
-                loggers.chatbot.warning(
-                    f"🔌 Connection closed: {getattr(e, 'code', '?')} – {getattr(e, 'reason', '?')}. Retrying...")
+            except (websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidStatus, OSError) as e:
                 self.connected_event.clear()
                 self.authorized_event.clear()
-                await asyncio.sleep(0.5)
+
+                if isinstance(e, websockets.exceptions.ConnectionClosed):
+                    close_info = e.rcvd or e.sent
+                    code = close_info.code if close_info else "?"
+                    reason = close_info.reason if close_info else "no reason"
+                    reason = f"Code: {code} ({reason})"
+                else:
+                    reason = str(e)
+
+                delay = min(delay * 2, self._ws_max_delay) + random.uniform(0, 1)
+                msg = f"🔌 Connection issue: {reason}. Retrying in {delay:.1f}s..."
+                loggers.chatbot.warning(msg)
+                print(msg)
+                continue
+
+            except websockets.exceptions.InvalidURI as e:
+                retry_count += 1
+                self.connected_event.clear()
+
+                if retry_count > self._ws_max_retries:
+                    loggers.chatbot.error(f"❌ Critical network error: {e}. Check your URI/IP. Giving up.")
+                    raise ConnectionError(f"Failed to connect after {self._ws_max_retries} attempts: {e}") from e
+
+                delay = 5
+                msg = f"⚠️ Cant reach server: {e}. Attempt {retry_count}/{self._ws_max_retries}. Retrying in {delay}s..."
+                loggers.chatbot.warning(msg)
+                print(msg)
                 continue
 
             finally:
@@ -528,7 +638,9 @@ class Bot:
         loggers.chatbot.info("🚀 Starting authorization")
 
         call = AuthMethod(
-            token=self.__token, receive_unread_messages=self.receive_unread_messages
+            token=self.__token,
+            receive_unread_messages=self.receive_unread_messages,
+
         )
         loggers.chatbot.info(f"🛠 Created AuthMethod with id={call.id}")
         result = await self(call)
@@ -544,6 +656,12 @@ class Bot:
             if q:
                 q.put_nowait(data)
                 return
+
+        if isinstance(data, ChangedFileUploadLimits):
+            self.max_file_size = data.max_size
+            if data.extensions:
+                self.file_extension_filter_mode = data.extensions.mode
+                self.file_extensions_list = set(data.extensions.list)
 
         if hasattr(data, "bind"):
             data.bind(self)
@@ -566,6 +684,33 @@ class Bot:
             asyncio.create_task(self._send_ws_payload({"type": 2, "id": data["id"]}))
         self.__resolve_future(data)
         asyncio.create_task(self.__process_message(data))
+
+    def __check_file_limitations(self, file):
+        loggers.chatbot.info(f"🔍 Checking file limitations: {file.file_name} ({file.file_size} bytes, .{file.extension})")
+        if self.file_extensions_list:
+            is_in_list = file.extension in self.file_extensions_list
+            if (is_in_list and self.file_extension_filter_mode == "block") or (
+                not is_in_list and self.file_extension_filter_mode == "allow"
+            ):
+                loggers.chatbot.error(
+                    f"🚫 File blocked by extension filter: .{file.extension} "
+                    f"(mode={self.file_extension_filter_mode}, allowed={self.file_extensions_list})"
+                )
+                raise InvalidFileExtensionError(
+                    extension=file.extension,
+                    extensions=self.file_extensions_list,
+                    mode=self.file_extension_filter_mode
+                )
+
+        if self.max_file_size and file.file_size:
+            if file.file_size > self.max_file_size:
+                loggers.chatbot.error(
+                    f"🚫 File too large: {file.file_size} bytes > limit {self.max_file_size} bytes"
+                )
+                raise FileSizeTooLargeError(
+                    actual_size=file.file_size, limit=self.max_file_size
+                )
+        loggers.chatbot.info(f"✅ File passed limitations check: {file.file_name}")
 
     async def add_participant_to_chat(
             self,
@@ -680,10 +825,30 @@ class Bot:
         Returns:
             CreateChannelResponse: Object containing the result of the channel creation.
         """
+        if (length := len(title)) > 256:
+            raise ChannelTitleTooLongError(actual_length=length)
 
         loggers.chatbot.info(f"✉️ Create channel with name {title}")
         call = CreateChannel(title=title)
         return await self(call)
+
+    async def clear_chat_history(self, chat_id: str, for_all: bool = False) -> ClearChatHistoryResponse:
+        """
+            **Requires TrueConf Server 5.5.3+**
+
+        Args:
+            chat_id (str): Identifier of the chat to clear the history for.
+            for_all (bool): If True, the history will be cleared for all participants.
+                            If False, it will only be cleared for the current user. Defaults to False.
+
+        Returns:
+            ClearChatHistoryResponse: Object containing the result of the history clearing.
+        """
+
+        loggers.chatbot.info(f"Clear history for chat: {chat_id} for all - {for_all}")
+        call = ClearChatHistory(chat_id=chat_id, for_all=for_all)
+        return await self(call)
+
 
     async def create_favorites_chat(self) -> CreateFavoritesChatResponse:
         """
@@ -701,7 +866,7 @@ class Bot:
             CreateFavoritesChatResponse: An object containing information about the newly created chat.
         """
 
-        loggers.chatbot.info(f"✉️ Create favorite chat")
+        loggers.chatbot.info("✉️ Create favorite chat")
         call = CreateFavoritesChat()
         return await self(call)
 
@@ -719,8 +884,11 @@ class Bot:
             CreateGroupChatResponse: Object containing the result of the group chat creation.
         """
 
-        loggers.chatbot.info(f"✉️ Create group chat with name {title}")
+        if (length := len(title)) > 256:
+            raise GroupTitleTooLongError(actual_length=length)
+
         call = CreateGroupChat(title=title)
+        loggers.chatbot.info(f"✉️ Create group chat with name {title}")
         return await self(call)
 
     async def create_personal_chat(self, user_id: str) -> CreateP2PChatResponse:
@@ -767,59 +935,123 @@ class Bot:
         call = RemoveChat(chat_id=chat_id)
         return await self(call)
 
-    async def download_file_by_id(self, file_id, dest_path: str = None) -> Path | None:
+    async def download_file_by_id(self, file_id, dest_path: str | Path | None = None) ->  bytes | Path | None:
         """
         Downloads a file by its ID, waiting for the upload to complete if necessary.
 
-        If the file is already in the READY state, it will be downloaded immediately.
-        If the file is in the NOT_AVAILABLE state, the method will exit without downloading.
-        In other cases, the bot will wait for the upload to finish and then attempt to download the file.
+        If `dest_path` is provided, the file is saved to disk and the Path is returned.
+        If `dest_path` is None, the file content is returned as bytes.
 
         Args:
             file_id (str): Unique identifier of the file on the server.
-            dest_path (str, optional): Path where the file should be saved.
-                If not specified, a temporary file will be created using `NamedTemporaryFile`
-                (with prefix `tc_dl_`, suffix set to the original file name, and `delete=False` to keep the file on disk).
+            dest_path (str | Path, optional): Path where the file should be saved.
 
         Returns:
-            Path | None: Path to the downloaded file, or None if the download failed.
+            bytes | Path | None: File content (bytes), path to file (Path), or None if failed.
         """
 
+        loggers.chatbot.info(f"📥 Getting file info: {file_id}")
         info = await self.get_file_info(file_id)
-
-        if info.ready_state == FileReadyState.READY:
-            return await self.__download_file_from_server(
-                url=info.download_url,
-                file_name=info.name,
-                dest_path=dest_path,
-            )
+        loggers.chatbot.info(f"📥 File {file_id}: state={info.ready_state.name}, size={info.size}, name={info.name}")
 
         if info.ready_state == FileReadyState.NOT_AVAILABLE:
             loggers.chatbot.warning(f"File {file_id} is NOT_AVAILABLE")
             return None
 
-        ok = await self.__wait_upload_complete(file_id, expected_size=info.size, timeout=None)
-        if not ok:
-            loggers.chatbot.error(f"Wait upload complete failed for {file_id}")
-            return None
+        if info.ready_state != FileReadyState.READY:
+            loggers.chatbot.info(f"📥 File {file_id} not ready yet, waiting for upload ({info.size} bytes)")
+            ok = await self.__wait_upload_complete(file_id, expected_size=info.size, timeout=None)
+            if not ok:
+                loggers.chatbot.error(f"Wait upload complete failed for {file_id}")
+                return None
 
-        for _ in range(20):
-            info = await self.get_file_info(file_id)
-            if info.ready_state == FileReadyState.READY:
-                break
-            await asyncio.sleep(1)
-        else:
-            loggers.chatbot.warning(f"File {file_id} didn’t reach READY in time")
-            return None
+            for _ in range(20):
+                info = await self.get_file_info(file_id)
+                if info.ready_state == FileReadyState.READY:
+                    break
+                await asyncio.sleep(1)
+            else:
+                loggers.chatbot.warning(f"File {file_id} didn’t reach READY in time")
+                return None
 
+        loggers.chatbot.info(f"📥 Downloading file from: {info.download_url}")
         return await self.__download_file_from_server(
             url=info.download_url,
             file_name=info.name,
             dest_path=dest_path
         )
 
+    async def edit_chat_title(self, chat_id: str, title: str) -> EditChatTitleResponse:
+        """
+        Updates the display title of the specified chat.
+
+        Use this method to set a new visible name for a chat (e.g., a group chat or channel).
+
+        Notes:
+            Requires TrueConf Server 5.5.3 or later.
+            The bot must have sufficient permissions in the chat (e.g., owner or admin/moderator).
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#editChatTitle
+
+        Args:
+            chat_id (str): Identifier of the chat whose title should be updated.
+            title (str): New title for the chat.
+
+        Returns:
+            EditChatTitleResponse: Object containing the result of the title update.
+
+        Example:
+            ```python
+            await bot.edit_chat_title(chat_id="a1s2d3f4f5g6", title="Project Alpha – Team")
+            ```
+        """
+
+        call = EditChatTitle(chat_id=chat_id, title=title)
+        return await self(call)
+
+    async def edit_chat_avatar(self, chat_id: str, file: InputFile) -> EditChatAvatarResponse:
+        """
+
+            Updates the avatar of the specified chat.
+            Use this method to set a new chat avatar for a group chat and channel.
+
+            Notes:
+                Requires TrueConf Server 5.5.3 or later.
+                The bot must have sufficient permissions in the chat (e.g., owner or admin/moderator).
+                The file must be provided as an instance of one of the `InputFile` subclasses:
+                `FSInputFile`, `BufferedInputFile`, or `URLInputFile`.
+
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/chats/#editChatAvatar
+
+            Args:
+                chat_id (str): Identifier of the chat whose avatar should be updated.
+                file (InputFile): Image file to be uploaded as the new chat avatar.
+
+            Returns:
+                EditChatAvatarResponse: Object containing the result of the avatar update.
+
+            Example:
+                ```python
+                await bot.edit_chat_avatar(
+                    chat_id="a1s2d3f4f5g6",
+                    file=FSInputFile("avatar.png")
+                )
+                ```
+        """
+        temporal_file_id = await self.__upload_file_to_server(
+            file=file,
+        )
+        loggers.chatbot.info(f"🖼️ Edit chat avatar: temporalFileId={temporal_file_id}")
+        call = EditChatAvatar(chat_id=chat_id, temporal_file_id=temporal_file_id)
+        return await self(call)
+
     async def edit_message(
-            self, message_id: str, text: str, parse_mode: ParseMode | str = ParseMode.TEXT
+            self,
+            message_id: str,
+            text: str,
+            parse_mode: ParseMode | str = ParseMode.TEXT
     ) -> EditMessageResponse:
         """
         Edits a previously sent message.
@@ -836,6 +1068,9 @@ class Bot:
         Returns:
             EditMessageResponse: Object containing the result of the message update.
         """
+
+        if (length := visible_len(text)) > 4096:
+            raise TextMessageTooLongError(actual_length=length)
 
         call = EditMessage(message_id=message_id, text=text, parse_mode=parse_mode)
         return await self(call)
@@ -914,7 +1149,7 @@ class Bot:
 
         if page < 1:
             raise ValueError("Argument <page> must be greater than 0")
-        loggers.chatbot.info(f"✉️ Get info all chats by ")
+        loggers.chatbot.info("✉️ Get info all chats")
         call = GetChats(count=count, page=page)
         return await self(call)
 
@@ -1012,6 +1247,33 @@ class Bot:
         call = GetFileInfo(file_id=file_id)
         return await self(call)
 
+    async def get_file_info_upload_limits(self) -> GetFileUploadLimitsResponse:
+        """
+        Returns the current file upload limits configured on the TrueConf Server.
+
+        Useful for validating outgoing files in advance (e.g., checking maximum
+        file size and allowed types/extensions).
+
+        Notes:
+            Requires TrueConf Server 5.5.3 or later.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#getFileUploadLimits
+
+        Returns:
+            GetFileUploadLimitsResponse: Object describing upload constraints
+            (e.g., maximum file size, allowed types/extensions).
+
+        Example:
+            ```python
+            limits = await bot.get_file_info_upload_limits()
+            # Use `limits` fields to validate a file before uploading
+            ```
+            """
+
+        call = GetFileUploadLimits()
+        return await self(call)
+
     async def get_message_by_id(
             self, message_id: str
     ) -> GetMessageByIdResponse:
@@ -1100,7 +1362,10 @@ class Bot:
         return await self(call)
 
     async def remove_participant_from_chat(
-            self, chat_id: str, user_id: str
+            self,
+            chat_id: str,
+            user_id: str,
+            clear_history: bool = False
     ) -> RemoveChatParticipantResponse:
         """
         Removes a participant from the specified chat.
@@ -1111,6 +1376,7 @@ class Bot:
         Args:
             chat_id (str): Identifier of the chat to remove the participant from.
             user_id (str): Identifier of the user to be removed.
+            clear_history (bool, optional): If True, the chat history will be cleared for the removed participant. Defaults to False.
 
         Returns:
             RemoveChatParticipantResponse: Object containing the result of the participant removal.
@@ -1119,7 +1385,7 @@ class Bot:
         if "@" not in user_id:
             user_id = f"{user_id}@{await self.server_name}"
 
-        call = RemoveChatParticipant(chat_id=chat_id, user_id=user_id)
+        call = RemoveChatParticipant(chat_id=chat_id, user_id=user_id, clear_history=clear_history)
         return await self(call)
 
     async def reply_message(
@@ -1151,6 +1417,9 @@ class Bot:
             DeprecationWarning,
             stacklevel=2
         )
+
+        if (length := visible_len(text)) > 4096:
+            raise TextMessageTooLongError(actual_length=length)
 
         call = SendMessage(
             chat_id=chat_id,
@@ -1184,6 +1453,7 @@ class Bot:
                 pass
 
         await self.start()
+        loggers.chatbot.info(f"⏸️ Bot running, waiting for shutdown signal")
         if self._connect_task:
             try:
                 await self._connect_task
@@ -1229,11 +1499,16 @@ class Bot:
             ```
         """
 
-        loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
+        self.__check_file_limitations(file)
+
+        if caption and (length := visible_len(caption)) > 4096:
+            raise FileCaptionTooLongError(actual_length=length)
 
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
         )
+
+        loggers.chatbot.info(f"📄 Document uploaded: temporalFileId={temporal_file_id}")
 
         call = SendFile(
             chat_id=chat_id,
@@ -1242,6 +1517,7 @@ class Bot:
             parse_mode=parse_mode,
             reply_message_id=reply_message_id
         )
+        loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
         return await self(call)
 
     async def send_message(
@@ -1267,6 +1543,9 @@ class Bot:
         Returns:
             SendMessageResponse: Object containing the result of the message delivery.
         """
+
+        if (length := visible_len(text)) > 4096:
+            raise TextMessageTooLongError(actual_length=length)
 
         loggers.chatbot.info(f"✉️ Sending message to {chat_id}")
         call = SendMessage(
@@ -1326,10 +1605,17 @@ class Bot:
 
         loggers.chatbot.info(f"✉️ Sending photo to {chat_id}")
 
+        self.__check_file_limitations(file)
+
+        if caption and (length := visible_len(caption)) > 4096:
+            raise FileCaptionTooLongError(actual_length=length)
+
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
             preview=preview,
         )
+
+        loggers.chatbot.info(f"📷 Photo uploaded: temporalFileId={temporal_file_id}")
 
         call = SendFile(
             chat_id=chat_id,
@@ -1376,22 +1662,24 @@ class Bot:
             ```
         """
 
-        if file.mimetype != "image/webp":
+        if file.mime_type != "image/webp":
             raise TypeError("File type not supported. File type must be 'image/webp'")
 
-        loggers.chatbot.info(f"✉️ Sending file to {chat_id}")
+        self.__check_file_limitations(file)
 
         temporal_file_id = await self.__upload_file_to_server(
             file=file,
             preview=file.clone(),
             is_sticker=True
         )
+        loggers.chatbot.info(f"🎨 Sticker uploaded: temporalFileId={temporal_file_id}")
 
         call = SendFile(
             chat_id=chat_id,
             temporal_file_id=temporal_file_id,
             reply_message_id=reply_message_id
         )
+        loggers.chatbot.info(f"✉️ Sending sticker to {chat_id}")
         return await self(call)
 
     async def send_survey(
@@ -1430,6 +1718,7 @@ class Bot:
             description=survey_type,
             secret=secret,
         )
+        loggers.chatbot.info(f"📋 Creating survey: title={title}, chat_id={chat_id}, campaign={survey_campaign_id}")
         return await self(call)
 
     async def start(self) -> None:
@@ -1443,6 +1732,7 @@ class Bot:
         Returns:
             None
         """
+        loggers.chatbot.info(f"🚀 Bot starting: {self._protocol}://{self.server}:{self.port}")
         await self.check_version()
         if self._connect_task and not self._connect_task.done():
             return

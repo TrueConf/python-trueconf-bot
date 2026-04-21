@@ -5,11 +5,16 @@ from trueconf.enums.message_type import MessageType
 from trueconf.enums.update_type import UpdateType
 from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
 from trueconf.types.content.attachment import AttachmentContent
+from trueconf.types.content.location import Location
 from trueconf.types.content.survey import SurveyContent
 from trueconf.types.content.text import TextContent
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
 from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
+from trueconf.types.requests.cleared_chat_history import ClearedChatHistory
+from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
+from trueconf.types.requests.edited_chat_avatar import EditedChatAvatar
+from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
@@ -25,13 +30,19 @@ T = TypeVar("T")
 
 
 def _content_factory(env_type: MessageType, raw: dict):
-    if env_type == MessageType.PLAIN_MESSAGE:
-        return TextContent.from_dict(raw)
-    if env_type == MessageType.ATTACHMENT:
-        return AttachmentContent.from_dict(raw)
-    if env_type == MessageType.SURVEY:
-        return SurveyContent.from_dict(raw)
-    return None
+    match env_type:
+        case MessageType.FORWARDED_MESSAGE:
+            return Message.from_dict(raw)
+        case MessageType.PLAIN_MESSAGE:
+            return TextContent.from_dict(raw)
+        case MessageType.ATTACHMENT:
+            return AttachmentContent.from_dict(raw)
+        case MessageType.SURVEY:
+            return SurveyContent.from_dict(raw)
+        case MessageType.LOCATION:
+            return Location.from_dict(raw)
+        case _:
+            return None
 
 
 def parse_update(raw: dict):
@@ -55,6 +66,12 @@ def parse_update(raw: dict):
         case IUM.REMOVED_CHAT:
             return RemovedChat.from_dict(raw["payload"])
 
+        case IUM.EDITED_CHAT_AVATAR:
+            return EditedChatAvatar.from_dict(raw["payload"])
+
+        case IUM.EDITED_CHAT_TITLE:
+            return EditedChatTitle.from_dict(raw["payload"])
+
         case IUM.EDITED_MESSAGE:
             return EditedMessage.from_dict(raw["payload"])
 
@@ -75,6 +92,12 @@ def parse_update(raw: dict):
 
         case IUM.CHANGED_PARTICIPANT_ROLE:
             return ChangedParticipantRole.from_dict(raw["payload"])
+
+        case IUM.CHANGED_FILE_UPLOAD_LIMITS:
+            return ChangedFileUploadLimits.from_dict(raw["payload"])
+
+        case IUM.CLEARED_CHAT_HISTORY:
+            return ClearedChatHistory.from_dict(raw["payload"])
 
         case IUM.MESSAGE:
             env_type = MessageType(p.get("type", 0))

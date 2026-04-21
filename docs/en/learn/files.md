@@ -141,3 +141,49 @@ await bot.download_file_by_id(
     dest_path="document.pdf"
 )
 ```
+
+## MIME Type Detection with python-magic
+
+A file’s MIME type can be detected automatically. The library supports two approaches:
+
+* **By file extension** — works without additional dependencies, but may be inaccurate.
+* **By file content (bytes)** — significantly more accurate, but requires `python-magic`.
+
+### How It Works
+
+The `python-magic` package does not determine MIME types on its own. It is a Python wrapper around the native **libmagic** library written in C, which is what actually identifies a file type based on its contents.
+
+That is why `python-magic` may not work out of the box on some systems: the Python package is installed via `pip`, but the system library `libmagic` must be installed separately.
+
+If `libmagic` is missing, importing `magic` may fail with an error such as:
+
+* `ImportError: failed to find libmagic. Check your installation`
+
+### Installation
+
+Install the system dependencies:
+
+* **macOS (Homebrew):**
+
+  ```bash
+  brew install libmagic
+  ```
+
+* **Linux (Debian/Ubuntu):**
+
+  ```bash
+  sudo apt install libmagic1
+  ```
+
+* **Windows:**
+
+  ```bash
+  pip install python-magic-bin
+  ```
+
+We also recommend reviewing the repository: [https://github.com/ahupp/python-magic](https://github.com/ahupp/python-magic).
+
+### Notes
+
+* When `python-magic` is available, the MIME type is detected **from the file bytes**, which is usually more accurate than detecting it by filename or extension.
+

@@ -12,10 +12,14 @@ class MessageType(int, Enum):
 
     ADD_PARTICIPANT = 1
     REMOVE_PARTICIPANT = 2
+    EDIT_CHAT_TITLE = 21
+    EDIT_CHAT_AVATAR = 22
+    CLEAR_CHAT_HISTORY = 23
     PARTICIPANT_ROLE = 110
     PLAIN_MESSAGE = 200
     FORWARDED_MESSAGE = 201
     ATTACHMENT = 202
+    LOCATION = 203
     SURVEY = 204
 
     async def __call__(self, event: Any) -> bool:

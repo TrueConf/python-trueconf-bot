@@ -10,11 +10,15 @@ from trueconf.filters.instance_of import InstanceOfFilter
 from trueconf.filters.method import MethodFilter
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
 from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
+from trueconf.types.requests.cleared_chat_history import ClearedChatHistory
 from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
 from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
+from trueconf.types.requests.edited_chat_avatar import EditedChatAvatar
+from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.edited_message import EditedMessage
 from trueconf.types.requests.removed_chat import RemovedChat
 from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
@@ -119,11 +123,11 @@ class Router:
                     if isinstance(result, dict):
                         kwargs.update(result)
 
-                self._spawn(handler, event, filters_str, kwargs)
+                self._spawn(handler, event, filters_str, **kwargs)
                 return True
         return False
 
-    def _spawn(self, handler: Handler, event: Event, filters_str: str, kwargs: dict[str, Any]):
+    def _spawn(self, handler: Handler, event: Event, filters_str: str, **kwargs: dict[str, Any]):
         """Internal method to spawn a task for executing the matched handler."""
         name = getattr(handler, "__name__", "<handler>")
         logger.info(f"[router:{self.name}] matched handler={name} filters=[{filters_str}]")
@@ -191,6 +195,9 @@ class Router:
             This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
             or conference chat. Used with the `ChangedParticipantRole` event type.
 
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/chats/#changedParticipantRole
+
             Args:
                 *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
@@ -209,6 +216,76 @@ class Router:
                 ```
             """
         return self._register((InstanceOfFilter(ChangedParticipantRole), *filters))
+
+    def changed_file_upload_limits(self, *filters: FilterLike):
+        """
+
+            **Requires TrueConf Server 5.5.3+**
+            Registers a handler for file upload limits change events.
+
+            This handler is triggered when the server's file upload restrictions are updated.
+            The event is represented by the `ChangedFileUploadLimits` type and may include:
+
+            - `max_size` — the maximum allowed file size in bytes (`1 MB = 1000 bytes`).
+              If the size limit is disabled, the value is `None`.
+            - `extensions` — file extension restrictions. If extension filtering is disabled,
+              the value is `None`.
+
+            If `extensions` is provided, it contains:
+            - `mode` — restriction mode:
+              - `block` — blocked extensions (blacklist)
+              - `allow` — allowed extensions (whitelist)
+            - `list` — list of file extensions.
+
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/files/#newFileUploadLimits
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.types import ChangedFileUploadLimits
+                @router.changed_file_upload_limits()
+                async def on_limits_changed(event: ChangedFileUploadLimits):
+                    print(f"Max file size: {event.max_size}")
+                    if event.extensions:
+                        print(f"Mode: {event.extensions.mode}")
+                        print(f"Extensions: {event.extensions.list}")
+                ```
+        """
+        return self._register((InstanceOfFilter(ChangedFileUploadLimits), *filters))
+
+    def cleared_chat_history(self, *filters: FilterLike):
+        """
+            **Requires TrueConf Server 5.5.3+**
+            Registers a handler for chat history clearing events.
+
+            This handler is triggered when the message history of a chat is cleared.
+            Used with the `ClearedChatHistory` event type.
+
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/chats/#clearedHistory
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.types import ClearedChatHistory
+                @router.cleared_chat_history()
+                async def on_history_cleared(event: ClearedChatHistory):
+                    print(f"History was cleared in chat {event.chat_id}. For all: {event.for_all}")
+
+                ```
+            """
+        return self._register((InstanceOfFilter(ClearedChatHistory), *filters))
 
     def created_personal_chat(self, *filters: FilterLike):
         """Register a handler for personal chat creation events."""
@@ -241,6 +318,62 @@ class Router:
     def edited_message(self, *filters: FilterLike):
         """Register a handler for message edit events."""
         return self._register((InstanceOfFilter(EditedMessage), *filters))
+
+    def edited_chat_avatar(self, *filters: FilterLike):
+        """
+
+            **Requires TrueConf Server 5.5.3+**
+            Registers a handler for chat avatar edit events.
+
+            This handler is triggered when a chat avatar is changed.
+            Used with the `EditedChatAvatar` event type.
+
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatAvatar
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.types import EditedChatAvatar
+                @router.edited_chat_avatar()
+                async def on_avatar_changed(event: EditedChatAvatar):
+                    print(f"Avatar was updated in chat {event.chat_id}")
+                    print(f"New avatar: {event.avatar_url}")
+                ```
+        """
+        return self._register((InstanceOfFilter(EditedChatAvatar), *filters))
+
+    def edited_chat_title(self, *filters: FilterLike):
+        """
+            **Requires TrueConf Server 5.5.3+**
+            Registers a handler for chat title edit events.
+
+            This handler is triggered when a chat title is changed.
+            Used with the `EditedChatTitle` event type.
+
+            Source:
+                https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatTitle
+
+            Args:
+                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+
+            Returns:
+                Callable: A decorator function for registering the handler.
+
+            Example:
+                ```python
+                from trueconf.types import EditedChatTitle
+                @router.edited_chat_title()
+                async def on_title_changed(event: EditedChatTitle):
+                    print(f"Chat {event.chat_id} has a new title: {event.title}")
+                ```
+        """
+        return self._register((InstanceOfFilter(EditedChatTitle), *filters))
 
     def removed_message(self, *filters: FilterLike):
         """Register a handler for message deletion events."""

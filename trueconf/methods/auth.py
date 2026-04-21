@@ -12,6 +12,7 @@ class AuthMethod(TrueConfMethod[AuthResponsePayload]):
     token: str
     tokenType: str = "JWT"
     receive_unread_messages: bool = False
+    receive_system_messages: bool = False
 
     def __post_init__(self):
         super().__init__()
@@ -20,6 +21,6 @@ class AuthMethod(TrueConfMethod[AuthResponsePayload]):
         return {
             "token": self.token,
             "tokenType": self.tokenType,
-            "receiveUnread": self.receive_unread_messages
-
+            "receiveUnread": self.receive_unread_messages,
+            "receiveSystemMessageEnvelopes": self.receive_system_messages
         }
