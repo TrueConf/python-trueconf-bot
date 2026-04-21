@@ -4,5 +4,4 @@ from mashumaro import DataClassDictMixin
 
 
 class AbstractEnvelopeContent(DataClassDictMixin, ABC):
-    """Маркерный базовый класс."""
     pass

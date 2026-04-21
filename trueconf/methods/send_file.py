@@ -20,14 +20,20 @@ class SendFile(TrueConfMethod[SendFileResponse]):
         super().__init__()
 
     def payload(self):
-        return {
+        data = {
             "chatId": self.chat_id,
-            "replyMessageId": self.reply_message_id,
             "content": {
-                "temporalFileId": self.temporal_file_id,
-                "caption":{
-                    "text": self.text,
-                    "parseMode": self.parse_mode,
-                }
+                "temporalFileId": self.temporal_file_id
             }
         }
+
+        if self.reply_message_id:
+            data["replyMessageId"] = self.reply_message_id
+
+        if self.text:
+            data["content"]["caption"] = {
+                "text": self.text,
+                "parseMode": self.parse_mode
+            }
+
+        return data

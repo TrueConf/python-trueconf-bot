@@ -1,11 +1,10 @@
-
 import os
 import re
 import subprocess
 from datetime import datetime, timezone
 from html import unescape
 from importlib.metadata import PackageNotFoundError, version as package_version
-from urllib.parse import urljoin
+
 
 from mkdocs.utils import log
 
@@ -164,8 +163,12 @@ def html_to_markdown(html: str) -> str:
 
     text = html
 
-    text = re.sub(r"<script\b[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<style\b[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(
+        r"<script\b[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE
+    )
+    text = re.sub(
+        r"<style\b[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE
+    )
     text = re.sub(
         r"<a[^>]*class=\"[^\"]*headerlink[^\"]*\"[^>]*>.*?</a>",
         "",
@@ -241,7 +244,9 @@ def html_to_markdown(html: str) -> str:
         pattern = rf"<h{level}[^>]*>(.*?)</h{level}>"
         text = re.sub(
             pattern,
-            lambda match, lvl=level: f"\n\n{'#' * lvl} {strip_tags(match.group(1))}\n\n",
+            lambda match, lvl=level: (
+                f"\n\n{'#' * lvl} {strip_tags(match.group(1))}\n\n"
+            ),
             text,
             flags=re.DOTALL | re.IGNORECASE,
         )
@@ -284,14 +289,11 @@ def get_version() -> str:
         log.debug(f"llms-txt: Failed to read package metadata version: {exc}")
 
     try:
-        return (
-            subprocess.check_output(
-                ["git", "describe", "--tags", "--abbrev=0"],
-                stderr=subprocess.DEVNULL,
-                text=True,
-            )
-            .strip()
-        )
+        return subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
     except Exception as exc:  # pragma: no cover
         log.debug(f"llms-txt: Failed to read git version: {exc}")
 
@@ -306,7 +308,9 @@ def get_page_title(html: str, fallback: str) -> str:
         if title:
             return title
 
-    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE)
+    title_match = re.search(
+        r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE
+    )
     if title_match:
         raw_title = strip_tags(title_match.group(1))
         title = re.split(r"\s[-|–—]\s", raw_title)[0].strip()
@@ -360,7 +364,9 @@ def flatten_nav(nav_items) -> list[str]:
 
 def get_section_key(path: str) -> str:
     normalized = path.replace("\\", "/")
-    if normalized == "index.html" or normalized.startswith(("features/", "release_notes/")):
+    if normalized == "index.html" or normalized.startswith(
+        ("features/", "release_notes/")
+    ):
         return "root"
     if normalized.startswith("learn/"):
         return "learn"
@@ -386,19 +392,22 @@ def build_url(base_url: str, rel_path: str) -> str:
     """Build a public URL for a rendered html file."""
     normalized = rel_path.replace("\\", "/").lstrip("/")
     if normalized == "index.html":
-        return base_url
+        return f"{base_url}/index.md"
 
     if normalized.endswith("/index.html"):
-        normalized = normalized[: -len("index.html")]
+        path_without_index = normalized[: -len("index.html")].rstrip("/")
+        return f"{base_url}/{path_without_index}.md"
 
-    return urljoin(base_url + "/", normalized)
+    return f"{base_url}/{normalized.rsplit('.', 1)[0]}.md"
 
 
 def make_indent(level: int) -> str:
     return "  " * max(level, 0)
 
 
-def add_index_entry(index_lines: list[str], title: str, url: str, level: int = 0) -> None:
+def add_index_entry(
+    index_lines: list[str], title: str, url: str, level: int = 0
+) -> None:
     index_lines.append(f"{make_indent(level)}- [{title}]({url})")
 
 
@@ -406,20 +415,28 @@ def build_index_lines(page_entries: list[dict]) -> list[str]:
     """Build the hierarchical INDEX section."""
     index_lines = ["## INDEX"]
 
-    home_entry = next((entry for entry in page_entries if entry["path"] == "index.html"), None)
+    home_entry = next(
+        (entry for entry in page_entries if entry["path"] == "index.html"), None
+    )
     features_entry = next(
         (entry for entry in page_entries if entry["path"] == "features/index.html"),
         None,
     )
     release_notes_entry = next(
-        (entry for entry in page_entries if entry["path"] == "release_notes/index.html"),
+        (
+            entry
+            for entry in page_entries
+            if entry["path"] == "release_notes/index.html"
+        ),
         None,
     )
 
     if home_entry:
         add_index_entry(index_lines, home_entry["title"], home_entry["url"], level=0)
     if features_entry:
-        add_index_entry(index_lines, features_entry["title"], features_entry["url"], level=0)
+        add_index_entry(
+            index_lines, features_entry["title"], features_entry["url"], level=0
+        )
 
     grouped_sections = {"learn": [], "reference": [], "examples": []}
     for entry in page_entries:
@@ -437,7 +454,12 @@ def build_index_lines(page_entries: list[dict]) -> list[str]:
             add_index_entry(index_lines, entry["title"], entry["url"], level=1)
 
     if release_notes_entry:
-        add_index_entry(index_lines, release_notes_entry["title"], release_notes_entry["url"], level=0)
+        add_index_entry(
+            index_lines,
+            release_notes_entry["title"],
+            release_notes_entry["url"],
+            level=0,
+        )
 
     return index_lines
 
@@ -463,7 +485,9 @@ def on_post_build(config):
             if should_include_page(rel_path):
                 discovered_paths.append(rel_path)
 
-    sorted_paths = sorted(set(discovered_paths), key=lambda path: path_sort_key(path, nav_positions))
+    sorted_paths = sorted(
+        set(discovered_paths), key=lambda path: path_sort_key(path, nav_positions)
+    )
 
     page_entries = []
     for rel_path in sorted_paths:
@@ -480,6 +504,18 @@ def on_post_build(config):
         markdown = html_to_markdown(main_html)
         title = get_page_title(html, rel_path)
         url = build_url(base_url, rel_path)
+
+        if rel_path == "index.html":
+            md_filename = "index.md"
+        elif rel_path.endswith("/index.html"):
+            md_filename = rel_path.replace("/index.html", ".md")
+        else:
+            md_filename = rel_path.rsplit(".", 1)[0] + ".md"
+        md_rel_path = os.path.join(site_dir, md_filename)
+        md_dir = os.path.dirname(md_rel_path)
+        os.makedirs(md_dir, exist_ok=True)
+        with open(md_rel_path, "w", encoding="utf-8") as md_file:
+            md_file.write(markdown.strip() + "\n")
 
         page_entries.append(
             {
