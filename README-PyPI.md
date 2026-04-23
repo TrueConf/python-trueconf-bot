@@ -39,16 +39,30 @@
 > 💡TIP
 > 
 > We were inspired by the popular [aiogram](https://github.com/aiogram/aiogram/) library, so, the transition will be **simple** for developers already familiar with this library.
-
 ---
+
+## ⚙️ Install
+
+You can install `python-trueconf-bot` using `pip`:
+
+```bash
+pip install python-trueconf-bot
+```
+
+Or with `uv` (recommended):
+
+```bash
+uv add python-trueconf-bot
+```
+
 
 ## 📦 Version Compatibility
 
 | TrueConf Server Version | Required Library Version |
 |:------------------------|:-------------------------|
-| < 5.5.0                 | ❌ Not supported         |
+| < 5.5.0                 | ❌ Not supported          |
 | 5.5.0 — 5.5.2           | v1.1.x                   |
-| >= 5.5.3                | **v1.2.0** (or higher)   |
+| >= 5.5.3                | **v1.2.1** (or higher)   |
 
 > ⚠️ IMPORTANT
 > 
