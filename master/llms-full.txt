@@ -1,39 +1,39 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** v1.1.9
-- **Generated:** 2026-04-16T15:01:37+00:00
+- **Version:** v1.2.0
+- **Generated:** 2026-04-23T12:05:57+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
 
 ## INDEX
-- [Python Library for TrueConf Chatbot Connector ⚓︎](https://trueconf.github.io/python-trueconf-bot/master)
-- [Features ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/features/)
+- [Python Library for TrueConf Chatbot Connector ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/index.md)
+- [Features ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/features.md)
 - [Learn](#learn)
-  - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started/)
-  - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages/)
-  - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters/)
-  - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums/)
-  - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/types/)
-  - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/files/)
+  - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md)
+  - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md)
+  - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md)
+  - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md)
+  - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/types.md)
+  - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/files.md)
 - [Reference](#reference)
-  - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Bot/)
-  - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Router/)
-  - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher/)
-  - [Enums](https://trueconf.github.io/python-trueconf-bot/master/reference/Enums/)
-  - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Types/)
-  - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Responses/)
+  - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Bot.md)
+  - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Router.md)
+  - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher.md)
+  - [Enums](https://trueconf.github.io/python-trueconf-bot/master/reference/Enums.md)
+  - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Types.md)
+  - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Responses.md)
 - [Examples](#examples)
-  - [Echo bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot/)
-  - [Multibot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/multibot/)
-- [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/release_notes/)
+  - [Echo bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot.md)
+  - [Multibot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/multibot.md)
+- [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/release_notes.md)
 
 ---
 
 ## CONTENT
 
 # DOCUMENT: Features ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/features/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/features.md
 
 # Features⚓︎
 
@@ -129,7 +129,7 @@ The library implements all core TrueConf API methods: sending messages, uploadin
 ---
 
 # DOCUMENT: List of Changes ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/release_notes/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/release_notes.md
 
 # List of Changes⚓︎
 
@@ -188,7 +188,7 @@ Modified:
 ---
 
 # DOCUMENT: Python Library for TrueConf Chatbot Connector ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/index.md
 
 # Python Library for TrueConf Chatbot Connector⚓︎
 
@@ -247,7 +247,7 @@ pip install python-trueconf-bot
 ---
 
 # DOCUMENT: Getting Started ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md
 
 # Getting Started⚓︎
 
@@ -361,7 +361,7 @@ This approach allows handling multiple events and messages in parallel — witho
 ---
 
 # DOCUMENT: Handling Requests ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md
 
 # Handling Requests⚓︎
 
@@ -573,7 +573,7 @@ For better logic separation, it's recommended to create multiple routers (e.g., 
 ---
 
 # DOCUMENT: Filters ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/filters/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md
 
 # Filters⚓︎
 
@@ -899,7 +899,7 @@ await bot.send_message(chat_id=message.chat_id, text=f"Special: {command.command
 ---
 
 # DOCUMENT: Using enumerations ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/enums/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md
 
 # Using enumerations⚓︎
 
@@ -959,7 +959,7 @@ Thus, `enums` help you write cleaner and safer code.
 ---
 
 # DOCUMENT: Data Types ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/types/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/types.md
 
 # Data Types⚓︎
 
@@ -1052,7 +1052,7 @@ pass
 ---
 
 # DOCUMENT: Working with Files ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/files/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/files.md
 
 # Working with Files⚓︎
 
@@ -1183,10 +1183,56 @@ dest_path="document.pdf"
 )
 ```
 
+## MIME Type Detection with python-magic⚓︎
+
+A file’s MIME type can be detected automatically. The library supports two approaches:
+
+- By file extension — works without additional dependencies, but may be inaccurate.
+
+- By file content (bytes) — significantly more accurate, but requires `python-magic`.
+
+### How It Works⚓︎
+
+The `python-magic` package does not determine MIME types on its own. It is a Python wrapper around the native libmagic library written in C, which is what actually identifies a file type based on its contents.
+
+That is why `python-magic` may not work out of the box on some systems: the Python package is installed via `pip`, but the system library `libmagic` must be installed separately.
+
+If `libmagic` is missing, importing `magic` may fail with an error such as:
+
+- `ImportError: failed to find libmagic. Check your installation`
+
+### Installation⚓︎
+
+Install the system dependencies:
+
+- macOS (Homebrew):
+
+```
+brew install libmagic
+```
+
+- Linux (Debian/Ubuntu):
+
+```
+sudo apt install libmagic1
+```
+
+- Windows:
+
+```
+pip install python-magic-bin
+```
+
+We also recommend reviewing the repository: https://github.com/ahupp/python-magic.
+
+### Notes⚓︎
+
+- When `python-magic` is available, the MIME type is detected from the file bytes, which is usually more accurate than detecting it by filename or extension.
+
 ---
 
 # DOCUMENT: Class Bot ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Bot/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Bot.md
 
 # Class `Bot`⚓︎
 
@@ -1200,7 +1246,7 @@ from trueconf import Bot
 ## `` trueconf.Bot ⚓︎
 
 ```
-Bot(server, token, web_port=443, https=True, debug=False, verify_ssl=True, dispatcher=None, receive_unread_messages=False)
+Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False)
 ```
 
 Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -1215,12 +1261,16 @@ Parameters:
 | --- | --- | --- | --- |
 | `server` | `str` | Address of the TrueConf server. | required |
 | `token` | `str` | Bot authorization token. | required |
-| `web_port` | `int` | WebSocket connection port. Defaults to 443. | `443` |
-| `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
-| `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
-| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `*` | | All following arguments must be passed by name (keyword-only). | required |
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
+| `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
+| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
+| `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
+| `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
+| `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
+| `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
 
 ### Note
 
@@ -1250,16 +1300,40 @@ debug = debug
 dp = dispatcher or trueconf.Dispatcher (trueconf.dispatcher.dispatcher.Dispatcher)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher()
 ```
 
+### `` file_extension_filter_mode `instance-attribute` ⚓︎
+
+```
+file_extension_filter_mode = None
+```
+
+### `` file_extensions_list `instance-attribute` ⚓︎
+
+```
+file_extensions_list = None
+```
+
 ### `` https `instance-attribute` ⚓︎
 
 ```
 https = https
 ```
 
+### `` max_file_size `instance-attribute` ⚓︎
+
+```
+max_file_size = None
+```
+
 ### `` port `instance-attribute` ⚓︎
 
 ```
-port = 443 if https else web_port
+port = 443 if https else 4309
+```
+
+### `` receive_system_messages `instance-attribute` ⚓︎
+
+```
+receive_system_messages = receive_system_messages
 ```
 
 ### `` receive_unread_messages `instance-attribute` ⚓︎
@@ -1298,12 +1372,6 @@ Returns:
 
 ```
 verify_ssl = verify_ssl
-```
-
-### `` web_port `instance-attribute` ⚓︎
-
-```
-web_port = web_port
 ```
 
 ### `` add_participant_to_chat `async` ⚓︎
@@ -1415,6 +1483,29 @@ role=role.ADMIN
 ```
 check_version()
 ```
+
+### `` clear_chat_history `async` ⚓︎
+
+```
+clear_chat_history(chat_id, for_all=False)
+```
+
+```
+**Requires TrueConf Server 5.5.3+**
+```
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `chat_id` | `str` | Identifier of the chat to clear the history for. | required |
+| `for_all` | `bool` | If True, the history will be cleared for all participants. If False, it will only be cleared for the current user. Defaults to False. | `False` |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `ClearChatHistoryResponse` | `ClearChatHistoryResponse` | Object containing the result of the history clearing. |
 
 ### `` create_channel `async` ⚓︎
 
@@ -1546,20 +1637,95 @@ download_file_by_id(file_id, dest_path=None)
 
 Downloads a file by its ID, waiting for the upload to complete if necessary.
 
-If the file is already in the READY state, it will be downloaded immediately. If the file is in the NOT_AVAILABLE state, the method will exit without downloading. In other cases, the bot will wait for the upload to finish and then attempt to download the file.
+If `dest_path` is provided, the file is saved to disk and the Path is returned. If `dest_path` is None, the file content is returned as bytes.
 
 Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | `file_id` | `str` | Unique identifier of the file on the server. | required |
-| `dest_path` | `str` | Path where the file should be saved. If not specified, a temporary file will be created using `NamedTemporaryFile` (with prefix `tc_dl_`, suffix set to the original file name, and `delete=False` to keep the file on disk). | `None` |
+| `dest_path` | `str | Path` | Path where the file should be saved. | `None` |
 
 Returns:
 
 | Type | Description |
 | --- | --- |
-| `Path | None` | Path | None: Path to the downloaded file, or None if the download failed. |
+| `bytes | Path | None` | bytes | Path | None: File content (bytes), path to file (Path), or None if failed. |
+
+### `` edit_chat_avatar `async` ⚓︎
+
+```
+edit_chat_avatar(chat_id, file)
+```
+
+Updates the avatar of the specified chat. Use this method to set a new chat avatar for a group chat and channel.
+
+### Notes
+
+Requires TrueConf Server 5.5.3 or later. The bot must have sufficient permissions in the chat (e.g., owner or admin/moderator). The file must be provided as an instance of one of the `InputFile` subclasses: `FSInputFile`, `BufferedInputFile`, or `URLInputFile`.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#editChatAvatar
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `chat_id` | `str` | Identifier of the chat whose avatar should be updated. | required |
+| `file` | `` trueconf.types.InputFile (`trueconf.types.input_file.InputFile`)' href=../Types/#trueconf.types.InputFile>InputFile | Image file to be uploaded as the new chat avatar. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `EditChatAvatarResponse` | `EditChatAvatarResponse` | Object containing the result of the avatar update. |
+
+### Example
+
+```
+await bot.edit_chat_avatar(
+chat_id="a1s2d3f4f5g6",
+file=FSInputFile("avatar.png")
+)
+```
+
+### `` edit_chat_title `async` ⚓︎
+
+```
+edit_chat_title(chat_id, title)
+```
+
+Updates the display title of the specified chat.
+
+Use this method to set a new visible name for a chat (e.g., a group chat or channel).
+
+### Notes
+
+Requires TrueConf Server 5.5.3 or later. The bot must have sufficient permissions in the chat (e.g., owner or admin/moderator).
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#editChatTitle
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `chat_id` | `str` | Identifier of the chat whose title should be updated. | required |
+| `title` | `str` | New title for the chat. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `EditChatTitleResponse` | `` EditChatTitleResponse (`trueconf.types.responses.edit_chat_title_response.EditChatTitleResponse`)' href=../Responses/#trueconf.types.responses.EditChatTitleResponse>EditChatTitleResponse | Object containing the result of the title update. |
+
+### Example
+
+```
+await bot.edit_chat_title(chat_id="a1s2d3f4f5g6", title="Project Alpha – Team")
+```
 
 ### `` edit_message `async` ⚓︎
 
@@ -1658,7 +1824,7 @@ Returns:
 ### `` from_credentials `classmethod` ⚓︎
 
 ```
-from_credentials(server, username, password, dispatcher=None, receive_unread_messages=False, verify_ssl=True, **token_opts)
+from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60)
 ```
 
 Creates a bot instance using username and password authentication.
@@ -1674,10 +1840,15 @@ Parameters:
 | `server` | `str` | Address of the TrueConf server. | required |
 | `username` | `str` | Username for authentication. | required |
 | `password` | `str` | Password for authentication. | required |
+| `*` | | All following arguments must be passed by name (keyword-only). | required |
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
+| `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
 | `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
-| `**token_opts` | `Unpack[TokenOpts]` | Additional options passed to the token request, such as `web_port` and `https`. | `{}` |
+| `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
+| `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
+| `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
+| `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 
 Returns:
 
@@ -1746,6 +1917,32 @@ Raises:
 | Type | Description |
 | --- | --- |
 | `ValueError` | If the count number is less than 1. |
+
+### `` get_chat_participant `async` ⚓︎
+
+```
+get_chat_participant(chat_id, user_id)
+```
+
+Retrieves information about a chat participant.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#getChatParticipant
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `chat_id` | `str` | Identifier of the chat. | required |
+| `user_id` | `str` | Identifier of the user. Can be with or without a domain. | required |
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `GetChatParticipantResponse |` ApiError (`trueconf.types.responses.ApiError`)' href=../Responses/#trueconf.types.responses.ApiError>ApiError | GetChatParticipantResponse | ApiError: Object containing information about the requested |
+| `GetChatParticipantResponse |` ApiError (`trueconf.types.responses.ApiError`)' href=../Responses/#trueconf.types.responses.ApiError>ApiError | participant, or an API error if the user is not a participant of the chat. |
 
 ### `` get_chat_participants `async` ⚓︎
 
@@ -1827,6 +2024,38 @@ Returns:
 | Name | Type | Description |
 | --- | --- | --- |
 | `GetFileInfoResponse` | `` GetFileInfoResponse (`trueconf.types.responses.get_file_info_response.GetFileInfoResponse`)' href=../Responses/#trueconf.types.responses.GetFileInfoResponse>GetFileInfoResponse | Object containing information about the file. |
+
+### `` get_file_info_upload_limits `async` ⚓︎
+
+```
+get_file_info_upload_limits()
+```
+
+Returns the current file upload limits configured on the TrueConf Server.
+
+Useful for validating outgoing files in advance (e.g., checking maximum file size and allowed types/extensions).
+
+### Notes
+
+Requires TrueConf Server 5.5.3 or later.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/files/#getFileUploadLimits
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `GetFileUploadLimitsResponse` | `` GetFileUploadLimitsResponse (`trueconf.types.responses.GetFileUploadLimitsResponse`)' href=../Responses/#trueconf.types.responses.GetFileUploadLimitsResponse>GetFileUploadLimitsResponse | Object describing upload constraints |
+| | `` GetFileUploadLimitsResponse (`trueconf.types.responses.GetFileUploadLimitsResponse`)' href=../Responses/#trueconf.types.responses.GetFileUploadLimitsResponse>GetFileUploadLimitsResponse | (e.g., maximum file size, allowed types/extensions). |
+
+### Example
+
+```
+limits = await bot.get_file_info_upload_limits()
+# Use `limits` fields to validate a file before uploading
+```
 
 ### `` get_message_by_id `async` ⚓︎
 
@@ -1945,7 +2174,7 @@ Returns:
 ### `` remove_participant_from_chat `async` ⚓︎
 
 ```
-remove_participant_from_chat(chat_id, user_id)
+remove_participant_from_chat(chat_id, user_id, clear_history=False)
 ```
 
 Removes a participant from the specified chat.
@@ -1960,6 +2189,7 @@ Parameters:
 | --- | --- | --- | --- |
 | `chat_id` | `str` | Identifier of the chat to remove the participant from. | required |
 | `user_id` | `str` | Identifier of the user to be removed. | required |
+| `clear_history` | `bool` | If True, the chat history will be cleared for the removed participant. Defaults to False. | `False` |
 
 Returns:
 
@@ -2366,7 +2596,7 @@ If necessary, you can unsubscribe from file upload events that were previously s
 ---
 
 # DOCUMENT: Class Router ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Router/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Router.md
 
 # Class `Router`⚓︎
 
@@ -2435,6 +2665,50 @@ added_chat_participant(*filters)
 
 Register a handler when a participant is added to a chat.
 
+### `` changed_file_upload_limits ⚓︎
+
+```
+changed_file_upload_limits(*filters)
+```
+
+Requires TrueConf Server 5.5.3+ Registers a handler for file upload limits change events.
+
+This handler is triggered when the server's file upload restrictions are updated. The event is represented by the `ChangedFileUploadLimits` type and may include:
+
+- `max_size` — the maximum allowed file size in bytes (`1 MB = 1000 bytes`). If the size limit is disabled, the value is `None`.
+
+- `extensions` — file extension restrictions. If extension filtering is disabled, the value is `None`.
+
+If `extensions` is provided, it contains: - `mode` — restriction mode: - `block` — blocked extensions (blacklist) - `allow` — allowed extensions (whitelist) - `list` — list of file extensions.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/files/#newFileUploadLimits
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*filters` | `FilterLike` | Optional filters to apply to the event. Multiple filters can be specified. | `()` |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `Callable` | | A decorator function for registering the handler. |
+
+### Example
+
+```
+from trueconf.types import ChangedFileUploadLimits
+@router.changed_file_upload_limits()
+async def on_limits_changed(event: ChangedFileUploadLimits):
+print(f"Max file size: {event.max_size}")
+if event.extensions:
+print(f"Mode: {event.extensions.mode}")
+print(f"Extensions: {event.extensions.list}")
+```
+
 ### `` changed_participant_role ⚓︎
 
 ```
@@ -2444,6 +2718,10 @@ changed_participant_role(*filters)
 Requires TrueConf Server 5.5.2+ Registers a handler for participant role change events in chats.
 
 This handler is triggered when a user's role is changed in a personal chat, group chat, channel, or conference chat. Used with the `ChangedParticipantRole` event type.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#changedParticipantRole
 
 Parameters:
 
@@ -2467,6 +2745,41 @@ from trueconf.types import ChangedParticipantRole
 async def on_role_changed(event: ChangedParticipantRole):
 if event.role == role.admin:
 print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
+```
+
+### `` cleared_chat_history ⚓︎
+
+```
+cleared_chat_history(*filters)
+```
+
+Requires TrueConf Server 5.5.3+ Registers a handler for chat history clearing events.
+
+This handler is triggered when the message history of a chat is cleared. Used with the `ClearedChatHistory` event type.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#clearedHistory
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*filters` | `FilterLike` | Optional filters to apply to the event. Multiple filters can be specified. | `()` |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `Callable` | | A decorator function for registering the handler. |
+
+### Example
+
+```
+from trueconf.types import ClearedChatHistory
+@router.cleared_chat_history()
+async def on_history_cleared(event: ClearedChatHistory):
+print(f"History was cleared in chat {event.chat_id}. For all: {event.for_all}")
 ```
 
 ### `` created_channel ⚓︎
@@ -2500,6 +2813,77 @@ created_personal_chat(*filters)
 ```
 
 Register a handler for personal chat creation events.
+
+### `` edited_chat_avatar ⚓︎
+
+```
+edited_chat_avatar(*filters)
+```
+
+Requires TrueConf Server 5.5.3+ Registers a handler for chat avatar edit events.
+
+This handler is triggered when a chat avatar is changed. Used with the `EditedChatAvatar` event type.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#editedChatAvatar
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*filters` | `FilterLike` | Optional filters to apply to the event. Multiple filters can be specified. | `()` |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `Callable` | | A decorator function for registering the handler. |
+
+### Example
+
+```
+from trueconf.types import EditedChatAvatar
+@router.edited_chat_avatar()
+async def on_avatar_changed(event: EditedChatAvatar):
+print(f"Avatar was updated in chat {event.chat_id}")
+print(f"New avatar: {event.avatar_url}")
+```
+
+### `` edited_chat_title ⚓︎
+
+```
+edited_chat_title(*filters)
+```
+
+Requires TrueConf Server 5.5.3+ Registers a handler for chat title edit events.
+
+This handler is triggered when a chat title is changed. Used with the `EditedChatTitle` event type.
+
+### Source
+
+trueconf.com/docs/chatbot-connector/en/chats/#editedChatTitle
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*filters` | `FilterLike` | Optional filters to apply to the event. Multiple filters can be specified. | `()` |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `Callable` | | A decorator function for registering the handler. |
+
+### Example
+
+```
+from trueconf.types import EditedChatTitle
+@router.edited_chat_title()
+async def on_title_changed(event: EditedChatTitle):
+print(f"Chat {event.chat_id} has a new title: {event.title}")
+```
 
 ### `` edited_message ⚓︎
 
@@ -2575,7 +2959,7 @@ Register a handler for file uploading progress events.
 ---
 
 # DOCUMENT: Class Dispatcher ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher.md
 
 # Class `Dispatcher`⚓︎
 
@@ -2639,7 +3023,7 @@ Parameters:
 ---
 
 # DOCUMENT: Enums
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Enums/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Enums.md
 
 # Enums
 
@@ -2799,10 +3183,22 @@ UPLOADING = 1
 ADDED_CHAT_PARTICIPANT = 'addChatParticipant'
 ```
 
+#### `` CHANGED_FILE_UPLOAD_LIMITS `class-attribute` `instance-attribute` ⚓︎
+
+```
+CHANGED_FILE_UPLOAD_LIMITS = 'getFileUploadLimits'
+```
+
 #### `` CHANGED_PARTICIPANT_ROLE `class-attribute` `instance-attribute` ⚓︎
 
 ```
 CHANGED_PARTICIPANT_ROLE = 'changeParticipantRole'
+```
+
+#### `` CLEARED_CHAT_HISTORY `class-attribute` `instance-attribute` ⚓︎
+
+```
+CLEARED_CHAT_HISTORY = 'clearHistory'
 ```
 
 #### `` CREATED_CHANNEL `class-attribute` `instance-attribute` ⚓︎
@@ -2827,6 +3223,18 @@ CREATED_GROUP_CHAT = 'createGroupChat'
 
 ```
 CREATED_PERSONAL_CHAT = 'createP2PChat'
+```
+
+#### `` EDITED_CHAT_AVATAR `class-attribute` `instance-attribute` ⚓︎
+
+```
+EDITED_CHAT_AVATAR = 'editChatAvatar'
+```
+
+#### `` EDITED_CHAT_TITLE `class-attribute` `instance-attribute` ⚓︎
+
+```
+EDITED_CHAT_TITLE = 'editChatTitle'
 ```
 
 #### `` EDITED_MESSAGE `class-attribute` `instance-attribute` ⚓︎
@@ -2885,10 +3293,34 @@ ADD_PARTICIPANT = 1
 ATTACHMENT = 202
 ```
 
+#### `` CLEAR_CHAT_HISTORY `class-attribute` `instance-attribute` ⚓︎
+
+```
+CLEAR_CHAT_HISTORY = 23
+```
+
+#### `` EDIT_CHAT_AVATAR `class-attribute` `instance-attribute` ⚓︎
+
+```
+EDIT_CHAT_AVATAR = 22
+```
+
+#### `` EDIT_CHAT_TITLE `class-attribute` `instance-attribute` ⚓︎
+
+```
+EDIT_CHAT_TITLE = 21
+```
+
 #### `` FORWARDED_MESSAGE `class-attribute` `instance-attribute` ⚓︎
 
 ```
 FORWARDED_MESSAGE = 201
+```
+
+#### `` LOCATION `class-attribute` `instance-attribute` ⚓︎
+
+```
+LOCATION = 203
 ```
 
 #### `` PARTICIPANT_ROLE `class-attribute` `instance-attribute` ⚓︎
@@ -3016,7 +3448,7 @@ RESPONSE = 2
 ---
 
 # DOCUMENT: Types ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Types/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Types.md
 
 # Types⚓︎
 
@@ -3505,7 +3937,7 @@ timestamp
 ## `` trueconf.types.InputFile ⚓︎
 
 ```
-InputFile(filename=None, file_size=None, mimetype=None)
+InputFile(file_name=None, file_size=None, mime_type=None)
 ```
 
 Base abstract class representing uploadable files.
@@ -3528,9 +3960,9 @@ Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| `filename` | `str | None` | Name of the file to display when sending. | `None` |
+| `file_name` | `str` | Name of the file to display when sending. | `None` |
 | `file_size` | `int | None` | File size in bytes (optional). | `None` |
-| `mimetype` | `str | None` | MIME type of the file. Can be detected automatically. | `None` |
+| `mime_type` | `str | None` | MIME type of the file. Can be detected automatically. | `None` |
 
 ### Abstract Methods
 
@@ -3543,22 +3975,28 @@ file = FSInputFile("example.pdf")
 await bot.send_document(chat_id="...", file=file)
 ```
 
+### `` extension `instance-attribute` ⚓︎
+
+```
+extension = lower()[1:]
+```
+
+### `` file_name `instance-attribute` ⚓︎
+
+```
+file_name = file_name
+```
+
 ### `` file_size `instance-attribute` ⚓︎
 
 ```
 file_size = file_size
 ```
 
-### `` filename `instance-attribute` ⚓︎
+### `` mime_type `instance-attribute` ⚓︎
 
 ```
-filename = filename
-```
-
-### `` mimetype `instance-attribute` ⚓︎
-
-```
-mimetype = mimetype
+mime_type = mime_type
 ```
 
 ### `` clone `abstractmethod` ⚓︎
@@ -3576,7 +4014,7 @@ read()
 ## `` trueconf.types.BufferedInputFile ⚓︎
 
 ```
-BufferedInputFile(file, filename, file_size=None, mimetype=None)
+BufferedInputFile(file, file_name=None, file_size=None, mime_type=None, **kwargs)
 ```
 
 Represents a file uploaded from a bytes buffer.
@@ -3586,7 +4024,7 @@ This class is useful when the file is already available as a `bytes` object, for
 ### Example
 
 ```
-file = BufferedInputFile(file=data_bytes, filename="example.txt")
+file = BufferedInputFile(file=data_bytes, file_name="example.txt")
 await bot.send_document(chat_id="...", file=file)
 ```
 
@@ -3601,14 +4039,26 @@ Parameters:
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | `file` | `bytes` | Raw file content in bytes. | required |
-| `filename` | `str` | The name of the file. | required |
-| `file_size` | `Optional[int]` | Size of the file in bytes. Auto-detected if not specified. | `None` |
-| `mimetype` | `Optional[str]` | MIME type of the file. Auto-detected if not specified. | `None` |
+| `file_name` | `str` | The name of the file. | `None` |
+| `file_size` | `int` | Size of the file in bytes. Auto-detected if not specified. | `None` |
+| `mime_type` | `str` | MIME type of the file. Auto-detected if not specified. | `None` |
 
 ### `` data `instance-attribute` ⚓︎
 
 ```
 data = file
+```
+
+### `` extension `instance-attribute` ⚓︎
+
+```
+extension = lower()[1:]
+```
+
+### `` file_name `instance-attribute` ⚓︎
+
+```
+file_name = file_name
 ```
 
 ### `` file_size `instance-attribute` ⚓︎
@@ -3617,16 +4067,10 @@ data = file
 file_size = file_size
 ```
 
-### `` filename `instance-attribute` ⚓︎
+### `` mime_type `instance-attribute` ⚓︎
 
 ```
-filename = filename
-```
-
-### `` mimetype `instance-attribute` ⚓︎
-
-```
-mimetype = mimetype
+mime_type = mime_type
 ```
 
 ### `` clone ⚓︎
@@ -3648,7 +4092,7 @@ Returns:
 ### `` from_file `classmethod` ⚓︎
 
 ```
-from_file(path, filename=None, file_size=None, mimetype=None)
+from_file(path, file_name=None, file_size=None, mime_type=None, **kwargs)
 ```
 
 Creates a `BufferedInputFile` from a file on disk.
@@ -3660,9 +4104,9 @@ Parameters:
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | `path` | `str | Path` | Path to the local file. | required |
-| `filename` | `Optional[str]` | File name to propagate. Defaults to the name extracted from path. | `None` |
-| `file_size` | `Optional[int]` | File size in bytes. Auto-detected if not specified. | `None` |
-| `mimetype` | `Optional[str]` | MIME type of the file. Auto-detected if not specified. | `None` |
+| `file_name` | `str` | File name to propagate. Defaults to the name extracted from path. | `None` |
+| `file_size` | `int` | File size in bytes. Auto-detected if not specified. | `None` |
+| `mime_type` | `str` | MIME type of the file. Auto-detected if not specified. | `None` |
 
 Returns:
 
@@ -3687,7 +4131,7 @@ Returns:
 ## `` trueconf.types.FSInputFile ⚓︎
 
 ```
-FSInputFile(path, filename=None, file_size=None, mimetype=None)
+FSInputFile(path, file_name=None, file_size=None, mime_type=None, **kwargs)
 ```
 
 Represents a file uploaded from the local filesystem.
@@ -3703,22 +4147,34 @@ await bot.send_document(chat_id="...", file=file)
 
 Initializes an `FSInputFile` instance from a local file.
 
-If not provided, `filename`, `file_size`, and `mimetype` are automatically detected:
+If not provided, `file_name`, `file_size`, and `mime_type` are automatically detected:
 
-- `filename` is extracted from the file path.
+- `file_name` is extracted from the file path.
 
 - `file_size` is determined via `os.path.getsize()`.
 
-- `mimetype` is detected from the first 2048 bytes of the file content (using `python-magic` if available).
+- `mime_type` is detected from the first 2048 bytes of the file content (using `python-magic` if available).
 
 Parameters:
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | `path` | `str | Path` | Path to the local file. | required |
-| `filename` | `Optional[str]` | File name to be propagated in the upload. | `None` |
-| `file_size` | `Optional[int]` | File size in bytes. | `None` |
-| `mimetype` | `Optional[str]` | File MIME type. | `None` |
+| `file_name` | `str` | File name to be propagated in the upload. | `None` |
+| `file_size` | `int` | File size in bytes. | `None` |
+| `mime_type` | `str` | File MIME type. | `None` |
+
+### `` extension `instance-attribute` ⚓︎
+
+```
+extension = lower()[1:]
+```
+
+### `` file_name `instance-attribute` ⚓︎
+
+```
+file_name = file_name
+```
 
 ### `` file_size `instance-attribute` ⚓︎
 
@@ -3726,16 +4182,10 @@ Parameters:
 file_size = file_size
 ```
 
-### `` filename `instance-attribute` ⚓︎
+### `` mime_type `instance-attribute` ⚓︎
 
 ```
-filename = filename
-```
-
-### `` mimetype `instance-attribute` ⚓︎
-
-```
-mimetype = mimetype
+mime_type = mime_type
 ```
 
 ### `` path `instance-attribute` ⚓︎
@@ -3777,7 +4227,7 @@ Returns:
 ## `` trueconf.types.URLInputFile ⚓︎
 
 ```
-URLInputFile(url, headers=None, filename=None, file_size=None, mimetype=None, timeout=30)
+URLInputFile(url, headers=None, file_name=None, file_size=None, mime_type=None, timeout=30, verify_ssl=True, **kwargs)
 ```
 
 Represents a file to be downloaded and uploaded from a remote URL.
@@ -3799,21 +4249,27 @@ Parameters:
 | --- | --- | --- | --- |
 | `url` | `str` | URL of the file to download. | required |
 | `headers` | `Optional[Dict[str, Any]]` | Optional HTTP headers for the request. | `None` |
-| `filename` | `Optional[str]` | Optional file name to propagate in the upload. | `None` |
-| `file_size` | `Optional[int]` | Optional file size in bytes. | `None` |
-| `mimetype` | `Optional[str]` | Optional MIME type of the file. | `None` |
+| `file_name` | `str` | Optional file name to propagate in the upload. | `None` |
+| `file_size` | `int` | Optional file size in bytes. | `None` |
+| `mime_type` | `str` | Optional MIME type of the file. | `None` |
 | `timeout` | `int` | Timeout (in seconds) for the HTTP request. | `30` |
+
+### `` extension `instance-attribute` ⚓︎
+
+```
+extension = lower()[1:]
+```
+
+### `` file_name `instance-attribute` ⚓︎
+
+```
+file_name = file_name
+```
 
 ### `` file_size `instance-attribute` ⚓︎
 
 ```
 file_size = file_size
-```
-
-### `` filename `instance-attribute` ⚓︎
-
-```
-filename = filename
 ```
 
 ### `` headers `instance-attribute` ⚓︎
@@ -3822,10 +4278,10 @@ filename = filename
 headers = headers
 ```
 
-### `` mimetype `instance-attribute` ⚓︎
+### `` mime_type `instance-attribute` ⚓︎
 
 ```
-mimetype = mimetype
+mime_type = mime_type
 ```
 
 ### `` timeout `instance-attribute` ⚓︎
@@ -3838,6 +4294,12 @@ timeout = timeout
 
 ```
 url = url
+```
+
+### `` verify_ssl `instance-attribute` ⚓︎
+
+```
+verify_ssl = verify_ssl
 ```
 
 ### `` clone ⚓︎
@@ -4926,7 +5388,7 @@ progress
 ---
 
 # DOCUMENT: Responses ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Responses/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Responses.md
 
 # Responses⚓︎
 
@@ -5026,6 +5488,24 @@ CreateP2PChatResponse(chat_id)
 chat_id = field(metadata={'alias': 'chatId'})
 ```
 
+### `` EditChatTitleResponse ⚓︎
+
+```
+EditChatTitleResponse(chat_id, timestamp)
+```
+
+#### `` chat_id ⚓︎
+
+```
+chat_id = field(metadata={'alias': 'chatId'})
+```
+
+#### `` timestamp ⚓︎
+
+```
+timestamp
+```
+
 ### `` EditMessageResponse ⚓︎
 
 ```
@@ -5089,7 +5569,13 @@ timestamp
 ### `` GetChatByIdResponse ⚓︎
 
 ```
-GetChatByIdResponse(chat_id, title, chat_type, unread_messages, last_message=None)
+GetChatByIdResponse(chat_id, title, chat_type, avatar_url, unread_messages, last_message=None)
+```
+
+#### `` avatar_url ⚓︎
+
+```
+avatar_url = field(metadata={'alias': 'avatarUrl'})
 ```
 
 #### `` chat_id ⚓︎
@@ -5216,6 +5702,24 @@ ready_state = field(metadata={'alias': 'readyState'})
 
 ```
 size
+```
+
+### `` GetFileUploadLimitsResponse ⚓︎
+
+```
+GetFileUploadLimitsResponse(max_size, extensions)
+```
+
+#### `` extensions ⚓︎
+
+```
+extensions
+```
+
+#### `` max_size ⚓︎
+
+```
+max_size = field(metadata={'alias': 'maxSize'})
 ```
 
 ### `` GetMessageByIdResponse ⚓︎
@@ -5353,13 +5857,19 @@ RemoveMessageResponse()
 ### `` SendFileResponse ⚓︎
 
 ```
-SendFileResponse(timestamp, chat_id, message_id)
+SendFileResponse(timestamp, chat_id, message_id, file_id)
 ```
 
 #### `` chat_id ⚓︎
 
 ```
 chat_id = field(metadata={'alias': 'chatId'})
+```
+
+#### `` file_id ⚓︎
+
+```
+file_id = field(metadata={'alias': 'fileId'})
 ```
 
 #### `` message_id ⚓︎
@@ -5461,7 +5971,7 @@ upload_task_id = field(metadata={'alias': 'uploadTaskId'})
 ---
 
 # DOCUMENT: Echo bot ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot.md
 
 # Echo bot⚓︎
 
@@ -5492,7 +6002,7 @@ asyncio.run(main())
 ---
 
 # DOCUMENT: Multibot ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/multibot/
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/multibot.md
 
 # Multibot⚓︎
 
