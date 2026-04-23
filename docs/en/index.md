@@ -44,5 +44,5 @@ pip install {{product_name}}
 
 ## LLM Files
 
-- [llms.txt](/llms.txt)
-- [llms-full.txt](/llms-full.txt)
+- [llms.txt](llms.txt)
+- [llms-full.txt](llms-full.txt)

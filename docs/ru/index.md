@@ -37,6 +37,6 @@ pip install {{product_name}}
 
 ## Документация для ИИ (LLM) 
 
-- [llms.txt](/llms.txt)
-- [llms-full.txt](/llms-full.txt)
+- [llms.txt](llms.txt)
+- [llms-full.txt](llms-full.txt)
 
