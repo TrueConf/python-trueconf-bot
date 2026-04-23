@@ -37,6 +37,6 @@ pip install {{product_name}}
 
 ## Документация для ИИ (LLM) 
 
-- [llms.txt](https://trueconf.github.io/python-trueconf-bot/master/llms.txt)
-- [llms-full.txt](https://trueconf.github.io/python-trueconf-bot/master/llms-full.txt)
+- [llms.txt](/llms.txt)
+- [llms-full.txt](/llms-full.txt)
 
