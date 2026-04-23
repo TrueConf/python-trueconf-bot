@@ -9,7 +9,7 @@ from httpx import AsyncClient, Client, HTTPStatusError
 from ..exceptions import TokenValidationError, InvalidGrantError
 
 
-def get_auth_token(
+def _get_auth_token(
     server: str,
     username: str,
     password: str,
@@ -42,7 +42,7 @@ def get_auth_token(
 
 
 @lru_cache()
-def validate_token(token: str) -> bool:
+def _validate_token(token: str) -> bool:
     """
     Validate TrueConf Chatbot Connector token
 
