@@ -169,9 +169,7 @@ nav:
       - reference/Dispatcher.md
       - reference/Enums.md
       - reference/Types.md
-  - Examples:
-      - examples/echo_bot.md
-      - examples/multibot.md
+  - Examples: examples/index.md
   - Release Notes: release_notes.md
 
 
