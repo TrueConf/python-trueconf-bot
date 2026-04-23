@@ -1,0 +1,22 @@
+# Python TrueConf Bot SDK
+## INDEX
+- [Python Library for TrueConf Chatbot Connector ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/index.md)
+- [Features ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/features.md)
+- [Learn](#learn)
+  - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/getting-started.md)
+  - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/parse-messages.md)
+  - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/filters.md)
+  - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/enums.md)
+  - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/types.md)
+  - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/learn/files.md)
+- [Reference](#reference)
+  - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Bot.md)
+  - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Router.md)
+  - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Dispatcher.md)
+  - [Enums](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Enums.md)
+  - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Types.md)
+  - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/reference/Responses.md)
+- [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.2.1/release_notes.md)
+
+## CONTENT
+See `llms-full.txt` for the complete rendered documentation.
