@@ -45,6 +45,7 @@ from trueconf.methods.edit_survey import EditSurvey
 from trueconf.methods.forward_message import ForwardMessage
 from trueconf.methods.get_chat_by_id import GetChatByID
 from trueconf.methods.get_chat_history import GetChatHistory
+from trueconf.methods.get_chat_participant import GetChatParticipant
 from trueconf.methods.get_chat_participants import GetChatParticipants
 from trueconf.methods.get_chats import GetChats
 from trueconf.methods.get_file_info import GetFileInfo
@@ -65,7 +66,7 @@ from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
 from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
-from trueconf.types.responses import GetFileUploadLimitsResponse
+from trueconf.types.responses import GetFileUploadLimitsResponse, ApiError
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 from trueconf.types.responses.clear_chat_history_response import ClearChatHistoryResponse
@@ -80,6 +81,7 @@ from trueconf.types.responses.edit_survey_response import EditSurveyResponse
 from trueconf.types.responses.forward_message_response import ForwardMessageResponse
 from trueconf.types.responses.get_chat_by_id_response import GetChatByIdResponse
 from trueconf.types.responses.get_chat_history_response import GetChatHistoryResponse
+from trueconf.types.responses.get_chat_participant_response import GetChatParticipantResponse
 from trueconf.types.responses.get_chat_participants_response import GetChatParticipantsResponse
 from trueconf.types.responses.get_chats_response import GetChatsResponse
 from trueconf.types.responses.get_file_info_response import GetFileInfoResponse
@@ -94,9 +96,9 @@ from trueconf.types.responses.send_message_response import SendMessageResponse
 from trueconf.types.responses.send_survey_response import SendSurveyResponse
 from trueconf.types.responses.subscribe_file_progress_response import SubscribeFileProgressResponse
 from trueconf.types.responses.unsubscribe_file_progress_response import UnsubscribeFileProgressResponse
-from trueconf.utils import generate_secret_for_survey
-from trueconf.utils import get_auth_token
-from trueconf.utils import validate_token
+from trueconf.utils._generate_secret_for_survey import _generate_secret_for_survey
+from trueconf.utils._token import _get_auth_token, _validate_token
+from trueconf.utils._version_checker import _VersionChecker
 from trueconf.utils.split_text import visible_len
 
 from trueconf.exceptions import (
@@ -119,6 +121,7 @@ class Bot:
             *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
+            receive_system_messages: bool = False,
             verify_ssl: bool = True,
             web_port: int | None = None,
             https: bool = True,
@@ -138,6 +141,8 @@ class Bot:
             * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
+            receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
+                to the chat or chat title changes. Defaults to False.
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
             web_port (int, optional): WebSocket connection port. Defaults to 443.
             https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
@@ -149,12 +154,13 @@ class Bot:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
         """
 
-        validate_token(token)
+        _validate_token(token)
 
         self.server = server
         self.__token = token
         self.dp = dispatcher or Dispatcher()
         self.receive_unread_messages = receive_unread_messages
+        self.receive_system_messages = receive_system_messages
         self.verify_ssl = verify_ssl
         self.https = https
         self._ws_max_retries = ws_max_retries
@@ -258,26 +264,7 @@ class Bot:
 
     async def check_version(self):
         current_version = await self.server_version
-        v = tuple(map(int, current_version.split('.')[:3]))
-
-        if v < (5, 5, 0):
-            raise RuntimeError(
-                f"Error: Server version {current_version} is too old. "
-                "Chatbots are not supported (version 5.5.0+ required)."
-            )
-
-        if (5, 5, 0) <= v <= (5, 5, 2):
-            raise RuntimeError(
-                f"\n[!] Server version {current_version} is incompatible with the current library.\n"
-                "Please install version v1.1.x using the following command:\n"
-                'uv pip install "python-trueconf-bot>=1.1.0,<1.2.0"'
-            )
-
-        if v >= (5, 5, 3):
-            raise RuntimeError(
-                f"\n[!] Server version {current_version} requires library v1.2.0.\n"
-                "Please install the stable release or the latest beta using the following command:\n"
-                'uv pip install --pre "python-trueconf-bot==1.2.0"')
+        _VersionChecker.check(current_version)
 
     @async_cached_property
     async def me(self) -> str:
@@ -303,6 +290,7 @@ class Bot:
             *,
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
+            receive_system_messages: bool = False,
             verify_ssl: bool = True,
             web_port: int | None = None,
             https: bool = True,
@@ -322,6 +310,8 @@ class Bot:
             * : All following arguments must be passed by name (keyword-only).
             dispatcher (Dispatcher | None, optional): Dispatcher instance for registering handlers.
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
+            receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
+                to the chat or chat title changes. Defaults to False.
             verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
             web_port (int, optional): WebSocket connection port. Defaults to 443.
             https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
@@ -336,7 +326,7 @@ class Bot:
         """
 
         loggers.chatbot.info(f"🔑 Obtaining auth token for user={username} @ {server}")
-        token = get_auth_token(server, username, password, verify=verify_ssl)
+        token = _get_auth_token(server, username, password, verify=verify_ssl)
         if not token:
             loggers.chatbot.error(f"❌ Failed to obtain token for user={username} @ {server}")
             raise RuntimeError("Failed to obtain token")
@@ -347,6 +337,7 @@ class Bot:
             https=https,
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
+            receive_system_messages = receive_system_messages,
             verify_ssl=verify_ssl,
             ws_max_delay=ws_max_delay,
             ws_max_retries=ws_max_retries
@@ -640,7 +631,7 @@ class Bot:
         call = AuthMethod(
             token=self.__token,
             receive_unread_messages=self.receive_unread_messages,
-
+            receive_system_messages=self.receive_system_messages
         )
         loggers.chatbot.info(f"🛠 Created AuthMethod with id={call.id}")
         result = await self(call)
@@ -1171,6 +1162,33 @@ class Bot:
         call = GetChatByID(chat_id=chat_id)
         return await self(call)
 
+    async def get_chat_participant(
+            self,
+            chat_id: str,
+            user_id: str
+    ) -> GetChatParticipantResponse | ApiError:
+        """
+        Retrieves information about a chat participant.
+
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#getChatParticipant
+
+        Args:
+            chat_id (str): Identifier of the chat.
+            user_id (str): Identifier of the user. Can be with or without a domain.
+
+        Returns:
+            GetChatParticipantResponse | ApiError: Object containing information about the requested
+            participant, or an API error if the user is not a participant of the chat.
+        """
+
+        if "@" not in user_id:
+            user_id = f"{user_id}@{await self.server_name}"
+
+        call = GetChatParticipant(chat_id=chat_id, user_id=user_id)
+
+        return await self(call)
+
     async def get_chat_participants(
             self,
             chat_id: str,
@@ -1333,6 +1351,12 @@ class Bot:
         Returns:
             HasChatParticipantResponse: Object containing the result of the check.
         """
+
+        warnings.warn(
+            "has_chat_participant is deprecated, use get_chat_participant(chat_id=..., user_id=...) instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
         if "@" not in user_id:
             user_id = f"{user_id}@{await self.server_name}"
@@ -1707,7 +1731,7 @@ class Bot:
             SendSurveyResponse: Object containing the result of the survey submission.
         """
 
-        secret = await generate_secret_for_survey(title=title)
+        secret = await _generate_secret_for_survey(title=title)
 
         call = SendSurvey(
             chat_id=chat_id,
