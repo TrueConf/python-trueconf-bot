@@ -17,11 +17,11 @@ class Previews(DataClassDictMixin):
 class GetFileInfoResponse(DataClassDictMixin):
     name: str
     size: int
-    previews: Optional[List[Previews]]
     mimetype: str = field(metadata={"alias": "mimeType"})
-    download_url: Optional[str] = field(metadata={"alias": "downloadUrl"})
     ready_state: FileReadyState = field(metadata={"alias": "readyState"})
     file_id: str = field(metadata={"alias": "fileId"})
+    previews: Optional[List[Previews]] = field(default=None)
+    download_url: Optional[str] = field(default=None, metadata={"alias": "downloadUrl"})
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:

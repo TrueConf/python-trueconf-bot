@@ -4,6 +4,7 @@ from asyncio import get_running_loop
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
 from trueconf.types.responses.api_error import ApiError
+import asyncio
 
 logger = logging.getLogger("chat_bot")
 
@@ -69,7 +70,7 @@ class TrueConfMethod(ABC, Generic[T]):
 
         return ret(**payload)  # type: ignore[misc]
 
-    async def __call__(self, bot: "ChatBot") -> T:
+    async def __call__(self, bot: "Bot", timeout: float = 10.0) -> T:
         loop = get_running_loop()
         future = loop.create_future()
         bot._register_future(self.id, future)
@@ -91,7 +92,10 @@ class TrueConfMethod(ABC, Generic[T]):
 
         await bot._send_ws_payload(message)
 
-        data = await future
+        try:
+            data = await asyncio.wait_for(future, timeout=timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Request to {self.__api_method__} timed out after {timeout}s")
         logger.debug(f"✅ Received response for {self.__api_method__}: {data}")
 
         return self._parse_return(data)
