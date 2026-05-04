@@ -21,12 +21,6 @@ class _VersionChecker:
             library_spec=None,
             message="Chatbots are not supported (server version 5.5.0+ required).",
         ),
-        CompatibilityRule(
-            server_spec=SpecifierSet(">=5.5.0,<=5.5.2"),
-            library_spec=SpecifierSet(">=1.1.0,<1.2.0"),
-            message="Server version 5.5.0–5.5.2 requires python-trueconf-bot v1.1.x.",
-            install_hint='uv pip install "python-trueconf-bot>=1.1.0,<1.2.0"',
-        ),
     )
 
     @classmethod
