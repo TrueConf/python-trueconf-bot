@@ -17,5 +17,5 @@ class ForwardMessage(AbstractEnvelopeContent):
     content: Union[TextContent, AttachmentContent, SurveyContent]
     message_id: str = field(metadata={"alias": "messageId"})
     chat_id: str = field(metadata={"alias": "chatId"})
-    is_edited: Optional[bool] = field(metadata={"alias": "isEdited"})
-    box: Optional[EnvelopeBox]
+    is_edited: bool | None = field(default=None, metadata={"alias": "isEdited"})
+    box: EnvelopeBox | None = field(default=None)

@@ -6,9 +6,9 @@ from trueconf.types.last_message import LastMessage
 
 @dataclass
 class GetChatByIdResponse(DataClassDictMixin):
-    chat_id: str = field(metadata={"alias": "chatId"})
     title: str
+    chat_id: str = field(metadata={"alias": "chatId"})
     chat_type: int = field(metadata={"alias": "chatType"})
-    avatar_url: str | None = field(metadata={"alias": "avatarUrl"})
     unread_messages: int = field(metadata={"alias": "unreadMessages"})
+    avatar_url: str | None = field(default=None, metadata={"alias": "avatarUrl"})
     last_message: LastMessage | None = field(default=None, metadata={"alias": "lastMessage"})

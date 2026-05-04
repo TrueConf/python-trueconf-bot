@@ -12,5 +12,5 @@ class Extensions(DataClassDictMixin):
 
 @dataclass
 class GetFileUploadLimitsResponse(DataClassDictMixin):
-    max_size: int | None = field(metadata={"alias": "maxSize"})
     extensions: Extensions | None
+    max_size: int | None = field(default=None, metadata={"alias": "maxSize"})
