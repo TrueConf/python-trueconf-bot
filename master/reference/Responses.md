@@ -177,13 +177,13 @@ timestamp
 ### `` GetChatByIdResponse ⚓︎
 
 ```
-GetChatByIdResponse(chat_id, title, chat_type, avatar_url, unread_messages, last_message=None)
+GetChatByIdResponse(title, chat_id, chat_type, unread_messages, avatar_url=None, last_message=None)
 ```
 
 #### `` avatar_url ⚓︎
 
 ```
-avatar_url = field(metadata={'alias': 'avatarUrl'})
+avatar_url = field(default=None, metadata={'alias': 'avatarUrl'})
 ```
 
 #### `` chat_id ⚓︎
@@ -267,19 +267,19 @@ chats = field(default_factory=list, metadata={'alias': 'chats'})
 ### `` GetFileInfoResponse ⚓︎
 
 ```
-GetFileInfoResponse(name, size, previews, mimetype, download_url, ready_state, info_hash)
+GetFileInfoResponse(name, size, mimetype, ready_state, file_id, previews=None, download_url=None)
 ```
 
 #### `` download_url ⚓︎
 
 ```
-download_url = field(metadata={'alias': 'downloadUrl'})
+download_url = field(default=None, metadata={'alias': 'downloadUrl'})
 ```
 
-#### `` info_hash ⚓︎
+#### `` file_id ⚓︎
 
 ```
-info_hash = field(metadata={'alias': 'infoHash'})
+file_id = field(metadata={'alias': 'fileId'})
 ```
 
 #### `` mimetype ⚓︎
@@ -297,7 +297,7 @@ name
 #### `` previews ⚓︎
 
 ```
-previews
+previews = field(default=None)
 ```
 
 #### `` ready_state ⚓︎
@@ -315,7 +315,7 @@ size
 ### `` GetFileUploadLimitsResponse ⚓︎
 
 ```
-GetFileUploadLimitsResponse(max_size, extensions)
+GetFileUploadLimitsResponse(extensions, max_size=None)
 ```
 
 #### `` extensions ⚓︎
@@ -327,7 +327,7 @@ extensions
 #### `` max_size ⚓︎
 
 ```
-max_size = field(metadata={'alias': 'maxSize'})
+max_size = field(default=None, metadata={'alias': 'maxSize'})
 ```
 
 ### `` GetMessageByIdResponse ⚓︎

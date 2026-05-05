@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** v1.2.0
-- **Generated:** 2026-04-23T12:28:12+00:00
+- **Version:** v1.2.3
+- **Generated:** 2026-05-05T17:38:25+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -13,19 +13,19 @@
   - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md)
   - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md)
   - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md)
+  - [Shortcuts ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md)
   - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md)
   - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/types.md)
   - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/files.md)
+  - [Restrictions ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/restrictions.md)
 - [Reference](#reference)
   - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Bot.md)
   - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Router.md)
   - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher.md)
   - [Enums](https://trueconf.github.io/python-trueconf-bot/master/reference/Enums.md)
   - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Types.md)
+  - [Exceptions](https://trueconf.github.io/python-trueconf-bot/master/reference/Exceptions.md)
   - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Responses.md)
-- [Examples](#examples)
-  - [Echo bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot.md)
-  - [Multibot ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/examples/multibot.md)
 - [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/release_notes.md)
 
 ---
@@ -132,6 +132,170 @@ The library implements all core TrueConf API methods: sending messages, uploadin
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/release_notes.md
 
 # List of Changes⚓︎
+
+## 1.2.3⚓︎
+
+Added:
+
+- Added a 10-second server response timeout. If no response is received within the timeout, an `asyncio.TimeoutError` is raised: `Request to {self.__api_method__} timed out after {timeout}s` (#12).
+
+Fixed:
+
+- Fixed cases where Mashumaro failed to parse a response, which could cause the application to crash (#8, #11).
+
+## 1.2.2⚓︎
+
+Fixed:
+
+- Fixed a missing dependency: the `packaging` package, which is required to check the library version at bot startup.
+
+## 1.2.1⚓︎
+
+Added:
+
+- Added support for TrueConf Server 5.5.4.
+
+- Added the `receive_system_messages` flag to `Bot()` and `Bot.from_credentials()` to enable or disable receiving system messages.
+
+- Added the new `bot.get_chat_participant()` method, which replaces `bot.has_chat_participant()`.
+
+Fixed:
+
+- Fixed support for TrueConf Server 5.5.3+. Removed an unnecessary version check that prevented the code from running with library version 1.2.0.
+
+- Fixed documentation links to `llms.txt` and `llms-full.txt`.
+
+Changed:
+
+- When retrieving file information via `bot.get_file_info(file_id=...)`, the response now returns the `file_id` field instead of `info_hash`.
+
+Deprecated:
+
+- The `bot.has_chat_participant()` method has been deprecated. Use `bot.get_chat_participant()` instead.
+
+## 1.2.0⚓︎
+
+Added:
+
+- Added support for TrueConf Server 5.5.3, including:
+
+- chat title editing with `bot.edit_chat_title(...)`;
+
+- chat avatar editing with `bot.edit_chat_avatar(...)`;
+
+- chat history clearing with `bot.clear_chat_history(...)`;
+
+- retrieving file storage limits with `bot.get_file_info_upload_limits(...)`;
+
+- a new file transfer approach where the `file_name` parameter is now required for `FSInputFile(...)` and other file upload methods.
+
+- Added caching for file storage limit settings. These settings are now used for pre-upload validation, and the library raises an exception if a file does not meet the configured constraints.
+
+- Added `python-magic` and `filetype` libraries for more reliable file type detection based on magic numbers (byte signatures).
+
+- Added automatic file extension appending when a filename does not contain an extension.
+
+- Improved WebSocket connection stability with exponential backoff and a configurable retry strategy. You can control the maximum number of reconnection attempts with `ws_max_retries` and the maximum delay between attempts with `ws_max_delay` (#6).
+
+- Added TrueConf Server version validation. The library now raises a `RuntimeError` with upgrade instructions if an incompatible server version is detected.
+
+- Added the `safe_split_text` utility for safely splitting long messages exceeding 4096 characters into chunks of up to 4096 characters. This is especially useful for AI agents that generate long responses.
+
+- Added AI-friendly documentation builds: `llms.txt` and `llms-full.txt`.
+
+- Added and expanded logging.
+
+Fixed:
+
+- Fixed an issue with sending stickers in TrueConf Server 5.5.3+.
+
+- Fixed issue #7.
+
+- Fixed various minor bugs and made general improvements.
+
+Deprecated:
+
+- The `filename` and `mimetype` parameters are now deprecated.
+
+- Please migrate to the new `snake_case` parameter naming, as the old parameters will be removed in future versions.
+
+## 1.1.10⚓︎
+
+Fixed:
+
+- Fixed the missing `file_id` parameter in `SendFileResponse`.
+
+## 1.1.9⚓︎
+
+Added:
+
+- Added TrueConf Server version validation. The library now raises a `RuntimeError` with update instructions if an incompatible server version is detected.
+
+## 1.1.8⚓︎
+
+Fixed:
+
+- Added `verify_ssl` support for WSS connections. Previously, SSL verification was unconditionally bypassed when `https` was enabled; it is now correctly controlled by the configuration flag.
+
+## 1.1.7⚓︎
+
+Added:
+
+- Added `reply_photo`, `reply_document`, and `reply_sticker` shortcut methods to the `Message` class.
+
+- Added `reply_message_id` support to multiple methods and to the `SendFile` class.
+
+Fixed:
+
+- Fixed `quote_fields` being set to `False` in `aiohttp.FormData`.
+
+- Set the default value of `last_message` to `None` in `GetChatByIdResponse` (fixes #4).
+
+Deprecated:
+
+- `reply_message` is now deprecated. Use `reply_message_id` instead.
+
+## 1.1.6⚓︎
+
+Refactored:
+
+- Replaced local `verify_ssl` usage with `self.verify_ssl` in class methods.
+
+## 1.1.5⚓︎
+
+Fixed:
+
+- Prevented `run()` from hanging when the connect task fails.
+
+- Properly propagate `ApiErrorException` and other errors to the caller.
+
+## 1.1.4⚓︎
+
+Fixed:
+
+- Removed the `chat_id` field from `RemoveChatResponse` (#1).
+
+## 1.1.3⚓︎
+
+Fixed:
+
+- Fixed event propagation for multiple routers and subrouters.
+
+## 1.1.2⚓︎
+
+Added:
+
+- Bumped the development status.
+
+- Added `typing_extensions` to dependencies.
+
+- Added and updated the downloads badge.
+
+- Added imports for `Self` and `Unpack` from `typing_extensions`.
+
+Fixed:
+
+- Fixed `Message` shortcuts not working.
 
 ## 1.1.1⚓︎
 
@@ -303,6 +467,10 @@ TOKEN = getenv("TOKEN")
 bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
 ```
 
+Note
+
+The token is valid for one month from the moment it is created. However, an already authorized connection remains active until it is closed, even after the token has expired. In theory, such a connection can persist for years.
+
 ### Login/Password Authentication⚓︎
 
 Use the `.from_credentials` method:
@@ -357,6 +525,47 @@ This means that all network operations (connecting to the server, receiving and 
 - the launch is managed via `asyncio.run(...)`.
 
 This approach allows handling multiple events and messages in parallel — without delays or blocking.
+
+### Automatic Connection Recovery⚓︎
+
+If the WebSocket connection to the server is interrupted, the bot will not stop immediately. Instead, it will automatically attempt to reconnect and continue receiving events.
+
+Reconnection uses an exponential backoff strategy: after each failed attempt, the delay increases but does not exceed the `ws_max_delay` value. This helps prevent excessive requests to the server during temporary network issues.
+
+By default, the following reconnection parameters are used:
+
+```
+bot = Bot(
+server="video.example.com",
+token=TOKEN,
+dispatcher=dp,
+ws_max_retries=5,
+ws_max_delay=60,
+)
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ws_max_retries` | `int` | `5` | Maximum number of connection attempts on network/IP errors before giving up |
+| `ws_max_delay` | `int` | `60` | Maximum delay between reconnection attempts (in seconds) |
+
+If your bot runs in an unstable network environment or the server may be temporarily unavailable, you can increase these values:
+
+```
+bot = Bot(
+server="video.example.com",
+token=TOKEN,
+dispatcher=dp,
+ws_max_retries=10,
+ws_max_delay=120,
+)
+```
+
+Note
+
+In case of a normal WebSocket disconnection, the bot will attempt to reconnect using exponential backoff.
+
+If the server address is incorrect, the bot will not be able to establish a connection. In this case, the number of retry attempts is limited by `ws_max_retries`, after which a connection error will be raised.
 
 ---
 
@@ -898,6 +1107,77 @@ await bot.send_message(chat_id=message.chat_id, text=f"Special: {command.command
 
 ---
 
+# DOCUMENT: Shortcuts ⚓︎
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md
+
+# Shortcuts⚓︎
+
+## Working with the Message Object⚓︎
+
+When handling an incoming message, a `Message` object is typically passed to the handler function:
+
+```
+from trueconf import Router
+from trueconf.types import Message
+
+r = Router()
+
+@r.message()
+async def on_message(message: Message):
+await message.answer("Message received")
+```
+
+The `Message` object is injected into the handler automatically and contains the context of the current event: information about the sender, chat, message type, content, message ID, and other parameters.
+
+In addition, the message object provides access to the bot instance that is processing the current event:
+
+```
+@r.message()
+async def on_message(message: Message):
+result = await message.bot.get_something()
+```
+
+This is useful when the bot instance is defined in another module or declared later in the code, making it unavailable as a direct variable (`bot`) inside the handler.
+
+In such cases, you can access the current bot instance via the message object: `message.bot`.
+
+## Message Shortcuts⚓︎
+
+The `Message` class provides shortcuts — helper methods that allow you to perform common actions without explicitly passing `chat_id`, `message_id`, and other parameters. These values are automatically taken from the current message.
+
+Note
+
+Currently, shortcuts are implemented only for the `Message` type. Support for other event types may be added in future releases.
+
+For example, instead of calling the bot method directly:
+
+```
+@r.message()
+async def on_message(message: Message):
+await message.bot.send_message(
+chat_id=message.chat_id,
+text="Hello!"
+)
+```
+
+you can use a shortcut:
+
+```
+@r.message()
+async def on_message(message: Message):
+await message.answer("Hello!")
+```
+
+Shortcuts are especially useful in handlers where actions are tied to the current message or chat. They make the code more concise and reduce repetition.
+
+For example, `message.answer(...)` automatically uses the chat where the message was received, while `message.reply(...)` also links the response to the original message.
+
+Tip
+
+You can find the full list of available shortcuts in the Message class reference.
+
+---
+
 # DOCUMENT: Using enumerations ⚓︎
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md
 
@@ -1228,6 +1508,53 @@ We also recommend reviewing the repository: https://github.com/ahupp/python-magi
 ### Notes⚓︎
 
 - When `python-magic` is available, the MIME type is detected from the file bytes, which is usually more accurate than detecting it by filename or extension.
+
+---
+
+# DOCUMENT: Restrictions ⚓︎
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/restrictions.md
+
+# Restrictions⚓︎
+
+The library performs pre-validation of certain TrueConf Server limits and raises exceptions before sending a request if a value exceeds the allowed threshold.
+
+#### Chat Title⚓︎
+
+The maximum chat title length is `255` characters. If a longer title is provided, a `GroupTitleTooLongError` or `ChannelTitleTooLongError` will be raised.
+
+#### Message Length⚓︎
+
+The maximum length of a text message is `4096` visible characters. If this limit is exceeded, a `TextMessageTooLongError` will be raised.
+
+If you need to send a long message, for example an LLM-generated response, you can split it into multiple parts using `safe_split_text`:
+
+```
+from trueconf.utils import safe_split_text
+
+for chunk in safe_split_text(long_text):
+await bot.send_message(
+chat_id=chat_id,
+text=chunk,
+)
+```
+
+The `safe_split_text(text)` function returns a list of chunks that can be sent sequentially.
+
+#### File Restrictions⚓︎
+
+Limits on file size and allowed extensions are configured by the TrueConf Server administrator. The bot retrieves these parameters from the server and updates them when the settings change:
+
+```
+bot.max_file_size: int | None
+bot.file_extension_filter_mode: str | None
+bot.file_extensions_list: set | None
+```
+
+When sending a file, the library checks its size and extension. If the file exceeds the allowed size, a `FileSizeTooLargeError` will be raised. If the file extension is not allowed by server settings, an `InvalidFileExtensionError` will be raised.
+
+Note
+
+File restrictions depend on the configuration of the specific TrueConf Server. If the administrator changes the maximum file size or the list of allowed extensions, the bot will automatically receive updated values on the next limits update event.
 
 ---
 
@@ -5387,6 +5714,357 @@ progress
 
 ---
 
+# DOCUMENT: Exceptions
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Exceptions.md
+
+# Exceptions
+
+## `` trueconf.exceptions ⚓︎
+
+### `` ApiErrorException ⚓︎
+
+```
+ApiErrorException(code, detail, payload=None)
+```
+
+Raised when TrueConf Server returns an API error response.
+
+This exception stores the server error code, human-readable detail, and optional response payload for additional context.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` code
+
+`instance-attribute`
+(`trueconf.exceptions.ApiErrorException.code`)' href=#trueconf.exceptions.ApiErrorException.code>code | | Error code returned by the server. |
+| `` detail
+
+`instance-attribute`
+(`trueconf.exceptions.ApiErrorException.detail`)' href=#trueconf.exceptions.ApiErrorException.detail>detail | | Human-readable error description. |
+| `` payload
+
+`instance-attribute`
+(`trueconf.exceptions.ApiErrorException.payload`)' href=#trueconf.exceptions.ApiErrorException.payload>payload | | Raw error payload returned by the server, or an empty dict. |
+
+#### `` code `instance-attribute` ⚓︎
+
+```
+code = code
+```
+
+#### `` detail `instance-attribute` ⚓︎
+
+```
+detail = detail
+```
+
+#### `` payload `instance-attribute` ⚓︎
+
+```
+payload = payload or {}
+```
+
+### `` ChannelTitleTooLongError ⚓︎
+
+```
+ChannelTitleTooLongError(actual_length, limit=256)
+```
+
+Raised when a channel title exceeds the maximum allowed length.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.ChannelTitleTooLongError.actual_value`)' href=#trueconf.exceptions.ChannelTitleTooLongError.actual_value>actual_value | | Actual length of the channel title. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.ChannelTitleTooLongError.limit`)' href=#trueconf.exceptions.ChannelTitleTooLongError.limit>limit | | Maximum allowed channel title length. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` ChatTitleTooLongError ⚓︎
+
+```
+ChatTitleTooLongError(message, actual_value, limit)
+```
+
+Base exception for chat title length errors.
+
+This class is inherited by more specific exceptions for group and channel title length validation.
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` FileCaptionTooLongError ⚓︎
+
+```
+FileCaptionTooLongError(actual_length, limit=4096)
+```
+
+Raised when a file caption exceeds the maximum allowed length.
+
+The default caption limit is 4096 visible characters. For long captions, use `safe_split_text` from `trueconf.utils` and send the returned chunks separately when appropriate.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.FileCaptionTooLongError.actual_value`)' href=#trueconf.exceptions.FileCaptionTooLongError.actual_value>actual_value | | Actual visible length of the caption. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.FileCaptionTooLongError.limit`)' href=#trueconf.exceptions.FileCaptionTooLongError.limit>limit | | Maximum allowed caption length. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` FileSizeTooLargeError ⚓︎
+
+```
+FileSizeTooLargeError(actual_size, limit)
+```
+
+Raised when a file exceeds the maximum size allowed by the server.
+
+File size limits are configured by the TrueConf Server administrator and are checked by the bot before sending a file.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.FileSizeTooLargeError.actual_value`)' href=#trueconf.exceptions.FileSizeTooLargeError.actual_value>actual_value | | Actual file size in bytes. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.FileSizeTooLargeError.limit`)' href=#trueconf.exceptions.FileSizeTooLargeError.limit>limit | | Maximum allowed file size in bytes. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` FileValidationError ⚓︎
+
+Base exception for file validation errors.
+
+This class is used for errors related to file size limits, extension filters, and other file validation rules received from TrueConf Server.
+
+### `` GroupTitleTooLongError ⚓︎
+
+```
+GroupTitleTooLongError(actual_length, limit=256)
+```
+
+Raised when a group title exceeds the maximum allowed length.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.GroupTitleTooLongError.actual_value`)' href=#trueconf.exceptions.GroupTitleTooLongError.actual_value>actual_value | | Actual length of the group title. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.GroupTitleTooLongError.limit`)' href=#trueconf.exceptions.GroupTitleTooLongError.limit>limit | | Maximum allowed group title length. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` InvalidFileExtensionError ⚓︎
+
+```
+InvalidFileExtensionError(extension, extensions=None, mode='allow')
+```
+
+Raised when a file extension does not satisfy the server extension filter.
+
+File extension rules are configured by the TrueConf Server administrator. Depending on the filter mode, the extension list can work either as an allow list or as a block list.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` extension
+
+`instance-attribute`
+(`trueconf.exceptions.InvalidFileExtensionError.extension`)' href=#trueconf.exceptions.InvalidFileExtensionError.extension>extension | | File extension that failed validation. |
+| `` extensions
+
+`instance-attribute`
+(`trueconf.exceptions.InvalidFileExtensionError.extensions`)' href=#trueconf.exceptions.InvalidFileExtensionError.extensions>extensions | | Set of extensions used for validation. |
+| `` mode
+
+`instance-attribute`
+(`trueconf.exceptions.InvalidFileExtensionError.mode`)' href=#trueconf.exceptions.InvalidFileExtensionError.mode>mode | | Extension filter mode. |
+
+#### `` extension `instance-attribute` ⚓︎
+
+```
+extension = extension
+```
+
+#### `` extensions `instance-attribute` ⚓︎
+
+```
+extensions = extensions or set()
+```
+
+#### `` mode `instance-attribute` ⚓︎
+
+```
+mode = mode
+```
+
+### `` InvalidGrantError ⚓︎
+
+Raised when the server rejects the provided authorization grant.
+
+This usually means that the token or credentials are invalid, expired, revoked, or cannot be used to authorize the bot.
+
+### `` LimitExceededError ⚓︎
+
+```
+LimitExceededError(message, actual_value, limit)
+```
+
+Base exception for all limit-related errors.
+
+This class is used for errors related to text length, title length, file size, and other numeric limits.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.LimitExceededError.actual_value`)' href=#trueconf.exceptions.LimitExceededError.actual_value>actual_value | | Actual value that exceeded the limit. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.LimitExceededError.limit`)' href=#trueconf.exceptions.LimitExceededError.limit>limit | | Maximum allowed value. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` TextMessageTooLongError ⚓︎
+
+```
+TextMessageTooLongError(actual_length, limit=4096)
+```
+
+Raised when a text message exceeds the maximum allowed length.
+
+The default text message limit is 4096 visible characters. For long texts, such as LLM-generated responses, use `safe_split_text` from `trueconf.utils` and send the returned chunks one by one.
+
+Attributes:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `` actual_value
+
+`instance-attribute`
+(`trueconf.exceptions.TextMessageTooLongError.actual_value`)' href=#trueconf.exceptions.TextMessageTooLongError.actual_value>actual_value | | Actual visible length of the message text. |
+| `` limit
+
+`instance-attribute`
+(`trueconf.exceptions.TextMessageTooLongError.limit`)' href=#trueconf.exceptions.TextMessageTooLongError.limit>limit | | Maximum allowed message length. |
+
+#### `` actual_value `instance-attribute` ⚓︎
+
+```
+actual_value = actual_value
+```
+
+#### `` limit `instance-attribute` ⚓︎
+
+```
+limit = limit
+```
+
+### `` TokenValidationError ⚓︎
+
+Raised when the bot token fails local validation.
+
+This error indicates that the token value has an invalid format or cannot be used by the connector before the authorization request is sent.
+
+### `` TrueConfChatBotError ⚓︎
+
+Base exception for all TrueConf ChatBot Connector errors.
+
+All custom exceptions raised by the library inherit from this class. You can catch this exception to handle any library-specific error in a single place.
+
+---
+
 # DOCUMENT: Responses ⚓︎
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Responses.md
 
@@ -5569,13 +6247,13 @@ timestamp
 ### `` GetChatByIdResponse ⚓︎
 
 ```
-GetChatByIdResponse(chat_id, title, chat_type, avatar_url, unread_messages, last_message=None)
+GetChatByIdResponse(title, chat_id, chat_type, unread_messages, avatar_url=None, last_message=None)
 ```
 
 #### `` avatar_url ⚓︎
 
 ```
-avatar_url = field(metadata={'alias': 'avatarUrl'})
+avatar_url = field(default=None, metadata={'alias': 'avatarUrl'})
 ```
 
 #### `` chat_id ⚓︎
@@ -5659,19 +6337,19 @@ chats = field(default_factory=list, metadata={'alias': 'chats'})
 ### `` GetFileInfoResponse ⚓︎
 
 ```
-GetFileInfoResponse(name, size, previews, mimetype, download_url, ready_state, info_hash)
+GetFileInfoResponse(name, size, mimetype, ready_state, file_id, previews=None, download_url=None)
 ```
 
 #### `` download_url ⚓︎
 
 ```
-download_url = field(metadata={'alias': 'downloadUrl'})
+download_url = field(default=None, metadata={'alias': 'downloadUrl'})
 ```
 
-#### `` info_hash ⚓︎
+#### `` file_id ⚓︎
 
 ```
-info_hash = field(metadata={'alias': 'infoHash'})
+file_id = field(metadata={'alias': 'fileId'})
 ```
 
 #### `` mimetype ⚓︎
@@ -5689,7 +6367,7 @@ name
 #### `` previews ⚓︎
 
 ```
-previews
+previews = field(default=None)
 ```
 
 #### `` ready_state ⚓︎
@@ -5707,7 +6385,7 @@ size
 ### `` GetFileUploadLimitsResponse ⚓︎
 
 ```
-GetFileUploadLimitsResponse(max_size, extensions)
+GetFileUploadLimitsResponse(extensions, max_size=None)
 ```
 
 #### `` extensions ⚓︎
@@ -5719,7 +6397,7 @@ extensions
 #### `` max_size ⚓︎
 
 ```
-max_size = field(metadata={'alias': 'maxSize'})
+max_size = field(default=None, metadata={'alias': 'maxSize'})
 ```
 
 ### `` GetMessageByIdResponse ⚓︎
@@ -5967,55 +6645,5 @@ UploadFileResponse(upload_task_id)
 ```
 upload_task_id = field(metadata={'alias': 'uploadTaskId'})
 ```
-
----
-
-# DOCUMENT: Echo bot ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/echo_bot.md
-
-# Echo bot⚓︎
-
-```
-import asyncio
-from trueconf import Bot, Dispatcher, Router, Message, F, ParseMode
-from os import getenv
-
-router = Router()
-dp = Dispatcher()
-dp.include_router(router)
-
-TOKEN = getenv("TOKEN")
-
-bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
-
-@router.message(F.text)
-async def echo(msg: Message):
-await msg.answer(f"You says: **{msg.text}**", parse_mode=ParseMode.MARKDOWN)
-
-async def main():
-await bot.run()
-
-if __name__ == "__main__":
-asyncio.run(main())
-```
-
----
-
-# DOCUMENT: Multibot ⚓︎
-**Source:** https://trueconf.github.io/python-trueconf-bot/master/examples/multibot.md
-
-# Multibot⚓︎
-
-The TrueConf team has prepared an example that demonstrates the use of four bots at once (all-in-one):
-
-- Echo bot
-
-- Sick-leave bot that forwards messages to an HR group
-
-- Monitoring bot for external service statistics (TrueConf Server)
-
-- GPT bot that runs a local LLM model in the background
-
-View repository
 
 ---
