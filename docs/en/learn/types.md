@@ -1,3 +1,8 @@
+---
+title: Data Types
+icon: material/database-search
+---
+
 # Data Types
 
 When developing applications, it is especially important that the IDE provides hints about available methods and class parameters. However, the router (Router) passes different data types to handlers, and the IDE cannot always correctly determine their type. Therefore, it needs a hint about which specific object is being passed.

@@ -1,3 +1,8 @@
+---
+title: Home
+icon: material/home-variant
+---
+
 # Python Library for TrueConf Chatbot Connector
 
 <img src="img/head.png" alt="">

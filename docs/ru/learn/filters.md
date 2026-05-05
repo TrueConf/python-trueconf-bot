@@ -1,6 +1,6 @@
 ---
 title: Фильтры
-icon: 
+icon: material/filter
 ---
 
 # Фильтры

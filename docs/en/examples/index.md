@@ -1,4 +1,9 @@
-# Examples
+---
+title: Code examples
+icon: material/console
+---
+
+# Code examples
 
 ## Echo bot
 

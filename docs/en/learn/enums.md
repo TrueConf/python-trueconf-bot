@@ -1,3 +1,8 @@
+---
+title: Using enumerations
+icon: material/alphabet-latin
+---
+
 # Using enumerations
 
 In the **{{product_name}}** library, many method parameters and object fields are defined through **enums** (enumerations).

@@ -1,3 +1,8 @@
+---
+title: Getting Started
+icon: material/run
+---
+
 # Getting Started
 
 Before getting started, we recommend creating and activating a virtual environment to isolate your project dependencies:
@@ -51,6 +56,11 @@ TOKEN = getenv("TOKEN")
 bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
 ```
 
+!!! Note
+    The token is valid for one month from the moment it is created.
+    However, an already authorized connection remains active until it is closed, even after the token has expired.
+    In theory, such a connection can persist for years.
+
 ### Login/Password Authentication
 
 Use the `.from_credentials` method:
@@ -102,3 +112,44 @@ This means that all network operations (connecting to the server, receiving and 
 * the launch is managed via `asyncio.run(...)`.
 
 This approach allows handling multiple events and messages in parallel — without delays or blocking.
+
+### Automatic Connection Recovery
+
+If the WebSocket connection to the server is interrupted, the bot will not stop immediately. Instead, it will automatically attempt to reconnect and continue receiving events.
+
+Reconnection uses an exponential backoff strategy: after each failed attempt, the delay increases but does not exceed the `ws_max_delay` value. This helps prevent excessive requests to the server during temporary network issues.
+
+By default, the following reconnection parameters are used:
+
+```python hl_lines="5-6"
+bot = Bot(
+    server="video.example.com",
+    token=TOKEN,
+    dispatcher=dp,
+    ws_max_retries=5,
+    ws_max_delay=60,
+)
+```
+
+| Parameter        | Type  | Default | Description                                                                 |
+| ---------------- | ----- | ------- | --------------------------------------------------------------------------- |
+| `ws_max_retries` | `int` | `5`     | Maximum number of connection attempts on network/IP errors before giving up |
+| `ws_max_delay`   | `int` | `60`    | Maximum delay between reconnection attempts (in seconds)                    |
+
+If your bot runs in an unstable network environment or the server may be temporarily unavailable, you can increase these values:
+
+```python hl_lines="5-6"
+bot = Bot(
+    server="video.example.com",
+    token=TOKEN,
+    dispatcher=dp,
+    ws_max_retries=10,
+    ws_max_delay=120,
+)
+```
+
+!!! note
+    In case of a normal WebSocket disconnection, the bot will attempt to reconnect using exponential backoff.
+
+    If the server address is incorrect, the bot will not be able to establish a connection. In this case, the number of retry attempts is limited by `ws_max_retries`, after which a connection error will be raised.
+

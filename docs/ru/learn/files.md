@@ -1,6 +1,6 @@
 ---
 title: Работа с файлами
-icon: 
+icon: material/file-sync
 ---
 
 # Работа с файлами

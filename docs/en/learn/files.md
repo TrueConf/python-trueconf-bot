@@ -1,6 +1,6 @@
 ---
 title: Working with files
-icon:
+icon: material/file-sync 
 ---
 
 # Working with Files
