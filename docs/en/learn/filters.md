@@ -1,6 +1,6 @@
 ---
 title: Filters
-icon:
+icon: material/filter
 ---
 
 # Filters

@@ -1,3 +1,8 @@
+---
+title: Features
+icon: material/feather
+---
+
 # Features
 
 ## Asyncio-based Asynchronous Architecture

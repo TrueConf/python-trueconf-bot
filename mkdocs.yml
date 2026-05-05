@@ -142,7 +142,7 @@ plugins:
             Features: Возможности
             Home: Главная
             Reference: Описание библиотеки
-            Examples: Примеры
+            Examples: Примеры кода
             Release Notes: Список изменений
           extra:
             social:
@@ -160,15 +160,18 @@ nav:
       - learn/getting-started.md
       - learn/parse-messages.md
       - learn/filters.md
+      - learn/shortcuts.md
       - learn/enums.md
       - learn/types.md
       - learn/files.md
+      - learn/restrictions.md
   - Reference:
       - reference/Bot.md
       - reference/Router.md
       - reference/Dispatcher.md
       - reference/Enums.md
       - reference/Types.md
+      - reference/Exceptions.md
   - Examples: examples/index.md
   - Release Notes: release_notes.md
 

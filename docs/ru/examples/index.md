@@ -1,4 +1,9 @@
-# Examples
+---
+title: Примеры кода
+icon: material/console
+---
+
+# Примеры
 
 ## Эхо-бот (базовый пример)
 
