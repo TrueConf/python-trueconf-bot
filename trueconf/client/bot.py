@@ -4,7 +4,6 @@ import contextlib
 import httpx
 import json
 import signal
-import ssl
 import websockets
 import warnings
 import random
@@ -17,10 +16,11 @@ from typing import (
     Dict,
     List,
     Tuple,
-    TypeVar
+    TypeVar,
+    Any
 )
-
-from typing_extensions import Self
+from datetime import datetime, timezone
+from typing_extensions import Self, deprecated
 
 from trueconf import loggers
 from trueconf.client.session import WebSocketSession
@@ -66,7 +66,7 @@ from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
 from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
-from trueconf.types.responses import GetFileUploadLimitsResponse, ApiError
+from trueconf.types.responses import GetFileUploadLimitsResponse, ApiError, AuthResponsePayload
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 from trueconf.types.responses.clear_chat_history_response import ClearChatHistoryResponse
@@ -99,6 +99,7 @@ from trueconf.types.responses.unsubscribe_file_progress_response import Unsubscr
 from trueconf.utils._generate_secret_for_survey import _generate_secret_for_survey
 from trueconf.utils._token import _get_auth_token, _validate_token
 from trueconf.utils._version_checker import _VersionChecker
+from trueconf.utils._ssl import _build_ssl_context, _describe_ssl_context, SSLVerify
 from trueconf.utils.split_text import visible_len
 
 from trueconf.exceptions import (
@@ -113,6 +114,8 @@ from trueconf.exceptions import (
 
 T = TypeVar("T")
 
+HealthCheckCallback = Callable[[Dict[str, Any]], Awaitable[None]]
+
 class Bot:
     def __init__(
             self,
@@ -122,12 +125,13 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             receive_system_messages: bool = False,
-            verify_ssl: bool = True,
+            verify_ssl: SSLVerify = True,
             web_port: int | None = None,
             https: bool = True,
             ws_max_retries: int = 5,
             ws_max_delay: int = 60,
             debug: bool = False,
+            on_health_check: HealthCheckCallback | None = None,
     ):
         """
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -143,12 +147,19 @@ class Bot:
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
             receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
                 to the chat or chat title changes. Defaults to False.
-            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            verify_ssl (bool | str | ssl.SSLContext, optional): SSL verification mode. If True, verifies
+                the server certificate using the system trust store when available. If False, disables
+                certificate verification. If a string is provided, it must be a path to a CA bundle file.
+                A custom ssl.SSLContext can also be passed. Defaults to True.
             web_port (int, optional): WebSocket connection port. Defaults to 443.
             https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
             ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
             ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
             debug (bool, optional): Enables debug mode. Defaults to False.
+            on_health_check (HealthCheckCallback | None, optional): Async callback called when the bot
+                connection health changes. The callback receives a dictionary with the current status,
+                WebSocket state, authorization state, server, port, protocol, timestamp, and optional
+                error details. Defaults to None.
 
         Note:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
@@ -161,7 +172,7 @@ class Bot:
         self.dp = dispatcher or Dispatcher()
         self.receive_unread_messages = receive_unread_messages
         self.receive_system_messages = receive_system_messages
-        self.verify_ssl = verify_ssl
+        self.ssl_context = _build_ssl_context(verify_ssl)
         self.https = https
         self._ws_max_retries = ws_max_retries
         self._ws_max_delay = ws_max_delay
@@ -186,10 +197,12 @@ class Bot:
         self.max_file_size: int | None = None
         self.file_extension_filter_mode: str | None = None
         self.file_extensions_list: set | None = None
+        self._me_id: str
+        self._on_health_check = on_health_check
 
         loggers.chatbot.info(
             f"Bot initialized: server={server}:{self.port}, protocol={self._protocol}, "
-            f"verify_ssl={verify_ssl}, ws_max_retries={ws_max_retries}, ws_max_delay={ws_max_delay}, "
+            f"verify_ssl={_describe_ssl_context(self.ssl_context)}, ws_max_retries={ws_max_retries}, ws_max_delay={ws_max_delay}, "
             f"receive_unread={receive_unread_messages}"
         )
 
@@ -209,7 +222,7 @@ class Bot:
 
     async def __get_domain_name(self):
         try:
-            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
+            async with httpx.AsyncClient(verify=self.ssl_context, timeout=5) as client:
                 response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
                 domain_name = response.json().get("product").get("display_name")
                 loggers.chatbot.info(f"🌐 Server domain_name resolved: {domain_name}")
@@ -220,7 +233,7 @@ class Bot:
 
     async def __get_server_version(self):
             try:
-                async with httpx.AsyncClient(verify=self.verify_ssl, timeout=5) as client:
+                async with httpx.AsyncClient(verify=self.ssl_context, timeout=5) as client:
                     response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
                     version = response.json().get("product").get("version")
                     loggers.chatbot.info(f"📦 Server version resolved: {version}")
@@ -266,8 +279,12 @@ class Bot:
         current_version = await self.server_version
         _VersionChecker.check(current_version)
 
+    @property
+    def me_id(self) -> str:
+        return self._me_id
+
     @async_cached_property
-    async def me(self) -> str:
+    async def me_chat(self) -> str:
         """
         Returns the identifier of the bot's personal (Favorites) chat.
 
@@ -281,6 +298,20 @@ class Bot:
         r = await self.create_favorites_chat()
         return r.chat_id
 
+    @async_cached_property
+    @deprecated("bot.me is deprecated, use bot.me_chat instead", stacklevel=2)
+    async def me(self) -> str:
+        """
+        Returns the identifier of the bot's personal (Favorites) chat.
+
+        If the chat does not exist yet, it will be created automatically.
+        The result is cached to prevent redundant API calls.
+
+        Returns:
+            str: Chat ID of the bot's personal Favorites chat.
+        """
+        return await self.me_chat
+
     @classmethod
     def from_credentials(
             cls,
@@ -291,11 +322,13 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             receive_system_messages: bool = False,
-            verify_ssl: bool = True,
+            verify_ssl: SSLVerify = True,
             web_port: int | None = None,
             https: bool = True,
             ws_max_retries: int = 5,
             ws_max_delay: int = 60,
+            debug: bool = False,
+            on_health_check: HealthCheckCallback | None = None,
     ) -> Self:
         """
         Creates a bot instance using username and password authentication.
@@ -312,11 +345,19 @@ class Bot:
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
             receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
                 to the chat or chat title changes. Defaults to False.
-            verify_ssl (bool, optional): Whether to verify the server's SSL certificate. Defaults to True.
+            verify_ssl (bool | str | ssl.SSLContext, optional): SSL verification mode. If True, verifies
+                the server certificate using the system trust store when available. If False, disables
+                certificate verification. If a string is provided, it must be a path to a CA bundle file.
+                A custom ssl.SSLContext can also be passed. Defaults to True.
             web_port (int, optional): WebSocket connection port. Defaults to 443.
             https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
             ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
             ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
+            debug (bool, optional): Enables debug mode. Defaults to False.
+            on_health_check (HealthCheckCallback | None, optional): Async callback called when the bot
+                connection health changes. The callback receives a dictionary with the current status,
+                WebSocket state, authorization state, server, port, protocol, timestamp, and optional
+                error details. Defaults to None.
 
         Returns:
             Bot: An authorized bot instance.
@@ -326,7 +367,8 @@ class Bot:
         """
 
         loggers.chatbot.info(f"🔑 Obtaining auth token for user={username} @ {server}")
-        token = _get_auth_token(server, username, password, verify=verify_ssl)
+        ssl_context = _build_ssl_context(verify_ssl)
+        token = _get_auth_token(server, username, password, ssl_context=ssl_context)
         if not token:
             loggers.chatbot.error(f"❌ Failed to obtain token for user={username} @ {server}")
             raise RuntimeError("Failed to obtain token")
@@ -338,9 +380,11 @@ class Bot:
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
             receive_system_messages = receive_system_messages,
-            verify_ssl=verify_ssl,
+            verify_ssl=ssl_context,
             ws_max_delay=ws_max_delay,
-            ws_max_retries=ws_max_retries
+            ws_max_retries=ws_max_retries,
+            debug=debug,
+            on_health_check=on_health_check,
         )
 
     async def __wait_upload_complete(
@@ -402,7 +446,7 @@ class Bot:
         if dest_path:
             loggers.chatbot.info(f"⬇️ Destination: {dest_path}")
         try:
-            async with httpx.AsyncClient(verify=self.verify_ssl, timeout=httpx.Timeout(timeout)) as client:
+            async with httpx.AsyncClient(verify=self.ssl_context, timeout=httpx.Timeout(timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
 
@@ -477,13 +521,7 @@ class Bot:
             "Upload-Task-Id": upload_task_id,
         }
 
-        if not self.verify_ssl:
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            connector = TCPConnector(ssl=ssl_context)
-        else:
-            connector = TCPConnector()
+        connector = TCPConnector(ssl=self.ssl_context)
 
         try:
             async with ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
@@ -532,10 +570,7 @@ class Bot:
 
         if self.https:
             ws_protocol = "wss"
-            if self.verify_ssl:
-                ssl_context = ssl.create_default_context()
-            else:
-                ssl_context = ssl._create_unverified_context()
+            ssl_context =  self.ssl_context
         else:
             ws_protocol = "ws"
 
@@ -546,7 +581,7 @@ class Bot:
                 loggers.chatbot.info("⏳ Attempting WebSocket connection...")
                 async with websockets.connect(
                         uri=f"{ws_protocol}://{self.server}:{self.port}/websocket/chat_bot",
-                        ssl=ssl_context,
+                        ssl = ssl_context,
                         ping_interval=30,
                         ping_timeout=10
                 ) as ws:
@@ -561,14 +596,34 @@ class Bot:
 
                     self.connected_event.set()
                     self.authorized_event.clear()
+                    await self._call_health_check({
+                        "status": "connected",
+                        "websocket_connected": True,
+                        "authorized": False,
+                        "server": self.server,
+                        "port": self.port,
+                        "protocol": self._protocol,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
 
                     try:
-                        await self.__authorize()
+                        user_id = await self.__authorize()
+                        self.authorized_event.set()
+
+                        await self._call_health_check({
+                            "status": "authorized",
+                            "websocket_connected": True,
+                            "authorized": True,
+                            "user_id": user_id,
+                            "server": self.server,
+                            "port": self.port,
+                            "protocol": self._protocol,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
                     except ApiErrorException as e:
                         loggers.chatbot.error(f"❌ Authorization failed: {e}")
                         raise
 
-                    self.authorized_event.set()
                     await ws.wait_closed()
 
             except asyncio.CancelledError:
@@ -576,6 +631,7 @@ class Bot:
                 raise
 
             except (websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidStatus, OSError) as e:
+                was_connected = self.connected_event.is_set() or self.authorized_event.is_set()
                 self.connected_event.clear()
                 self.authorized_event.clear()
 
@@ -587,6 +643,18 @@ class Bot:
                 else:
                     reason = str(e)
 
+                if was_connected:
+                    await self._call_health_check({
+                        "status": "disconnected",
+                        "websocket_connected": False,
+                        "authorized": False,
+                        "error": reason,
+                        "server": self.server,
+                        "port": self.port,
+                        "protocol": self._protocol,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+
                 delay = min(delay * 2, self._ws_max_delay) + random.uniform(0, 1)
                 msg = f"🔌 Connection issue: {reason}. Retrying in {delay:.1f}s..."
                 loggers.chatbot.warning(msg)
@@ -594,8 +662,22 @@ class Bot:
                 continue
 
             except websockets.exceptions.InvalidURI as e:
+                was_connected = self.connected_event.is_set() or self.authorized_event.is_set()
                 retry_count += 1
                 self.connected_event.clear()
+                self.authorized_event.clear()
+
+                if was_connected:
+                    await self._call_health_check({
+                        "status": "disconnected",
+                        "websocket_connected": False,
+                        "authorized": False,
+                        "error": str(e),
+                        "server": self.server,
+                        "port": self.port,
+                        "protocol": self._protocol,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
 
                 if retry_count > self._ws_max_retries:
                     loggers.chatbot.error(f"❌ Critical network error: {e}. Check your URI/IP. Giving up.")
@@ -608,8 +690,21 @@ class Bot:
                 continue
 
             finally:
+                was_connected = self.connected_event.is_set() or self.authorized_event.is_set()
                 self.connected_event.clear()
                 self.authorized_event.clear()
+
+                if was_connected:
+                    await self._call_health_check({
+                        "status": "disconnected",
+                        "websocket_connected": False,
+                        "authorized": False,
+                        "server": self.server,
+                        "port": self.port,
+                        "protocol": self._protocol,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+
                 if self._session:
                     with contextlib.suppress(Exception):
                         await self._session.detach()
@@ -625,7 +720,7 @@ class Bot:
             if future and not future.done():
                 future.set_result(message)
 
-    async def __authorize(self):
+    async def __authorize(self) -> str:
         loggers.chatbot.info("🚀 Starting authorization")
 
         call = AuthMethod(
@@ -635,7 +730,9 @@ class Bot:
         )
         loggers.chatbot.info(f"🛠 Created AuthMethod with id={call.id}")
         result = await self(call)
+        self._me_id = result.user_id.split("/", maxsplit=1)[0]
         loggers.chatbot.info(f"🔐 Authenticated as {result.user_id}")
+        return result.user_id
 
     async def __process_message(self, data: dict):
         data = parse_update(data)
@@ -702,6 +799,59 @@ class Bot:
                     actual_size=file.file_size, limit=self.max_file_size
                 )
         loggers.chatbot.info(f"✅ File passed limitations check: {file.file_name}")
+
+    async def _call_health_check(self, status: Dict[str, Any]) -> None:
+        """
+        Calls the registered health-check callback with the provided status payload.
+
+        The callback is optional. If it is not registered, the method returns immediately.
+        Exceptions raised inside the callback are caught and logged so that user-defined
+        monitoring logic cannot interrupt the bot connection loop.
+
+        Args:
+            status (Dict[str, Any]): Current bot health status payload. Common fields include
+                ``status``, ``websocket_connected``, ``authorized``, ``server``, ``port``,
+                ``protocol``, ``timestamp``, and optionally ``user_id`` or ``error``.
+
+        Returns:
+            None
+        """
+        if self._on_health_check is None:
+            return
+
+        try:
+            await self._on_health_check(status)
+        except Exception as e:
+            loggers.chatbot.error(f"Health check callback error: {e}")
+
+    def health_check(self) -> Dict[str, Any]:
+        """
+        Returns the current bot health status.
+
+        This method can be used by external monitoring systems, HTTP health endpoints,
+        or application code that needs to check the current WebSocket and authorization
+        state without waiting for a callback event.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing the current status, WebSocket state,
+                authorization state, server, port, protocol, and UTC timestamp.
+        """
+        return {
+            "status": (
+                "authorized"
+                if self.authorized_event.is_set()
+                else "connected"
+                if self.connected_event.is_set()
+                else "disconnected"
+            ),
+            "websocket_connected": self.connected_event.is_set(),
+            "authorized": self.authorized_event.is_set(),
+            "server": self.server,
+            "port": self.port,
+            "protocol": self._protocol,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
 
     async def add_participant_to_chat(
             self,
@@ -1477,7 +1627,7 @@ class Bot:
                 pass
 
         await self.start()
-        loggers.chatbot.info(f"⏸️ Bot running, waiting for shutdown signal")
+        loggers.chatbot.info("⏸️ Bot running, waiting for shutdown signal")
         if self._connect_task:
             try:
                 await self._connect_task

@@ -6,3 +6,23 @@
     <strong>Click here to go to latest.</strong>
   </a>
 {% endblock %}
+
+{% block extrahead %}
+  <script
+          src="https://context7.com/widget.js"
+          data-library="/websites/trueconf_github_io_python-trueconf-bot"
+          data-color="#0397A7"
+          data-placeholder="Ask about python-trueconf-bot"
+          async
+  ></script>
+
+  <script>
+      // Проверка в консоли браузера (F12), загружается ли скрипт
+    console.log("Custom overrides loaded");
+    document$.subscribe(function() {
+      // Если виджет требует ручной инициализации или специфических настроек,
+      // добавьте их сюда. Обычно внешние чаты подхватываются сами.
+      console.log("Context7 chat initialized");
+    })
+  </script>
+{% endblock %}

@@ -5,6 +5,58 @@ icon: material/note-text
 
 # List of Changes
 
+## 1.3.0
+
+**Added:**
+
+- Added a health-check mechanism for tracking the bot connection state:
+    - push model via the `Bot(on_health_check=func_callback)` callback, which is called when the connection status changes;
+    - pull model via the `bot.health_check()` method, which returns the current bot state;
+    - `connected`, `authorized`, and `disconnected` statuses.
+- Added `bot.me_id` support for storing the authorized bot identifier.
+- Added the `message.mention` shortcut, which returns `True` if the current bot is mentioned in the message or if `@all` is used.
+- Added the `trueconf.utils.formatting` module for convenient HTML/Markdown message construction with classes: `Text`, `Bold`, `Italic`, `Underline`, `Strikethrough`, `Link`, `Mention`, `AllMention`.
+- Added the `truststore` dependency for working with the system trusted certificate store.
+- Added the `SSLVerify` type for unified typing of the `verify_ssl` parameter: `bool | str | ssl.SSLContext`.
+- Added the `bot.me_chat` property as the new name for getting the `chat_id` of the "Favorites" chat.
+
+**Changed:**
+
+- Updated the `verify_ssl` behavior:
+    - `verify_ssl=True` uses the system trusted certificate store through `truststore`;
+    - `verify_ssl=False` disables certificate verification;
+    - `verify_ssl="/path/to/ca.pem"` uses a custom CA bundle;
+    - `verify_ssl=ssl.SSLContext(...)` uses the provided SSL context.
+- Updated the SSL logic for WebSocket connections: a single `self.ssl_context`, created via `build_ssl_context(...)`, is now used.
+- Updated bot initialization logging: logs now include human-readable information about the SSL context.
+
+**Fixed:**
+
+- Fixed failures caused by incomplete certificate chains. Certificate chains can now be verified successfully by using the system trusted certificate store through `truststore` or by passing a custom SSL context.
+
+**Deprecated:**
+
+- The asynchronous `bot.me` property, which returns the `chat_id` of the "Favorites" chat, is now deprecated. Use `await bot.me_chat` instead.
+
+**Documentation:**
+
+- Added Context7 AI Assistant: interactive support for code and documentation.
+- Added a new **Sending messages** documentation section covering:
+    - getting `chat_id`;
+    - sending text messages via `bot.send_message(...)`;
+    - replying with `reply_message_id`;
+    - forwarding messages via `bot.forward_message(...)`;
+    - text formatting via `trueconf.utils.formatting`;
+    - the 4096-character message length limit and using `safe_split_text(...)`.
+- Added health-check documentation covering:
+    - push model via callback;
+    - pull model via `bot.health_check()`;
+    - an example of combined usage with an HTTP health endpoint.
+- Added and updated docstrings for the formatting module, `Message.mention`, `verify_ssl`, and the health-check API.
+- Added new sections: **Shortcuts**, **Restrictions**, **Formatting**, **Exceptions**.
+
+
+
 ## 1.2.3
 
 **Added:**

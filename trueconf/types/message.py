@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union, TYPE_CHECKING
 from mashumaro import DataClassDictMixin
 from trueconf.enums.message_type import MessageType
 from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
@@ -21,9 +21,16 @@ from trueconf.enums.parse_mode import ParseMode
 from trueconf.types.input_file import InputFile
 
 import logging
+import re
+
+if TYPE_CHECKING:
+    from trueconf.types.responses.send_file_response import SendFileResponse
+    from trueconf.types.responses.send_message_response import SendMessageResponse
+    from trueconf.types.responses.forward_message_response import ForwardMessageResponse
+    from trueconf.types.responses.remove_message_response import RemoveMessageResponse
 
 logger = logging.getLogger("chat_bot")
-
+MENTION_RE = re.compile(r"href=[\"']trueconf:([^\"'&]+)(?:&do=profile)?[\"']")
 
 @dataclass
 class Message(BoundToBot, DataClassDictMixin):
@@ -55,6 +62,7 @@ class Message(BoundToBot, DataClassDictMixin):
             from_user (EnvelopeAuthor): Shortcut for accessing the message author.
             content_type (MessageType): Returns the type of the message.
             text (Optional[str]): Returns the message text if it contains text, else None.
+            mention (Optional[bool]): Returns True if the message mentions the bot, else None.
             document (Optional[Document]): Returns a document attachment if the message
                 contains a non-media file (not photo, video, sticker).
             photo (Optional[Photo]): Returns a photo attachment if available.
@@ -89,7 +97,7 @@ class Message(BoundToBot, DataClassDictMixin):
     message_id: str = field(metadata={"alias": "messageId"})
     chat_id: str = field(metadata={"alias": "chatId"})
     is_edited: bool = field(metadata={"alias": "isEdited"})
-    reply_message_id: Optional[str] = field(default=None, metadata={"alias": "replyMessageId"})
+    reply_message_id: str | None = field(default=None, metadata={"alias": "replyMessageId"})
 
     @property
     def from_user(self) -> EnvelopeAuthor:
@@ -122,7 +130,7 @@ class Message(BoundToBot, DataClassDictMixin):
         return self.content.text if isinstance(self.content, TextContent) else None
 
     @property
-    def document(self) -> Optional["Document"]:
+    def document(self) -> Document | None:
         """
         Returns the attached document if the message contains a non-media file.
 
@@ -146,7 +154,7 @@ class Message(BoundToBot, DataClassDictMixin):
         return None
 
     @property
-    def photo(self) -> Optional["Photo"]:
+    def photo(self) -> Photo | None:
         """
         Returns the attached photo object if the current message contains an image.
 
@@ -166,7 +174,7 @@ class Message(BoundToBot, DataClassDictMixin):
         return None
 
     @property
-    def video(self) -> Optional["Video"]:
+    def video(self) -> Video | None:
         """
         Returns the attached video object if the current message contains a video.
 
@@ -186,7 +194,7 @@ class Message(BoundToBot, DataClassDictMixin):
         return None
 
     @property
-    def sticker(self) -> Optional["Sticker"]:
+    def sticker(self) -> Sticker | None:
         """
         Returns the attached sticker object if the current message contains a sticker.
 
@@ -203,13 +211,41 @@ class Message(BoundToBot, DataClassDictMixin):
             ).bind(self.bot)
         return None
 
+    @property
+    def mention(self) -> bool | None:
+        """
+        Returns whether the current text message mentions the bot.
+
+        The shortcut checks two supported mention formats:
+
+        - ``@all`` — treated as a mention because it targets all chat participants.
+        - TrueConf user mentions rendered as HTML links, for example
+          ``<a href="trueconf:john_doe@video.example.com">John Doe</a>``.
+
+        For user mentions, the extracted TrueConf ID is compared with ``bot.me_id``.
+
+        Returns:
+            bool | None: ``True`` if the message mentions the bot, otherwise ``None``.
+        """
+        if not isinstance(self.content, TextContent):
+            return None
+
+        text = self.content.text.strip()
+        if text == "@all":
+            return True
+
+        return any(
+            match.group(1) == self.bot.me_id
+            for match in MENTION_RE.finditer(text)
+        ) or None
+
     async def answer_photo(
             self,
             file: InputFile,
             preview: InputFile | None,
             caption: str | None = None,
             parse_mode: ParseMode | str = ParseMode.TEXT
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_photo`][trueconf.Bot.send_photo] method of the bot instance. Use this method to send a photo in response to the current message.
 
@@ -247,7 +283,7 @@ class Message(BoundToBot, DataClassDictMixin):
             file: InputFile,
             caption: str | None = None,
             parse_mode: ParseMode | str = ParseMode.TEXT
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_document`][trueconf.Bot.send_document] method of the bot instance. Use this method to send a document in response to the current message.
 
@@ -281,7 +317,7 @@ class Message(BoundToBot, DataClassDictMixin):
     async def answer_sticker(
             self,
             file: InputFile
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_sticker`][trueconf.Bot.send_sticker] method of the bot instance. Use this method to send a sticker in response to the current message.
 
@@ -308,7 +344,7 @@ class Message(BoundToBot, DataClassDictMixin):
             file=file,
         )
 
-    async def answer(self, text: str, parse_mode: ParseMode | str = ParseMode.HTML) -> object:
+    async def answer(self, text: str, parse_mode: ParseMode | str = ParseMode.HTML) -> SendMessageResponse:
         """
         Shortcut for the [`send_message`][trueconf.Bot.send_message] method of the bot instance. Use this method to send a text message to the current chat.
 
@@ -341,7 +377,7 @@ class Message(BoundToBot, DataClassDictMixin):
             parse_mode=parse_mode
         )
 
-    async def reply(self, text: str, parse_mode: ParseMode | str = ParseMode.HTML) -> object:
+    async def reply(self, text: str, parse_mode: ParseMode | str = ParseMode.HTML) -> SendMessageResponse:
         """
         Shortcut for the [`send_message`][trueconf.Bot.send_message] method.
         Sends a reply to this message in the current chat.
@@ -374,7 +410,7 @@ class Message(BoundToBot, DataClassDictMixin):
             caption: str | None = None,
             parse_mode: ParseMode | str = ParseMode.TEXT,
 
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_photo`][trueconf.Bot.send_photo] method of the bot instance.
         Sends a photo as a reply to the current message in this chat.
@@ -416,7 +452,7 @@ class Message(BoundToBot, DataClassDictMixin):
             file: InputFile,
             caption: str | None = None,
             parse_mode: ParseMode | str = ParseMode.TEXT
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_document`][trueconf.Bot.send_document] method of the bot instance.
         Sends a document as a reply to the current message in this chat.
@@ -453,7 +489,7 @@ class Message(BoundToBot, DataClassDictMixin):
     async def reply_sticker(
             self,
             file: InputFile
-    ) -> object:
+    ) -> SendFileResponse:
         """
         Shortcut for the [`send_sticker`][trueconf.Bot.send_sticker] method of the bot instance.
         Sends a sticker as a reply to the current message in this chat.
@@ -483,7 +519,7 @@ class Message(BoundToBot, DataClassDictMixin):
             reply_message_id=self.message_id
         )
 
-    async def forward(self, chat_id: str) -> object:
+    async def forward(self, chat_id: str) -> ForwardMessageResponse:
         """
         Shortcut for the [`forward_message`][trueconf.Bot.forward_message] method of the bot instance. Use this method to forward the current message to another chat.
 
@@ -505,7 +541,7 @@ class Message(BoundToBot, DataClassDictMixin):
             message_id=self.message_id,
         )
 
-    async def copy_to(self, chat_id: str) -> object:
+    async def copy_to(self, chat_id: str) -> SendMessageResponse | None:
         """
         Shortcut for the [`send_message`][trueconf.Bot.send_message] method of the bot instance. Use this method to send a copy of the current message (without metadata or reply context) to another chat.
 
@@ -537,7 +573,7 @@ class Message(BoundToBot, DataClassDictMixin):
         )
         return None
 
-    async def delete(self, for_all: bool = False) -> object:
+    async def delete(self, for_all: bool = False) -> RemoveMessageResponse:
         """
         Shortcut for the [`remove_message`][trueconf.Bot.remove_message] method of the bot instance. Use this method to delete the current message from the chat.
 
@@ -560,7 +596,7 @@ class Message(BoundToBot, DataClassDictMixin):
             for_all=for_all,
         )
 
-    async def save_to_favorites(self, copy: bool = False) -> object:
+    async def save_to_favorites(self, copy: bool = False) -> SendMessageResponse | ForwardMessageResponse | None:
         """
         Saves the current message to the bot's "Favorites" chat.
 
@@ -592,7 +628,7 @@ class Message(BoundToBot, DataClassDictMixin):
         """
 
         if copy:
-            return await self.copy_to(await self.bot.me)
+            return await self.copy_to(await self.bot.me_chat)
         else:
-            return await self.forward(await self.bot.me)
+            return await self.forward(await self.bot.me_chat)
 

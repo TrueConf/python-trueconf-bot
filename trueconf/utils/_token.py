@@ -4,8 +4,8 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Optional
 
-from httpx import AsyncClient, Client, HTTPStatusError
-
+from httpx import Client, HTTPStatusError
+from ._ssl import SSLVerify
 from ..exceptions import TokenValidationError, InvalidGrantError
 
 
@@ -13,7 +13,7 @@ def _get_auth_token(
     server: str,
     username: str,
     password: str,
-    verify: bool,
+    ssl_context: SSLVerify,
     *,
     protocol: str = "https",
     port: int = 443,
@@ -26,7 +26,7 @@ def _get_auth_token(
         "username": str(username),
         "password": str(password)
     }
-    with Client(timeout=timeout, verify=verify) as client:
+    with Client(timeout=timeout, verify=ssl_context) as client:
         r = client.post(url, json=params)
 
         try:
