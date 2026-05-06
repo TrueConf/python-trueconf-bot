@@ -1,7 +1,3 @@
----
-title: Class Bot
----
-
 # Class `Bot`
 
 Here is the reference information for the `Bot` class, including all its parameters, attributes, and methods.  

@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
 Такой подход позволяет обрабатывать сразу несколько событий и сообщений параллельно, без задержек и подвисаний.
 
-### Автоматическое восстановление соединения
+## Автоматическое восстановление соединения
 
 Если WebSocket-соединение с сервером будет разорвано, бот не завершит работу сразу. Он автоматически попытается восстановить соединение и продолжить получать события.
 
@@ -152,3 +152,119 @@ bot = Bot(
     При обычном разрыве WebSocket-соединения бот будет пытаться подключиться повторно с экспоненциальной задержкой.
 
     Если адрес сервера указан неправильно, бот не сможет установить соединение. В этом случае количество повторных попыток ограничивается параметром `ws_max_retries`, после чего будет вызвана ошибка подключения.
+
+## Health-check
+
+{{product_name}} поддерживает два подхода к проверке состояния бота:
+
+- **push-модель** — бот сам вызывает callback-функцию при изменении состояния подключения;
+- **pull-модель** — приложение само запрашивает текущее состояние через `bot.health_check()`.
+
+### Push: callback при изменении состояния
+
+Callback передаётся в параметр `on_health_check` при создании бота. Функция должна быть асинхронной и принимать словарь со статусом:
+
+```python
+async def on_health_check(status: dict):
+    print("Bot status changed:", status)
+
+
+bot = Bot.from_credentials(
+    server="video.example.com",
+    username="echo_bot",
+    password="123tr",
+    dispatcher=dp,
+    on_health_check=on_health_check,
+)
+```
+
+Callback вызывается при изменении состояния WebSocket-подключения и авторизации. Например, бот может передать статусы:
+
+- `connected` — WebSocket-соединение установлено, но бот ещё не авторизован;
+- `authorized` — бот успешно авторизован;
+- `disconnected` — соединение разорвано.
+
+Пример payload:
+
+```json
+{
+    "status": "authorized",
+    "websocket_connected": true,
+    "authorized": true,
+    "user_id": "echo_bot@video.example.com",
+    "server": "video.example.com",
+    "port": 443,
+    "protocol": "https",
+    "timestamp": "2026-05-06T12:00:00+00:00",
+}
+```
+
+Push-модель удобна, если нужно сразу реагировать на изменение состояния: записывать статус в лог, отправлять событие в мониторинг, обновлять переменную приложения или уведомлять администратора.
+
+### Pull: ручная проверка состояния
+
+Метод `bot.health_check()` возвращает текущее состояние бота в момент вызова:
+
+```python
+status = bot.health_check()
+print(status)
+```
+
+Пример ответа:
+
+```json
+{
+    "status": "authorized",
+    "websocket_connected": true,
+    "authorized": true,
+    "server": "video.example.com",
+    "port": 443,
+    "protocol": "https",
+    "timestamp": "2026-05-06T12:00:00+00:00",
+}
+```
+
+Pull-модель удобна для HTTP health-check endpoint'ов, например в FastAPI, Zabbix, Kubernetes probes или других системах мониторинга:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/health")
+def health():
+    return bot.health_check()
+```
+
+### Совместное использование push и pull
+
+На практике часто удобно использовать оба подхода одновременно. Callback обновляет последний известный статус, а HTTP endpoint возвращает его системе мониторинга:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+bot_status = {"status": "disconnected"}
+
+
+async def on_health_check(status: dict):
+    bot_status.update(status)
+
+
+bot = Bot.from_credentials(
+    server="video.example.com",
+    username="echo_bot",
+    password="123tr",
+    dispatcher=dp,
+    on_health_check=on_health_check,
+)
+
+
+@app.get("/health")
+def health():
+    return bot_status
+```
+
+В такой схеме бот сообщает об изменениях через callback, а внешняя система мониторинга получает актуальный статус через HTTP-запрос.
+

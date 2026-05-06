@@ -152,6 +152,7 @@ plugins:
                 link: https://t.me/trueconf_talks
               - icon: fontawesome/brands/vk
                 link: https://vk.com/trueconf_club
+  - typeset
 
 nav:
   - Home: index.md
@@ -160,6 +161,7 @@ nav:
       - learn/getting-started.md
       - learn/parse-messages.md
       - learn/filters.md
+      - learn/send_message.md
       - learn/shortcuts.md
       - learn/enums.md
       - learn/types.md
@@ -171,6 +173,7 @@ nav:
       - reference/Dispatcher.md
       - reference/Enums.md
       - reference/Types.md
+      - reference/Formatting.md
       - reference/Exceptions.md
   - Examples: examples/index.md
   - Release Notes: release_notes.md
