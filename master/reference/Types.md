@@ -970,6 +970,10 @@ Attributes:
 
 `property`
 (`trueconf.types.Message.text`)' href=#trueconf.types.Message.text>text | `Optional[str]` | Returns the message text if it contains text, else None. |
+| `` mention
+
+`property`
+(`trueconf.types.Message.mention`)' href=#trueconf.types.Message.mention>mention | `Optional[bool]` | Returns True if the message mentions the bot, else None. |
 | `` document
 
 `property`
@@ -1076,7 +1080,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Document']` | Optional[Document]: Document attachment bound to the bot, or None if not applicable. |
+| `Document | None` | Optional[Document]: Document attachment bound to the bot, or None if not applicable. |
 
 ### `` from_user `property` ⚓︎
 
@@ -1098,6 +1102,28 @@ Returns:
 is_edited = field(metadata={'alias': 'isEdited'})
 ```
 
+### `` mention `property` ⚓︎
+
+```
+mention
+```
+
+Returns whether the current text message mentions the bot.
+
+The shortcut checks two supported mention formats:
+
+- `@all` — treated as a mention because it targets all chat participants.
+
+- TrueConf user mentions rendered as HTML links, for example `[John Doe](trueconf:john_doe@video.example.com)`.
+
+For user mentions, the extracted TrueConf ID is compared with `bot.me_id`.
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `bool | None` | bool | None: `True` if the message mentions the bot, otherwise `None`. |
+
 ### `` message_id `class-attribute` `instance-attribute` ⚓︎
 
 ```
@@ -1118,7 +1144,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Photo']` | Optional[Photo]: A `Photo` object bound to the bot, or None if the message does not contain an image. |
+| `Photo | None` | Optional[Photo]: A `Photo` object bound to the bot, or None if the message does not contain an image. |
 
 ### `` reply_message_id `class-attribute` `instance-attribute` ⚓︎
 
@@ -1138,7 +1164,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Sticker']` | Optional[Sticker]: A `Sticker` object bound to the bot, or None if the message does not contain a sticker. |
+| `Sticker | None` | Optional[Sticker]: A `Sticker` object bound to the bot, or None if the message does not contain a sticker. |
 
 ### `` text `property` ⚓︎
 
@@ -1180,7 +1206,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Video']` | Optional[Video]: A `Video` object bound to the bot, or None if the message does not contain a video. |
+| `Video | None` | Optional[Video]: A `Video` object bound to the bot, or None if the message does not contain a video. |
 
 ### `` answer `async` ⚓︎
 
@@ -1217,7 +1243,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | Object containing the result of the message delivery. |
 
 Examples:
 
@@ -1269,7 +1295,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the document upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the document upload. |
 
 Examples:
 
@@ -1316,7 +1342,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the photo upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the photo upload. |
 
 Examples:
 
@@ -1352,7 +1378,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the sticker delivery. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the sticker delivery. |
 
 Examples:
 
@@ -1390,7 +1416,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | None | Object containing the result of the message delivery. |
 
 ### `` delete `async` ⚓︎
 
@@ -1418,7 +1444,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `RemoveMessageResponse` | `object` | Object containing the result of the message deletion. |
+| `RemoveMessageResponse` | `` RemoveMessageResponse (`trueconf.types.responses.remove_message_response.RemoveMessageResponse`)' href=../Responses/#trueconf.types.responses.RemoveMessageResponse>RemoveMessageResponse | Object containing the result of the message deletion. |
 
 ### `` forward `async` ⚓︎
 
@@ -1446,7 +1472,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `ForwardMessageResponse` | `object` | Object containing the result of the message forwarding. |
+| `ForwardMessageResponse` | `` ForwardMessageResponse (`trueconf.types.responses.forward_message_response.ForwardMessageResponse`)' href=../Responses/#trueconf.types.responses.ForwardMessageResponse>ForwardMessageResponse | Object containing the result of the message forwarding. |
 
 ### `` reply `async` ⚓︎
 
@@ -1483,7 +1509,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | Object containing the result of the message delivery. |
 
 ### `` reply_document `async` ⚓︎
 
@@ -1523,7 +1549,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the document upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the document upload. |
 
 Examples:
 
@@ -1573,7 +1599,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the photo upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the photo upload. |
 
 Examples:
 
@@ -1611,7 +1637,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the sticker delivery. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the sticker delivery. |
 
 Examples:
 
@@ -1651,8 +1677,8 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `object` | SendMessageResponse | ForwardMessageResponse | None: |
-| `object` | Result of sending or forwarding the message. Returns `None` if copying is not supported for the message type. |
+| `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | ForwardMessageResponse | None | SendMessageResponse | ForwardMessageResponse | None: |
+| `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | ForwardMessageResponse | None | Result of sending or forwarding the message. Returns `None` if copying is not supported for the message type. |
 
 ### Example
 

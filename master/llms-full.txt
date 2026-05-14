@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** v1.2.3
-- **Generated:** 2026-05-05T17:38:25+00:00
+- **Version:** v1.3.0
+- **Generated:** 2026-05-14T11:13:48+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -13,6 +13,7 @@
   - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md)
   - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md)
   - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md)
+  - [Sending messages ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/send_message.md)
   - [Shortcuts ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md)
   - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md)
   - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/types.md)
@@ -24,6 +25,7 @@
   - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Dispatcher.md)
   - [Enums](https://trueconf.github.io/python-trueconf-bot/master/reference/Enums.md)
   - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Types.md)
+  - [Formatting](https://trueconf.github.io/python-trueconf-bot/master/reference/Formatting.md)
   - [Exceptions](https://trueconf.github.io/python-trueconf-bot/master/reference/Exceptions.md)
   - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/reference/Responses.md)
 - [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/release_notes.md)
@@ -132,6 +134,84 @@ The library implements all core TrueConf API methods: sending messages, uploadin
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/release_notes.md
 
 # List of Changes⚓︎
+
+## 1.3.0⚓︎
+
+Added:
+
+- Added a health-check mechanism for tracking the bot connection state:
+
+- push model via the `Bot(on_health_check=func_callback)` callback, which is called when the connection status changes;
+
+- pull model via the `bot.health_check()` method, which returns the current bot state;
+
+- `connected`, `authorized`, and `disconnected` statuses.
+
+- Added `bot.me_id` support for storing the authorized bot identifier.
+
+- Added the `message.mention` shortcut, which returns `True` if the current bot is mentioned in the message or if `@all` is used.
+
+- Added the `trueconf.utils.formatting` module for convenient HTML/Markdown message construction with classes: `Text`, `Bold`, `Italic`, `Underline`, `Strikethrough`, `Link`, `Mention`, `AllMention`.
+
+- Added the `truststore` dependency for working with the system trusted certificate store.
+
+- Added the `SSLVerify` type for unified typing of the `verify_ssl` parameter: `bool | str | ssl.SSLContext`.
+
+- Added the `bot.me_chat` property as the new name for getting the `chat_id` of the "Favorites" chat.
+
+Changed:
+
+- Updated the `verify_ssl` behavior:
+
+- `verify_ssl=True` uses the system trusted certificate store through `truststore`;
+
+- `verify_ssl=False` disables certificate verification;
+
+- `verify_ssl="/path/to/ca.pem"` uses a custom CA bundle;
+
+- `verify_ssl=ssl.SSLContext(...)` uses the provided SSL context.
+
+- Updated the SSL logic for WebSocket connections: a single `self.ssl_context`, created via `build_ssl_context(...)`, is now used.
+
+- Updated bot initialization logging: logs now include human-readable information about the SSL context.
+
+Fixed:
+
+- Fixed failures caused by incomplete certificate chains. Certificate chains can now be verified successfully by using the system trusted certificate store through `truststore` or by passing a custom SSL context.
+
+Deprecated:
+
+- The asynchronous `bot.me` property, which returns the `chat_id` of the "Favorites" chat, is now deprecated. Use `await bot.me_chat` instead.
+
+Documentation:
+
+- Added Context7 AI Assistant: interactive support for code and documentation.
+
+- Added a new Sending messages documentation section covering:
+
+- getting `chat_id`;
+
+- sending text messages via `bot.send_message(...)`;
+
+- replying with `reply_message_id`;
+
+- forwarding messages via `bot.forward_message(...)`;
+
+- text formatting via `trueconf.utils.formatting`;
+
+- the 4096-character message length limit and using `safe_split_text(...)`.
+
+- Added health-check documentation covering:
+
+- push model via callback;
+
+- pull model via `bot.health_check()`;
+
+- an example of combined usage with an HTTP health endpoint.
+
+- Added and updated docstrings for the formatting module, `Message.mention`, `verify_ssl`, and the health-check API.
+
+- Added new sections: Shortcuts, Restrictions, Formatting, Exceptions.
 
 ## 1.2.3⚓︎
 
@@ -566,6 +646,119 @@ Note
 In case of a normal WebSocket disconnection, the bot will attempt to reconnect using exponential backoff.
 
 If the server address is incorrect, the bot will not be able to establish a connection. In this case, the number of retry attempts is limited by `ws_max_retries`, after which a connection error will be raised.
+
+## Health-check⚓︎
+
+python-trueconf-bot supports two approaches for checking bot state:
+
+- push model — the bot calls a callback function when the connection state changes;
+
+- pull model — the application manually requests the current state via `bot.health_check()`.
+
+### Push: callback on state changes⚓︎
+
+The callback is passed via the `on_health_check` parameter when creating the bot. The function must be asynchronous and accept a dictionary with the current status:
+
+```
+async def on_health_check(status: dict):
+print("Bot status changed:", status)
+
+bot = Bot.from_credentials(
+server="video.example.com",
+username="echo_bot",
+password="123tr",
+dispatcher=dp,
+on_health_check=on_health_check,
+)
+```
+
+The callback is triggered whenever the WebSocket connection or authorization state changes. For example, the bot may emit the following statuses:
+
+- `connected` — the WebSocket connection is established, but the bot is not authorized yet;
+
+- `authorized` — the bot has successfully authenticated;
+
+- `disconnected` — the connection has been lost.
+
+Example payload:
+
+```
+{
+"status": "authorized",
+"websocket_connected": true,
+"authorized": true,
+"user_id": "echo_bot@video.example.com",
+"server": "video.example.com",
+"port": 443,
+"protocol": "https",
+"timestamp": "2026-05-06T12:00:00+00:00",
+}
+```
+
+The push model is useful when you need to react immediately to state changes: write logs, notify monitoring systems, update application state, or alert administrators.
+
+### Pull: manual health check⚓︎
+
+The `bot.health_check()` method returns the current bot state at the moment it is called:
+
+```
+status = bot.health_check()
+print(status)
+```
+
+Example response:
+
+```
+{
+"status": "authorized",
+"websocket_connected": true,
+"authorized": true,
+"server": "video.example.com",
+"port": 443,
+"protocol": "https",
+"timestamp": "2026-05-06T12:00:00+00:00",
+}
+```
+
+The pull model is useful for HTTP health-check endpoints, such as FastAPI, Zabbix, Kubernetes probes, or other monitoring systems:
+
+```
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/health")
+def health():
+return bot.health_check()
+```
+
+### Combining push and pull⚓︎
+
+In practice, it is often convenient to use both approaches together. The callback updates the latest known state, while the HTTP endpoint exposes it to monitoring systems:
+
+```
+from fastapi import FastAPI
+
+app = FastAPI()
+bot_status = {"status": "disconnected"}
+
+async def on_health_check(status: dict):
+bot_status.update(status)
+
+bot = Bot.from_credentials(
+server="video.example.com",
+username="echo_bot",
+password="123tr",
+dispatcher=dp,
+on_health_check=on_health_check,
+)
+
+@app.get("/health")
+def health():
+return bot_status
+```
+
+In this setup, the bot reports state changes through the callback, while external monitoring systems retrieve the current status through HTTP requests.
 
 ---
 
@@ -1107,6 +1300,231 @@ await bot.send_message(chat_id=message.chat_id, text=f"Special: {command.command
 
 ---
 
+# DOCUMENT: Sending messages ⚓︎
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/send_message.md
+
+# Sending messages⚓︎
+
+To send a message, the bot must know the `chat_id` of the target chat: a personal chat, group chat, or channel.
+
+## How to get `chat_id`?⚓︎
+
+### Personal chats (P2P)⚓︎
+
+To get the `chat_id` of a personal chat, use `bot.create_personal_chat(user_id)`. If a personal chat with the user does not exist yet, the server will create it. If the chat already exists, the server will return the existing `chat_id`.
+
+```
+chat = await bot.create_personal_chat(user_id="john_doe@video.example.com")
+
+await bot.send_message(
+chat_id=chat.chat_id,
+text="Hello!",
+)
+```
+
+### Group chats and channels⚓︎
+
+Be careful with group chats and channels. Methods that create group chats and channels always create a new chat:
+
+```
+chat = await bot.create_group_chat(title="Support")
+channel = await bot.create_channel(title="News")
+```
+
+If you call such a method again with the same title, another chat or channel with the same `title` will be created. Therefore, after creating a group chat or channel, it is better to save its `chat_id` in a database, configuration file, or another persistent storage.
+
+What if the chat already exists? How do I get its `chat_id`?
+
+### Finding an existing chat⚓︎
+
+You can get the list of available chats with `bot.get_chats()`:
+
+```
+response = await bot.get_chats(count=10, page=1)
+```
+
+The method returns `GetChatsResponse` with the `list` parameter containing the list of chats. You can find the required chat, for example by its title, and get its `chat_id`:
+
+Using a generatorUsing a loop
+
+```
+response = await bot.get_chats(count=100, page=1)
+
+chat = next(
+(chat for chat in response.list if chat.title == "Support"),
+None,
+)
+
+if chat is not None:
+print(chat.chat_id)
+```
+
+```
+response = await bot.get_chats(count=100, page=1)
+chat = None
+
+for item in response.list:
+if item.title == "Support":
+chat = item
+break
+
+if chat is not None:
+print(chat.chat_id)
+```
+
+After you find the required `chat_id`, it is also recommended to save it so that you do not have to search for the chat again on every application start.
+
+### Getting `chat_id` from an incoming message⚓︎
+
+Another simple way is to send a message to the target chat and handle it with the bot. In the handler, you can print `message.chat_id`:
+
+```
+from trueconf import Router
+from trueconf.types import Message
+
+router = Router()
+
+@router.message()
+async def print_chat_id(message: Message):
+print(message.chat_id)
+```
+
+This approach is convenient for group chats and channels: add the bot to the required chat, send a message, and check the `chat_id` in the console.
+
+## Text messages⚓︎
+
+To send a text message, use `bot.send_message(...)`:
+
+```
+await bot.send_message(
+chat_id="chat_id",
+text="Hello!",
+)
+```
+
+If you send a message from an incoming message handler, you can use `Message` shortcut methods, such as `message.answer(...)` or `message.reply(...)`. They automatically use `message.chat_id`, so you do not need to pass it manually. For details, see the Shortcuts section.
+
+### Replying to a message⚓︎
+
+If you need to reply to a specific message, pass the source message identifier in the `reply_message_id` parameter:
+
+```
+await bot.send_message(
+chat_id="chat_id",
+text="This is a reply",
+reply_message_id="message_id",
+)
+```
+
+This approach allows you to send regular messages and replies through a single API.
+
+### Forwarding messages⚓︎
+
+To forward an existing message, use `bot.forward_message(...)`:
+
+```
+await bot.forward_message(
+chat_id="target_chat_id",
+message_id="source_message_id",
+)
+```
+
+Where:
+
+- `chat_id` is the identifier of the chat where the message should be forwarded;
+
+- `message_id` is the identifier of the message to forward.
+
+### Text formatting⚓︎
+
+Messages can be sent as plain text, HTML, or Markdown by passing `parse_mode`:
+
+```
+from trueconf.enums import ParseMode
+
+await bot.send_message(
+chat_id="chat_id",
+text="Important",
+parse_mode=ParseMode.HTML,
+)
+```
+
+For convenient formatted text construction, the library provides the `trueconf.utils.formatting` module. It lets you build a message from classes instead of writing HTML or Markdown manually:
+
+```
+from trueconf.enums import ParseMode
+from trueconf.utils.formatting import (
+Bold,
+Italic,
+Link,
+Mention,
+Text,
+)
+
+content = Text(
+Bold("Important"),
+" message for ",
+Mention("John Doe", user_id="john_doe@video.example.com"),
+"\n",
+Link("Open website", url="https://trueconf.com"),
+)
+
+await bot.send_message(
+chat_id="chat_id",
+text=content.as_html(),
+parse_mode=ParseMode.HTML,
+)
+```
+
+The module supports:
+
+- `Bold(...)`
+
+- `Italic(...)`
+
+- `Underline(...)`
+
+- `Strikethrough(...)`
+
+- `Link(...)`
+
+- `Mention(...)`
+
+- `AllMention()`
+
+- `Text(...)`
+
+### Message length limits⚓︎
+
+TrueConf Server limits text messages to `4096` characters.
+
+If a message exceeds this limit, use the `safe_split_text(...)` helper function. It safely splits long text while preserving HTML/Markdown markup:
+
+```
+from trueconf.utils import safe_split_text
+
+chunks = safe_split_text(long_text)
+
+for chunk in chunks:
+await bot.send_message(
+chat_id="chat_id",
+text=chunk,
+parse_mode=ParseMode.HTML,
+)
+```
+
+For more information about limits, see the Restrictions section.
+
+Shortcut methods
+
+In message handlers, it is often more convenient to use `message.answer(...)`, `message.reply(...)`, and other shortcut methods instead of calling `bot.send_message(...)` directly. For details, see the Shortcuts section.
+
+Sending files
+
+This section covers text messages. To send documents, images, videos, voice messages, and other attachments, see the Working with files section.
+
+---
+
 # DOCUMENT: Shortcuts ⚓︎
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md
 
@@ -1573,7 +1991,7 @@ from trueconf import Bot
 ## `` trueconf.Bot ⚓︎
 
 ```
-Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False)
+Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
 ```
 
 Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -1592,12 +2010,13 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
 
 ### Note
 
@@ -1651,6 +2070,12 @@ https = https
 max_file_size = None
 ```
 
+### `` me_id `property` ⚓︎
+
+```
+me_id
+```
+
 ### `` port `instance-attribute` ⚓︎
 
 ```
@@ -1675,6 +2100,12 @@ receive_unread_messages = receive_unread_messages
 server = server
 ```
 
+### `` ssl_context `instance-attribute` ⚓︎
+
+```
+ssl_context = _build_ssl_context(verify_ssl)
+```
+
 ### `` stopped_event `instance-attribute` ⚓︎
 
 ```
@@ -1694,12 +2125,6 @@ Returns:
 | Name | Type | Description |
 | --- | --- | --- |
 | `str` | `str` | The access token used for authentication. |
-
-### `` verify_ssl `instance-attribute` ⚓︎
-
-```
-verify_ssl = verify_ssl
-```
 
 ### `` add_participant_to_chat `async` ⚓︎
 
@@ -2151,7 +2576,7 @@ Returns:
 ### `` from_credentials `classmethod` ⚓︎
 
 ```
-from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60)
+from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
 ```
 
 Creates a bot instance using username and password authentication.
@@ -2171,11 +2596,13 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
+| `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
 
 Returns:
 
@@ -2457,10 +2884,42 @@ Returns:
 | --- | --- | --- |
 | `HasChatParticipantResponse` | `` HasChatParticipantResponse (`trueconf.types.responses.has_chat_participant_response.HasChatParticipantResponse`)' href=../Responses/#trueconf.types.responses.HasChatParticipantResponse>HasChatParticipantResponse | Object containing the result of the check. |
 
+### `` health_check ⚓︎
+
+```
+health_check()
+```
+
+Returns the current bot health status.
+
+This method can be used by external monitoring systems, HTTP health endpoints, or application code that needs to check the current WebSocket and authorization state without waiting for a callback event.
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `Dict[str, Any]` | Dict[str, Any]: Dictionary containing the current status, WebSocket state, authorization state, server, port, protocol, and UTC timestamp. |
+
 ### `` me `async` ⚓︎
 
 ```
 me()
+```
+
+Returns the identifier of the bot's personal (Favorites) chat.
+
+If the chat does not exist yet, it will be created automatically. The result is cached to prevent redundant API calls.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Chat ID of the bot's personal Favorites chat. |
+
+### `` me_chat `async` ⚓︎
+
+```
+me_chat()
 ```
 
 Returns the identifier of the bot's personal (Favorites) chat.
@@ -4749,6 +5208,10 @@ Attributes:
 
 `property`
 (`trueconf.types.Message.text`)' href=#trueconf.types.Message.text>text | `Optional[str]` | Returns the message text if it contains text, else None. |
+| `` mention
+
+`property`
+(`trueconf.types.Message.mention`)' href=#trueconf.types.Message.mention>mention | `Optional[bool]` | Returns True if the message mentions the bot, else None. |
 | `` document
 
 `property`
@@ -4855,7 +5318,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Document']` | Optional[Document]: Document attachment bound to the bot, or None if not applicable. |
+| `Document | None` | Optional[Document]: Document attachment bound to the bot, or None if not applicable. |
 
 ### `` from_user `property` ⚓︎
 
@@ -4877,6 +5340,28 @@ Returns:
 is_edited = field(metadata={'alias': 'isEdited'})
 ```
 
+### `` mention `property` ⚓︎
+
+```
+mention
+```
+
+Returns whether the current text message mentions the bot.
+
+The shortcut checks two supported mention formats:
+
+- `@all` — treated as a mention because it targets all chat participants.
+
+- TrueConf user mentions rendered as HTML links, for example `[John Doe](trueconf:john_doe@video.example.com)`.
+
+For user mentions, the extracted TrueConf ID is compared with `bot.me_id`.
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `bool | None` | bool | None: `True` if the message mentions the bot, otherwise `None`. |
+
 ### `` message_id `class-attribute` `instance-attribute` ⚓︎
 
 ```
@@ -4897,7 +5382,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Photo']` | Optional[Photo]: A `Photo` object bound to the bot, or None if the message does not contain an image. |
+| `Photo | None` | Optional[Photo]: A `Photo` object bound to the bot, or None if the message does not contain an image. |
 
 ### `` reply_message_id `class-attribute` `instance-attribute` ⚓︎
 
@@ -4917,7 +5402,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Sticker']` | Optional[Sticker]: A `Sticker` object bound to the bot, or None if the message does not contain a sticker. |
+| `Sticker | None` | Optional[Sticker]: A `Sticker` object bound to the bot, or None if the message does not contain a sticker. |
 
 ### `` text `property` ⚓︎
 
@@ -4959,7 +5444,7 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `Optional['Video']` | Optional[Video]: A `Video` object bound to the bot, or None if the message does not contain a video. |
+| `Video | None` | Optional[Video]: A `Video` object bound to the bot, or None if the message does not contain a video. |
 
 ### `` answer `async` ⚓︎
 
@@ -4996,7 +5481,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | Object containing the result of the message delivery. |
 
 Examples:
 
@@ -5048,7 +5533,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the document upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the document upload. |
 
 Examples:
 
@@ -5095,7 +5580,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the photo upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the photo upload. |
 
 Examples:
 
@@ -5131,7 +5616,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the sticker delivery. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the sticker delivery. |
 
 Examples:
 
@@ -5169,7 +5654,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | None | Object containing the result of the message delivery. |
 
 ### `` delete `async` ⚓︎
 
@@ -5197,7 +5682,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `RemoveMessageResponse` | `object` | Object containing the result of the message deletion. |
+| `RemoveMessageResponse` | `` RemoveMessageResponse (`trueconf.types.responses.remove_message_response.RemoveMessageResponse`)' href=../Responses/#trueconf.types.responses.RemoveMessageResponse>RemoveMessageResponse | Object containing the result of the message deletion. |
 
 ### `` forward `async` ⚓︎
 
@@ -5225,7 +5710,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `ForwardMessageResponse` | `object` | Object containing the result of the message forwarding. |
+| `ForwardMessageResponse` | `` ForwardMessageResponse (`trueconf.types.responses.forward_message_response.ForwardMessageResponse`)' href=../Responses/#trueconf.types.responses.ForwardMessageResponse>ForwardMessageResponse | Object containing the result of the message forwarding. |
 
 ### `` reply `async` ⚓︎
 
@@ -5262,7 +5747,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendMessageResponse` | `object` | Object containing the result of the message delivery. |
+| `SendMessageResponse` | `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | Object containing the result of the message delivery. |
 
 ### `` reply_document `async` ⚓︎
 
@@ -5302,7 +5787,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the document upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the document upload. |
 
 Examples:
 
@@ -5352,7 +5837,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the photo upload. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the photo upload. |
 
 Examples:
 
@@ -5390,7 +5875,7 @@ Returns:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `SendFileResponse` | `object` | Object containing the result of the sticker delivery. |
+| `SendFileResponse` | `` SendFileResponse (`trueconf.types.responses.send_file_response.SendFileResponse`)' href=../Responses/#trueconf.types.responses.SendFileResponse>SendFileResponse | Object containing the result of the sticker delivery. |
 
 Examples:
 
@@ -5430,8 +5915,8 @@ Returns:
 
 | Type | Description |
 | --- | --- |
-| `object` | SendMessageResponse | ForwardMessageResponse | None: |
-| `object` | Result of sending or forwarding the message. Returns `None` if copying is not supported for the message type. |
+| `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | ForwardMessageResponse | None | SendMessageResponse | ForwardMessageResponse | None: |
+| `` SendMessageResponse (`trueconf.types.responses.send_message_response.SendMessageResponse`)' href=../Responses/#trueconf.types.responses.SendMessageResponse>SendMessageResponse | ForwardMessageResponse | None | Result of sending or forwarding the message. Returns `None` if copying is not supported for the message type. |
 
 ### Example
 
@@ -5711,6 +6196,570 @@ file_id = field(metadata={'alias': 'fileId'})
 ```
 progress
 ```
+
+---
+
+# DOCUMENT: Formatting
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/reference/Formatting.md
+
+# Formatting
+
+## `` trueconf.utils.formatting ⚓︎
+
+### `` AllMention ⚓︎
+
+Represents an `@all` mention.
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders an `@all` mention.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered `@all` mention. |
+
+### `` Bold ⚓︎
+
+```
+Bold(*body)
+```
+
+Represents bold text.
+
+Initializes a text container.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes. | `()` |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as bold text.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered bold text. |
+
+### `` Italic ⚓︎
+
+```
+Italic(*body)
+```
+
+Represents italic text.
+
+Initializes a text container.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes. | `()` |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as italic text.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered italic text. |
+
+### `` Link ⚓︎
+
+```
+Link(*body, url)
+```
+
+Represents a hyperlink.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Link label as plain text or formatting nodes. | `()` |
+| `url` | `str` | Link target URL. | required |
+
+Initializes a hyperlink node.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Link label as plain text or formatting nodes. | `()` |
+| `url` | `str` | Link target URL. | required |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` url `instance-attribute` ⚓︎
+
+```
+url = url
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as a hyperlink.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered hyperlink. |
+
+### `` Mention ⚓︎
+
+```
+Mention(*body, user_id)
+```
+
+Represents a TrueConf user mention.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Mention label as plain text or formatting nodes. | `()` |
+| `user_id` | `str` | TrueConf user ID, for example `john_doe@video.example.com`. | required |
+
+Initializes a TrueConf mention node.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Mention label as plain text or formatting nodes. | `()` |
+| `user_id` | `str` | TrueConf user ID. | required |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` user_id `instance-attribute` ⚓︎
+
+```
+user_id = user_id
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as a TrueConf user mention.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered mention. |
+
+### `` Strikethrough ⚓︎
+
+```
+Strikethrough(*body)
+```
+
+Represents strikethrough text.
+
+Initializes a text container.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes. | `()` |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as strikethrough text.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered strikethrough text. |
+
+### `` Text ⚓︎
+
+```
+Text(*body)
+```
+
+Container node for plain text and nested formatting nodes.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes to concatenate. | `()` |
+
+### Example
+
+```
+content = Text("Hello, ", Bold("world"))
+html = content.as_html()
+```
+
+Initializes a text container.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes. | `()` |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the text container using the provided decoration strategy.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered text. |
+
+### `` Underline ⚓︎
+
+```
+Underline(*body)
+```
+
+Represents underlined text.
+
+Initializes a text container.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `*body` | `str | TextNode` | Plain strings or formatting nodes. | `()` |
+
+#### `` body `instance-attribute` ⚓︎
+
+```
+body = body
+```
+
+#### `` as_html ⚓︎
+
+```
+as_html()
+```
+
+Renders the text container as HTML.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | HTML representation of the formatted text. |
+
+#### `` as_markdown ⚓︎
+
+```
+as_markdown()
+```
+
+Renders the text container as Markdown.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Markdown representation of the formatted text. |
+
+#### `` render ⚓︎
+
+```
+render(decoration)
+```
+
+Renders the nested content as underlined text.
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `decoration` | `TextDecoration` | Formatting strategy used for rendering. | required |
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Rendered underlined text. |
 
 ---
 

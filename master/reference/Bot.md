@@ -10,7 +10,7 @@ from trueconf import Bot
 ## `` trueconf.Bot ⚓︎
 
 ```
-Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False)
+Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
 ```
 
 Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -29,12 +29,13 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
 
 ### Note
 
@@ -88,6 +89,12 @@ https = https
 max_file_size = None
 ```
 
+### `` me_id `property` ⚓︎
+
+```
+me_id
+```
+
 ### `` port `instance-attribute` ⚓︎
 
 ```
@@ -112,6 +119,12 @@ receive_unread_messages = receive_unread_messages
 server = server
 ```
 
+### `` ssl_context `instance-attribute` ⚓︎
+
+```
+ssl_context = _build_ssl_context(verify_ssl)
+```
+
 ### `` stopped_event `instance-attribute` ⚓︎
 
 ```
@@ -131,12 +144,6 @@ Returns:
 | Name | Type | Description |
 | --- | --- | --- |
 | `str` | `str` | The access token used for authentication. |
-
-### `` verify_ssl `instance-attribute` ⚓︎
-
-```
-verify_ssl = verify_ssl
-```
 
 ### `` add_participant_to_chat `async` ⚓︎
 
@@ -588,7 +595,7 @@ Returns:
 ### `` from_credentials `classmethod` ⚓︎
 
 ```
-from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60)
+from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
 ```
 
 Creates a bot instance using username and password authentication.
@@ -608,11 +615,13 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool` | Whether to verify the server's SSL certificate. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
+| `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
 
 Returns:
 
@@ -894,10 +903,42 @@ Returns:
 | --- | --- | --- |
 | `HasChatParticipantResponse` | `` HasChatParticipantResponse (`trueconf.types.responses.has_chat_participant_response.HasChatParticipantResponse`)' href=../Responses/#trueconf.types.responses.HasChatParticipantResponse>HasChatParticipantResponse | Object containing the result of the check. |
 
+### `` health_check ⚓︎
+
+```
+health_check()
+```
+
+Returns the current bot health status.
+
+This method can be used by external monitoring systems, HTTP health endpoints, or application code that needs to check the current WebSocket and authorization state without waiting for a callback event.
+
+Returns:
+
+| Type | Description |
+| --- | --- |
+| `Dict[str, Any]` | Dict[str, Any]: Dictionary containing the current status, WebSocket state, authorization state, server, port, protocol, and UTC timestamp. |
+
 ### `` me `async` ⚓︎
 
 ```
 me()
+```
+
+Returns the identifier of the bot's personal (Favorites) chat.
+
+If the chat does not exist yet, it will be created automatically. The result is cached to prevent redundant API calls.
+
+Returns:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `str` | `str` | Chat ID of the bot's personal Favorites chat. |
+
+### `` me_chat `async` ⚓︎
+
+```
+me_chat()
 ```
 
 Returns the identifier of the bot's personal (Favorites) chat.
