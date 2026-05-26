@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import copy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -43,3 +44,14 @@ class MemoryStorage(BaseStorage):
 
     async def clear(self, key: StorageKey) -> None:
         self._records.pop(key, None)
+
+    async def get_value(
+        self,
+        key: StorageKey,
+        dict_key: str,
+        default: Any | None = None,
+    ) -> Any | None:
+        record = self._records.get(key)
+        if record is None:
+            return default
+        return copy(record.data.get(dict_key, default))

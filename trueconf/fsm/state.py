@@ -129,3 +129,7 @@ class StatesGroup(metaclass=_StatesGroupMeta):
         if cls.__parent__ is None:
             return cls
         return cls.__parent__.get_root()
+
+
+any_state = State(state="*")
+default_state = State()

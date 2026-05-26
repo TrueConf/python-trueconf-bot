@@ -18,5 +18,7 @@ class FSMMiddleware(BaseMiddleware):
     ) -> None:
         bot = data.get("bot")
         if bot is not None:
-            data["state"] = self._manager.get_context(bot, event)
+            context = self._manager.get_context(bot, event)
+            data["state"] = context
+            data["raw_state"] = await context.get_state()
         return await handler(event, data)

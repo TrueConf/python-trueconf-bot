@@ -11,6 +11,7 @@ class StateFilter:
         self._states: set[str | None] = {
             str(s) if isinstance(s, State) else s for s in states
         }
+        self._wildcard = "*" in self._states
 
     async def __call__(
         self,
@@ -24,5 +25,7 @@ class StateFilter:
                 "Make sure FSMMiddleware is registered as outer middleware "
                 "before any StateFilter is evaluated."
             )
+        if self._wildcard:
+            return True
         current = await state.get_state()
         return current in self._states

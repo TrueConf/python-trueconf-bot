@@ -659,3 +659,249 @@ class TestNestedStatesGroups:
         await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
         await asyncio.sleep(0.05)
         assert calls == ["name"]
+
+
+# ──────────────────────────────────────────────
+# get_value
+# ──────────────────────────────────────────────
+
+class TestGetValue:
+    async def test_get_value_returns_value(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.update_data(name="Nikita", age=25)
+        assert await ctx.get_value("name") == "Nikita"
+        assert await ctx.get_value("age") == 25
+
+    async def test_get_value_returns_default(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        assert await ctx.get_value("missing") is None
+        assert await ctx.get_value("missing", "default") == "default"
+
+    async def test_get_value_empty_data(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        assert await ctx.get_value("x") is None
+
+
+# ──────────────────────────────────────────────
+# update_data with Mapping
+# ──────────────────────────────────────────────
+
+class TestUpdateDataMapping:
+    async def test_update_data_with_kwargs(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.update_data(name="Nikita")
+        assert await ctx.get_data() == {"name": "Nikita"}
+
+    async def test_update_data_with_dict(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.update_data({"name": "Nikita", "age": 25})
+        assert await ctx.get_data() == {"name": "Nikita", "age": 25}
+
+    async def test_update_data_with_dict_and_kwargs(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.update_data({"name": "Nikita"}, age=25)
+        assert await ctx.get_data() == {"name": "Nikita", "age": 25}
+
+    async def test_update_data_dict_overrides_kwargs(self):
+        """Dict values override kwargs, matching aiogram behavior."""
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.update_data({"name": "New"}, name="Old")
+        assert await ctx.get_value("name") == "New"
+
+
+# ──────────────────────────────────────────────
+# clear() semantics
+# ──────────────────────────────────────────────
+
+class TestClearSemantics:
+    async def test_clear_resets_state_and_data(self):
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.set_state("Form:name")
+        await ctx.update_data(x=1)
+        await ctx.clear()
+        assert await ctx.get_state() is None
+        assert await ctx.get_data() == {}
+
+    async def test_key_still_exists_after_clear(self):
+        """After clear(), the key should still exist in storage with None state and {} data."""
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+        await ctx.set_state("Form:name")
+        await ctx.update_data(x=1)
+        await ctx.clear()
+        # Key should still exist — get_state returns None, get_data returns {}
+        assert await ctx.get_state() is None
+        assert await ctx.get_data() == {}
+        # Can set new state immediately
+        await ctx.set_state("Form:age")
+        assert await ctx.get_state() == "Form:age"
+
+
+# ──────────────────────────────────────────────
+# any_state wildcard
+# ──────────────────────────────────────────────
+
+class TestAnyState:
+    def test_any_state_str(self):
+        from trueconf.fsm.state import any_state
+        assert str(any_state) == "*"
+
+    async def test_any_state_filter_matches_any(self):
+        from trueconf.fsm.state import any_state
+        storage = MemoryStorage()
+        key = StorageKey(bot_id="b", chat_id="c", user_id="u")
+        ctx = FSMContext(storage, key)
+
+        await ctx.set_state("Form:name")
+        f = StateFilter(any_state)
+        assert await f(_make_message(), state=ctx) is True
+
+        await ctx.set_state("Form:age")
+        assert await f(_make_message(), state=ctx) is True
+
+        await ctx.set_state(None)
+        assert await f(_make_message(), state=ctx) is True
+
+    async def test_any_state_in_pipeline(self):
+        from trueconf.fsm.state import any_state
+
+        dp = Dispatcher(storage=MemoryStorage())
+        router = Router()
+        dp.include_router(router)
+
+        calls: list[str] = []
+
+        @router.message(any_state)
+        async def catch_all(msg: Message, state: FSMContext):
+            calls.append("any_state")
+
+        key = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user1")
+        await dp.fsm.storage.set_state(key, "Whatever:state")
+        await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["any_state"]
+
+
+# ──────────────────────────────────────────────
+# FSMStrategy
+# ──────────────────────────────────────────────
+
+class TestFSMStrategy:
+    async def test_user_in_chat_strategy(self):
+        from trueconf.fsm.strategy import FSMStrategy
+        dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.USER_IN_CHAT)
+        router = Router()
+        dp.include_router(router)
+
+        calls: list[str] = []
+
+        @router.message(StateFilter("Form:name"))
+        async def on_name(msg: Message, state: FSMContext):
+            calls.append(f"name:{msg.from_user.id}")
+
+        # Set state for user1 in chat1
+        key1 = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user1")
+        await dp.fsm.storage.set_state(key1, "Form:name")
+
+        # user2 in same chat should NOT match
+        key2 = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user2")
+
+        await dp._feed_update(_make_message("user1", chat_id="chat_1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["name:user1"]
+
+    async def test_chat_strategy(self):
+        from trueconf.fsm.strategy import FSMStrategy
+        dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
+        router = Router()
+        dp.include_router(router)
+
+        calls: list[str] = []
+
+        @router.message(StateFilter("Form:name"))
+        async def on_name(msg: Message, state: FSMContext):
+            calls.append("matched")
+
+        # Set state with chat_id=user_id (as CHAT strategy does)
+        key = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="chat_1")
+        await dp.fsm.storage.set_state(key, "Form:name")
+
+        # Any user in the same chat should match
+        await dp._feed_update(_make_message("user1", chat_id="chat_1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["matched"]
+
+    async def test_global_user_strategy(self):
+        from trueconf.fsm.strategy import FSMStrategy
+        dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.GLOBAL_USER)
+        router = Router()
+        dp.include_router(router)
+
+        calls: list[str] = []
+
+        @router.message(StateFilter("Form:name"))
+        async def on_name(msg: Message, state: FSMContext):
+            calls.append("matched")
+
+        # Set state with chat_id=user_id (as GLOBAL_USER strategy does)
+        key = StorageKey(bot_id="bot_id", chat_id="user1", user_id="user1")
+        await dp.fsm.storage.set_state(key, "Form:name")
+
+        # User should match from any chat
+        await dp._feed_update(_make_message("user1", chat_id="other_chat"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["matched"]
+
+
+# ──────────────────────────────────────────────
+# raw_state in data
+# ──────────────────────────────────────────────
+
+class TestRawState:
+    async def test_raw_state_injected(self):
+        storage = MemoryStorage()
+        fsm = FSMManager(storage=storage)
+        mw = FSMMiddleware(fsm)
+
+        key = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user1")
+        await storage.set_state(key, "Form:name")
+
+        data: dict = {"bot": FakeBot()}
+        received_raw: list = []
+
+        async def handler(evt, d):
+            received_raw.append(d.get("raw_state"))
+
+        await mw(handler, _make_message("user1"), data)
+        assert received_raw == ["Form:name"]
+
+    async def test_raw_state_none_when_no_state(self):
+        storage = MemoryStorage()
+        fsm = FSMManager(storage=storage)
+        mw = FSMMiddleware(fsm)
+
+        data: dict = {"bot": FakeBot()}
+        received_raw: list = []
+
+        async def handler(evt, d):
+            received_raw.append(d.get("raw_state"))
+
+        await mw(handler, _make_message("user1"), data)
+        assert received_raw == [None]

@@ -23,5 +23,14 @@ class BaseStorage(ABC):
     @abstractmethod
     async def clear(self, key: StorageKey) -> None: ...
 
+    async def get_value(
+        self,
+        key: StorageKey,
+        dict_key: str,
+        default: Any | None = None,
+    ) -> Any | None:
+        data = await self.get_data(key)
+        return data.get(dict_key, default)
+
     async def close(self) -> None:
         pass
