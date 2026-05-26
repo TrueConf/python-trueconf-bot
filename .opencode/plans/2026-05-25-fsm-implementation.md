@@ -61,9 +61,9 @@ from typing import Any, Protocol, runtime_checkable
 
 @dataclass(frozen=True, slots=True)
 class StorageKey:
-    bot_id: str | int | None
-    chat_id: str | int
-    user_id: str | int
+    bot_id: str | None
+    chat_id: str
+    user_id: str
     destiny: str = "default"
 
 
@@ -91,12 +91,12 @@ class DefaultKeyBuilder:
                 f"Provide a custom KeyBuilder to Dispatcher.setup_fsm()."
             )
 
-        return StorageKey(bot_id=bot_id, chat_id=chat_id, user_id=user_id)
+        return StorageKey(bot_id=bot_id, chat_id=str(chat_id), user_id=str(user_id))
 ```
 
 No external dependencies. Pure dataclass + protocol.
 
-**Note**: `chat_id` and `user_id` store original types (`str | int`). Serialization to string is the storage layer's responsibility (e.g., Redis key format).
+**Note**: `chat_id` and `user_id` are always strings. In TrueConf API, IDs are strings like `"user@server"`. `DefaultKeyBuilder` converts to `str` to normalize input types.
 
 ---
 
@@ -530,11 +530,33 @@ class Dispatcher(Router):
 
 ---
 
-## Step 13: Modify `trueconf/dispatcher/router.py` — `_apply_filter` expansion + kwargs merge
+## Step 13: Modify `trueconf/dispatcher/router.py` — `_apply_filter` expansion + kwargs merge + State sugar
 
 **File**: `trueconf/dispatcher/router.py` (modify)
 
-### Change 1: `_apply_filter` signature and body
+### Change 1: `_register` — auto-wrap `State` with `StateFilter`
+
+Add sugar so `@router.message(Form.name)` works as shorthand for `@router.message(StateFilter(Form.name))`:
+
+```python
+# CURRENT (line 116):
+def _register(self, filters: Tuple[FilterLike, ...]):
+
+# NEW:
+def _register(self, filters: Tuple[FilterLike, ...]):
+    # Sugar: State instances are auto-wrapped with StateFilter
+    from trueconf.fsm.state import State
+    from trueconf.fsm.filters import StateFilter
+    filters = tuple(
+        StateFilter(f) if isinstance(f, State) else f
+        for f in filters
+    )
+    # ... rest unchanged
+```
+
+This is backward-compatible — existing filter tuples without `State` are unchanged.
+
+### Change 2: `_apply_filter` signature and body
 
 ```python
 # CURRENT (line 232):
@@ -594,7 +616,7 @@ async def _apply_filter(self, f: Filter | Any, event: Event, data: dict[str, Any
 - Only `MagicFilter` catches exceptions (attribute resolution failures are normal)
 - `has_var_kwargs` check — filters with `**kwargs` receive all of `data`
 
-### Change 2: `_core()` — pass `ctx` to `_apply_filter` and merge data into handler kwargs
+### Change 3: `_core()` — pass `ctx` to `_apply_filter` and merge data into handler kwargs
 
 In `_core()` (around lines 151-192), two changes:
 
