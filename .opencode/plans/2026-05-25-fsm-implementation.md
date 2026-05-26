@@ -61,9 +61,9 @@ from typing import Any, Protocol, runtime_checkable
 
 @dataclass(frozen=True, slots=True)
 class StorageKey:
-    bot_id: str | None
-    chat_id: str
-    user_id: str
+    bot_id: str | int | None
+    chat_id: str | int
+    user_id: str | int
     destiny: str = "default"
 
 
@@ -91,10 +91,12 @@ class DefaultKeyBuilder:
                 f"Provide a custom KeyBuilder to Dispatcher.setup_fsm()."
             )
 
-        return StorageKey(bot_id=bot_id, chat_id=str(chat_id), user_id=str(user_id))
+        return StorageKey(bot_id=bot_id, chat_id=chat_id, user_id=user_id)
 ```
 
 No external dependencies. Pure dataclass + protocol.
+
+**Note**: `chat_id` and `user_id` store original types (`str | int`). Serialization to string is the storage layer's responsibility (e.g., Redis key format).
 
 ---
 
@@ -218,6 +220,11 @@ class State:
         self._group: type[StatesGroup] | None = None
 
     def bind(self, group: type[StatesGroup], name: str) -> None:
+        if self._group is not None or self._name is not None:
+            raise RuntimeError(
+                f"State '{self._name}' is already bound to {self._group}. "
+                f"Cannot rebind to {group.__name__}:{name}."
+            )
         self._group = group
         self._name = name
 
@@ -500,6 +507,12 @@ class Dispatcher(Router):
         from trueconf.fsm.key_builder import DefaultKeyBuilder
         from trueconf.fsm.middleware import FSMMiddleware
 
+        if self.fsm is not None:
+            raise RuntimeError(
+                "FSM is already configured for this Dispatcher. "
+                "Call setup_fsm() only once, or create a new Dispatcher."
+            )
+
         if fsm_manager is None:
             fsm_manager = FSMManager(
                 storage=storage or MemoryStorage(),
@@ -546,9 +559,13 @@ async def _apply_filter(self, f: Filter | Any, event: Event, data: dict[str, Any
 
     # Resolve which kwargs from data the filter accepts
     kwargs: dict[str, Any] = {}
+    has_var_kwargs = False
     try:
         sig = inspect.signature(f)
         for name, param in sig.parameters.items():
+            if param.kind == inspect.Parameter.VAR_KEYWORD:
+                has_var_kwargs = True
+                continue
             if name in data and param.kind in (
                 inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 inspect.Parameter.KEYWORD_ONLY,
@@ -557,21 +574,25 @@ async def _apply_filter(self, f: Filter | Any, event: Event, data: dict[str, Any
     except (ValueError, TypeError):
         pass
 
-    try:
-        res = f(event, **kwargs) if kwargs else f(event)
-    except Exception:
-        return False
+    # If filter accepts **kwargs, pass all remaining data
+    if has_var_kwargs:
+        kwargs.update({k: v for k, v in data.items() if k not in kwargs})
+
+    # Regular filters: let exceptions propagate (config errors must be explicit)
+    res = f(event, **kwargs) if kwargs else f(event)
 
     if inspect.isawaitable(res):
-        try:
-            res = await res
-        except Exception:
-            return False
+        res = await res
 
     if isinstance(res, (bool, dict)):
         return res
     return bool(res)
 ```
+
+**Key changes from original plan:**
+- Regular filter exceptions are **NOT caught** — `RuntimeError` from `StateFilter` (missing FSMContext) propagates explicitly
+- Only `MagicFilter` catches exceptions (attribute resolution failures are normal)
+- `has_var_kwargs` check — filters with `**kwargs` receive all of `data`
 
 ### Change 2: `_core()` — pass `ctx` to `_apply_filter` and merge data into handler kwargs
 
@@ -685,10 +706,12 @@ If the project has a lint/typecheck command (check pyproject.toml), run it too.
 
 1. **Circular imports**: `fsm/storage/base.py` imports from `fsm/key_builder.py`. Both are in `trueconf.fsm.*`. No issue — `key_builder` has no imports from `fsm`. `fsm/middleware.py` imports `BaseMiddleware` from `trueconf.middleware` — no issue. `dispatcher.py` uses lazy imports in `setup_fsm()` to avoid circular deps.
 
-2. **`_apply_filter` backward compatibility**: Existing filters (`Command`, `InstanceOfFilter`, `MethodFilter`, `MessageFilter`, `MagicFilter`) accept only `(event)`. The new signature inspection will find no matching kwargs in `data` for them, so `f(event)` is called — identical to current behavior.
+2. **`_apply_filter` backward compatibility**: Existing filters (`Command`, `InstanceOfFilter`, `MethodFilter`, `MessageFilter`, `MagicFilter`) accept only `(event)`. The new signature inspection will find no matching kwargs in `data` for them, so `f(event)` is called — identical to current behavior. Exception: existing filters that raise exceptions will now propagate instead of being swallowed. This is intentional — configuration errors must be explicit.
 
 3. **Handler kwargs collision**: If `data` contains `"bot"` and a filter also returns `{"bot": ...}`, the filter value wins (`{**ctx, **kwargs}`). This is correct — filter-returned values are more specific.
 
 4. **`asyncio.create_task` in `_spawn`**: Handlers run as fire-and-forget tasks. Middleware post-processing runs after task creation, not completion. This is existing behavior and doesn't change with FSM.
 
 5. **Thread safety of MemoryStorage**: MemoryStorage uses a plain dict. In a single asyncio event loop (which is the intended usage), this is safe. No thread safety needed for v1.
+
+6. **`setup_fsm()` idempotency**: Guard prevents double-registration of FSMMiddleware. Calling `setup_fsm()` twice raises `RuntimeError`. This is intentional for v1 — if dynamic reconfiguration is needed later, it can be added.
