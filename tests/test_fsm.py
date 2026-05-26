@@ -467,3 +467,195 @@ class TestDispatcherFSMIntegration:
         assert received_state is not None
         assert isinstance(received_state, FSMContext)
         assert await received_state.get_state() == "Form:name"
+
+
+# ──────────────────────────────────────────────
+# Nested StatesGroups
+# ──────────────────────────────────────────────
+
+class TestNestedStatesGroups:
+    def test_nested_state_str_format(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+                street = State()
+
+            confirm = State()
+
+        assert str(Form.name) == "Form:name"
+        assert str(Form.Address.city) == "Form.Address:city"
+        assert str(Form.Address.street) == "Form.Address:street"
+        assert str(Form.confirm) == "Form:confirm"
+
+    def test_parent_child_link(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+        assert Form.Address.__parent__ is Form
+        assert Form.__parent__ is None
+
+    def test_childs_tuple(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+            class Payment(StatesGroup):
+                card = State()
+
+        assert Form.Address in Form.__childs__
+        assert Form.Payment in Form.__childs__
+        assert len(Form.__childs__) == 2
+
+    def test_all_states_recursive(self):
+        class Form(StatesGroup):
+            name = State()
+            age = State()
+
+            class Address(StatesGroup):
+                city = State()
+                street = State()
+
+            confirm = State()
+
+        all_names = [str(s) for s in Form.__all_states__]
+        assert "Form:name" in all_names
+        assert "Form:age" in all_names
+        assert "Form.Address:city" in all_names
+        assert "Form.Address:street" in all_names
+        assert "Form:confirm" in all_names
+        assert len(Form.__all_states__) == 5
+
+    def test_all_childs_recursive(self):
+        class Form(StatesGroup):
+            class Address(StatesGroup):
+                city = State()
+
+        assert Form.Address in Form.__all_childs__
+
+    def test_contains_state_string(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+        assert "Form:name" in Form
+        assert "Form.Address:city" in Form
+        assert "Form:nonexistent" not in Form
+
+    def test_contains_state_object(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+        assert Form.name in Form
+        assert Form.Address.city in Form
+
+    def test_contains_child_group(self):
+        class Form(StatesGroup):
+            class Address(StatesGroup):
+                city = State()
+
+        assert Form.Address in Form
+
+    def test_iter_states(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+            confirm = State()
+
+        names = [str(s) for s in Form]
+        assert "Form:name" in names
+        assert "Form.Address:city" in names
+        assert "Form:confirm" in names
+
+    def test_get_root(self):
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+
+        assert Form.get_root() is Form
+        assert Form.Address.get_root() is Form
+
+    def test_nested_state_as_filter(self):
+        """Test that nested State works as StateFilter sugar."""
+        class Form(StatesGroup):
+            class Address(StatesGroup):
+                city = State()
+
+        f = StateFilter(Form.Address.city)
+        assert "Form.Address:city" in f._states
+
+    def test_nested_state_in_storage(self):
+        """Test that nested states work with storage."""
+        class Form(StatesGroup):
+            class Address(StatesGroup):
+                city = State()
+
+        f = StateFilter(Form.Address.city)
+        assert "Form.Address:city" in f._states
+
+    async def test_nested_state_in_pipeline(self):
+        """Test nested states work end-to-end in the dispatcher pipeline."""
+        class Form(StatesGroup):
+            name = State()
+
+            class Address(StatesGroup):
+                city = State()
+                street = State()
+
+            confirm = State()
+
+        dp = Dispatcher(storage=MemoryStorage())
+        router = Router()
+        dp.include_router(router)
+
+        calls: list[str] = []
+
+        @router.message(Form.Address.city)
+        async def on_city(msg: Message, state: FSMContext):
+            calls.append("city")
+
+        @router.message(Form.Address.street)
+        async def on_street(msg: Message, state: FSMContext):
+            calls.append("street")
+
+        @router.message(Form.name)
+        async def on_name(msg: Message, state: FSMContext):
+            calls.append("name")
+
+        key = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user1")
+
+        # Test Form.Address:city
+        await dp.fsm.storage.set_state(key, "Form.Address:city")
+        await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["city"]
+
+        # Test Form.Address:street
+        calls.clear()
+        await dp.fsm.storage.set_state(key, "Form.Address:street")
+        await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["street"]
+
+        # Test Form:name (not nested)
+        calls.clear()
+        await dp.fsm.storage.set_state(key, "Form:name")
+        await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
+        await asyncio.sleep(0.05)
+        assert calls == ["name"]
