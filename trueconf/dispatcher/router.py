@@ -115,6 +115,13 @@ class Router:
 
     def _register(self, filters: Tuple[FilterLike, ...]):
         """Internal decorator for registering handlers with filters."""
+        # Sugar: State instances are auto-wrapped with StateFilter
+        from trueconf.fsm.filters import StateFilter
+        from trueconf.fsm.state import State
+        filters = tuple(
+            StateFilter(f) if isinstance(f, State) else f
+            for f in filters
+        )
 
         def decorator(func: Handler):
             async def async_wrapper(evt: Event, **kwargs: Any):
@@ -159,7 +166,7 @@ class Router:
                 kwargs: dict[str, Any] = {}
                 for f in flts:
                     try:
-                        result = await self._apply_filter(f, evt)
+                        result = await self._apply_filter(f, evt, ctx)
                     except Exception as e:
                         logger.exception("Filter %s error: %s", type(f).__name__, e)
                         matched = False
@@ -179,9 +186,12 @@ class Router:
                         for f in flts
                     )
 
+                    # Merge data dict (bot, state, etc.) with filter-returned kwargs
+                    all_kwargs: dict[str, Any] = {**ctx, **kwargs}
+
                     # --- build inner chain: inner_mw → handler ---
                     async def _inner_base(ievt: Event, ictx: Dict[str, Any]) -> None:
-                        self._spawn(handler, ievt, filters_str, **kwargs)
+                        self._spawn(handler, ievt, filters_str, **all_kwargs)
 
                     inner_chain: Callable[[Event, Dict[str, Any]], Awaitable[None]] = _inner_base
                     for mw in reversed(self._collect_middlewares("_inner_middlewares")):
@@ -229,24 +239,42 @@ class Router:
 
         asyncio.create_task(_run())
 
-    async def _apply_filter(self, f: Filter | Any, event: Event) -> bool:
-        """Evaluate a filter (sync or async) against the event."""
+    async def _apply_filter(self, f: Filter | Any, event: Event, data: dict[str, Any] | None = None) -> bool:
+        """Evaluate a filter against the event, passing matching kwargs from data."""
+        data = data or {}
+
         if isinstance(f, MagicFilter):
             try:
                 return bool(f.resolve(event))
             except Exception:
                 return False
 
+        # Resolve which kwargs from data the filter accepts
+        kwargs: dict[str, Any] = {}
+        has_var_kwargs = False
         try:
-            res = f(event)
-        except Exception:
-            return False
+            sig = inspect.signature(f)
+            for name, param in sig.parameters.items():
+                if param.kind == inspect.Parameter.VAR_KEYWORD:
+                    has_var_kwargs = True
+                    continue
+                if name in data and param.kind in (
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.KEYWORD_ONLY,
+                ):
+                    kwargs[name] = data[name]
+        except (ValueError, TypeError):
+            pass
+
+        # If filter accepts **kwargs, pass all remaining data
+        if has_var_kwargs:
+            kwargs.update({k: v for k, v in data.items() if k not in kwargs})
+
+        # Regular filters: let exceptions propagate (config errors must be explicit)
+        res = f(event, **kwargs) if kwargs else f(event)
 
         if inspect.isawaitable(res):
-            try:
-                res = await res
-            except Exception:
-                return False
+            res = await res
 
         if isinstance(res, (bool, dict)):
             return res

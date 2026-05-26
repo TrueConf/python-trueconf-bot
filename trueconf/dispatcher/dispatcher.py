@@ -6,7 +6,9 @@ from trueconf.dispatcher.router import Router
 MiddlewareHandler = Callable[[Event, Dict[str, Any]], Awaitable[None]]
 
 if TYPE_CHECKING:
-    pass
+    from trueconf.fsm.key_builder import KeyBuilder
+    from trueconf.fsm.manager import FSMManager
+    from trueconf.fsm.storage.base import BaseStorage
 
 
 class Dispatcher(Router):
@@ -28,13 +30,62 @@ class Dispatcher(Router):
         >>> dispatcher.include_router(my_router)
         >>> await dispatcher._feed_update(event, {"bot": bot})
 
+        FSM usage:
+
+        >>> from trueconf.fsm.storage.memory import MemoryStorage
+        >>> dispatcher = Dispatcher(storage=MemoryStorage())
+
         Attributes:
             routers (List[Router]): List of root routers included in the dispatcher.
+            fsm (FSMManager | None): FSM manager, if configured.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        storage: BaseStorage | None = None,
+        fsm_manager: FSMManager | None = None,
+        key_builder: KeyBuilder | None = None,
+    ):
         super().__init__(name="dispatcher")
         self.routers: List[Router] = []
+        self.fsm: FSMManager | None = None
+
+        if fsm_manager is not None and storage is not None:
+            raise ValueError("Pass either fsm_manager or storage, not both")
+
+        if fsm_manager is not None:
+            self.setup_fsm(fsm_manager=fsm_manager)
+        elif storage is not None:
+            self.setup_fsm(storage=storage, key_builder=key_builder)
+
+    def setup_fsm(
+        self,
+        *,
+        fsm_manager: FSMManager | None = None,
+        storage: BaseStorage | None = None,
+        key_builder: KeyBuilder | None = None,
+    ) -> FSMManager:
+        from trueconf.fsm.key_builder import DefaultKeyBuilder
+        from trueconf.fsm.manager import FSMManager
+        from trueconf.fsm.middleware import FSMMiddleware
+        from trueconf.fsm.storage.memory import MemoryStorage
+
+        if self.fsm is not None:
+            raise RuntimeError(
+                "FSM is already configured for this Dispatcher. "
+                "Call setup_fsm() only once, or create a new Dispatcher."
+            )
+
+        if fsm_manager is None:
+            fsm_manager = FSMManager(
+                storage=storage or MemoryStorage(),
+                key_builder=key_builder or DefaultKeyBuilder(),
+            )
+
+        self.fsm = fsm_manager
+        self._outer_middlewares.insert(0, FSMMiddleware(fsm_manager))
+        return fsm_manager
 
     def include_router(self, router: "Router") -> None:
         """Include a root router in the dispatcher.
