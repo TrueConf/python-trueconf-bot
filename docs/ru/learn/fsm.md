@@ -24,9 +24,8 @@ FSM полезен везде, где нужен **пошаговый диало
 
 - **Анкеты и формы** — регистрация, опросы, сбор данных
 - **Мастер настройки** — пошаговая настройка параметров
-- **Корзина интернет-магазина** — выбор товара → количество → адрес доставки
 - **Поддержка** — заявка → описание проблемы → прикрепление файлов → подтверждение
-- **Меню с вложенными разделами** — навигация по каталогу
+- **Меню с разделами** — навигация с помощью команд или текста
 
 ## Основные концепции
 
@@ -36,7 +35,7 @@ FSM полезен везде, где нужен **пошаговый диало
 | **StatesGroup** | Группа связанных состояний | `Form` с состояниями `name`, `age`, `confirm` |
 | **FSMContext** | Объект для чтения и записи состояния и данных | `await state.get_state()`, `await state.set_state(...)` |
 | **StateFilter** | Фильтр, который пропускает хендлер только в нужном состоянии | `@router.message(StateFilter(Form.name))` |
-| **Storage** | Хранилище состояний (в памяти, Redis, БД) | `MemoryStorage()` |
+| **Storage** | Хранилище состояний (в памяти) | `MemoryStorage()` |
 
 ## Быстрый старт
 
@@ -61,7 +60,7 @@ dp.include_router(router)
 
 !!! info
     `MemoryStorage` хранит состояния в оперативной памяти. После перезапуска бота все состояния сбрасываются. 
-    Для разработки и тестирования этого достаточно. Для продакшена позже можно будет подключить `RedisStorage` или другое постоянное хранилище.
+    Для разработки и тестирования этого достаточно. Для продакшена вы можете реализовать [свое постоянное хранилище](#создание-кастомного-хранилища).
 
 ### Шаг 3. Объявление состояний
 
@@ -321,6 +320,34 @@ async def process_name(msg: Message, state: FSMContext): ...
 async def process_name(msg: Message, state: FSMContext): ...
 ```
 
+### Команды внутри состояний
+
+Можно комбинировать `StateFilter` с `Command` — хендлер сработает только если пользователь **в нужном состоянии** И отправил **конкретную команду**:
+
+```python
+# /skip работает ТОЛЬКО в состоянии Form.name
+@router.message(Form.name, Command("skip"))
+async def skip_name(msg: Message, state: FSMContext):
+    await state.update_data(name="Аноним")
+    await state.set_state(Form.age)
+    await msg.answer("Имя пропущено. Сколько вам лет?")
+```
+
+Несколько команд в одном состоянии:
+
+```python
+@router.message(Form.confirm, Command("yes"))
+async def confirm_yes(msg: Message, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    await msg.answer(f"Готово, {data['name']}!")
+
+@router.message(Form.confirm, Command("no"))
+async def confirm_no(msg: Message, state: FSMContext):
+    await state.clear()
+    await msg.answer("Отменено.")
+```
+
 !!! warning "Порядок хендлеров важен!"
     Router проверяет хендлеры **в порядке регистрации** и останавливается на первом совпавшем. 
     
@@ -476,8 +503,7 @@ dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
 `MemoryStorage` подходит для разработки, но данные теряются при перезапуске. Для продакшена можно реализовать своё хранилище.
 
 !!! Tip
-    В будущих версиях библиотеки планируются готовые хранилища: `RedisStorage`, `SQLiteStorage` и другие. 
-    Но если вам нужно своё — реализуйте абстрактный класс `BaseStorage`:
+    Если вам нужно своё сохранять данные в хранилище, чтобы они сохранялись при перезапуске бота — реализуйте абстрактный класс `BaseStorage`:
 
 ```python
 from trueconf.fsm.storage.base import BaseStorage
