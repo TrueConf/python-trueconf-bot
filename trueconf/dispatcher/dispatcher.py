@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from trueconf.fsm.key_builder import KeyBuilder
     from trueconf.fsm.manager import FSMManager
     from trueconf.fsm.storage.base import BaseStorage
+    from trueconf.fsm.strategy import FSMStrategy
 
 
 class Dispatcher(Router):
@@ -46,6 +47,7 @@ class Dispatcher(Router):
         storage: BaseStorage | None = None,
         fsm_manager: FSMManager | None = None,
         key_builder: KeyBuilder | None = None,
+        strategy: FSMStrategy | None = None,
     ):
         super().__init__(name="dispatcher")
         self.routers: List[Router] = []
@@ -57,7 +59,7 @@ class Dispatcher(Router):
         if fsm_manager is not None:
             self.setup_fsm(fsm_manager=fsm_manager)
         elif storage is not None:
-            self.setup_fsm(storage=storage, key_builder=key_builder)
+            self.setup_fsm(storage=storage, key_builder=key_builder, strategy=strategy)
 
     def setup_fsm(
         self,
@@ -65,11 +67,13 @@ class Dispatcher(Router):
         fsm_manager: FSMManager | None = None,
         storage: BaseStorage | None = None,
         key_builder: KeyBuilder | None = None,
+        strategy: FSMStrategy | None = None,
     ) -> FSMManager:
         from trueconf.fsm.key_builder import DefaultKeyBuilder
         from trueconf.fsm.manager import FSMManager
         from trueconf.fsm.middleware import FSMMiddleware
         from trueconf.fsm.storage.memory import MemoryStorage
+        from trueconf.fsm.strategy import FSMStrategy
 
         if self.fsm is not None:
             raise RuntimeError(
@@ -81,6 +85,7 @@ class Dispatcher(Router):
             fsm_manager = FSMManager(
                 storage=storage or MemoryStorage(),
                 key_builder=key_builder or DefaultKeyBuilder(),
+                strategy=strategy or FSMStrategy.USER_IN_CHAT,
             )
 
         self.fsm = fsm_manager
