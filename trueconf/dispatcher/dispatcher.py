@@ -13,32 +13,44 @@ if TYPE_CHECKING:
 
 
 class Dispatcher(Router):
-    """
-        Central event dispatcher for processing and routing incoming events.
+    """Central dispatcher for routing incoming events.
 
-        The `Dispatcher` extends `Router` and aggregates one or more child `Router`
-        instances. Each incoming event is passed through the dispatcher's own
-        middleware chain first, then fed to each child router in order until handled.
+    The dispatcher is the root router of an application. It receives incoming
+    events, applies its own outer middleware chain, and then passes each event
+    to the included root routers in order. Processing stops when a router handles
+    the event, unless that router allows propagation to its child routers.
 
-        Because ``Dispatcher`` inherits from ``Router``, it supports registering
-        middleware directly:
+    `Dispatcher` inherits from `Router`, so it supports the same handler,
+    middleware, and subrouter registration APIs.
 
-        >>> dp.outer_middleware(MyMiddleware())
+    Example:
+        ```python
+        dispatcher = Dispatcher()
+        dispatcher.include_router(router)
+        ```
 
-        Typical usage:
+    FSM example:
+        ```python
+        from trueconf.fsm.storage.memory import MemoryStorage
 
-        >>> dispatcher = Dispatcher()
-        >>> dispatcher.include_router(my_router)
-        >>> await dispatcher._feed_update(event, {"bot": bot})
+        storage = MemoryStorage()
+        dp = Dispatcher(storage=storage)
+        ```
 
-        FSM usage:
+    Args:
+        storage: Storage backend used to create an FSM manager. Cannot be used
+            together with `fsm_manager`.
+        fsm_manager: Existing FSM manager instance. Cannot be used together
+            with `storage`.
+        key_builder: Key builder used when creating an FSM manager from
+            `storage`. Ignored when `fsm_manager` is passed.
+        strategy: FSM strategy used when creating an FSM manager from `storage`.
+            Ignored when `fsm_manager` is passed.
 
-        >>> from trueconf.fsm.storage.memory import MemoryStorage
-        >>> dispatcher = Dispatcher(storage=MemoryStorage())
-
-        Attributes:
-            routers (List[Router]): List of root routers included in the dispatcher.
-            fsm (FSMManager | None): FSM manager, if configured.
+    Attributes:
+        routers: Root routers included in the dispatcher.
+        fsm: FSM manager configured for the dispatcher, or `None` if FSM support
+            has not been enabled.
     """
 
     def __init__(
