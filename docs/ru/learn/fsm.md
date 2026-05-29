@@ -60,13 +60,15 @@ dp.include_router(router)
 
 !!! info
     `MemoryStorage` хранит состояния в оперативной памяти. После перезапуска бота все состояния сбрасываются. 
-    Для разработки и тестирования этого достаточно. Для продакшена вы можете реализовать [свое постоянное хранилище](#создание-кастомного-хранилища).
+    Для разработки и тестирования этого достаточно. Для продакшена вы можете реализовать [свое постоянное хранилище](#_16).
 
 ### Шаг 3. Объявление состояний
 
 Создайте класс, наследующийся от `StatesGroup`, и объявите в нём состояния как атрибуты:
 
 ```python
+from trueconf.fsm import State, StatesGroup
+
 class Form(StatesGroup):
     name = State()     # "Form:name"
     age = State()      # "Form:age"
@@ -130,7 +132,11 @@ if __name__ == "__main__":
 
 ## Объявление состояний
 
-### StatesGroup и State
+!!! note "Правила"
+    - Класс **обязательно** должен наследоваться от `StatesGroup`.
+    - Каждое состояние — это атрибут класса, созданный через `State()`
+    - Имена состояний формируются **автоматически** из имени группы и имени атрибута
+    - Не используйте один и тот же `State()` в разных группах — каждый `State` привязывается к одной группе
 
 ```python
 from trueconf.fsm import State, StatesGroup
@@ -142,17 +148,19 @@ class OrderForm(StatesGroup):
     confirm = State()    # "OrderForm:confirm"
 ```
 
-!!! note "Правила"
-    - Класс **обязательно** должен наследоваться от `StatesGroup`.
-    - Каждое состояние — это атрибут класса, созданный через `State()`
-    - Имена состояний формируются **автоматически** из имени группы и имени атрибута
-    - Не используйте один и тот же `State()` в разных группах — каждый `State` привязывается к одной группе
-
 ### Несколько групп
 
-Можно создавать сколько угодно групп для разных сценариев:
+Можно создавать несколько групп состояний для разных сценариев бота:
+
+- для анкетирования;
+- для обращения в поддержку;
+- для оформления заказа на складе или в 1С. 
+
+Так состояния разных диалогов не смешиваются между собой, а код остаётся более понятным и удобным для расширения.
 
 ```python
+from trueconf.fsm import State, StatesGroup
+
 class FeedbackForm(StatesGroup):
     rating = State()
     comment = State()
@@ -165,9 +173,12 @@ class SupportTicket(StatesGroup):
 
 ### Вложенные группы
 
-Группы могут быть вложенными друг в друга — это удобно для сложных многошаговых форм:
+Группы могут быть вложенными друг в друга. Это удобно для сложных многошаговых форм, где один сценарий содержит отдельные логические блоки. 
+Например, в регистрации можно вынести адрес в отдельную вложенную группу, чтобы состояния `city`, `street` и `zip_code` были связаны именно с адресом, а не смешивались с основными шагами формы.
 
 ```python
+from trueconf.fsm import State, StatesGroup
+
 class Registration(StatesGroup):
     name = State()                       # "Registration:name"
     age = State()                        # "Registration:age"
@@ -180,91 +191,101 @@ class Registration(StatesGroup):
     confirm = State()                    # "Registration:confirm"
 ```
 
-Идентификаторы вложенных состояний формируются через точку: `Registration.Address:city`.
+!!! Tip
+    Идентификаторы вложенных состояний формируются через точку: `Registration.Address:city`.
 
-## Установка и чтение состояния
+## Работа с состояниями
 
-### set_state — установить состояние
+При работе с формой важно проверять состояние, в котором находится пользователь. Ниже показаны примеры, как работать с машиной состояний:
 
-```python
-await state.set_state(Form.name)
-```
+=== "Установить состояние"
+    ```python
+    await state.set_state(Form.name)
+    ```
 
-Устанавливает текущее состояние пользователя. Все последующие сообщения от этого пользователя будут обрабатываться хендлерами, привязанными к `Form.name`.
+    Все последующие сообщения от этого пользователя будут обрабатываться хендлерами, привязанными к `Form.name`.
 
-### get_state — получить текущее состояние
+=== "Получить состояние"
+    ```python
+    current = await state.get_state()
+    ```
 
-```python
-current = await state.get_state()
-# "Form:name" или None, если состояния нет
-```
+    `"Form:name"` или `None`, если состояния нет.
 
-### clear — сбросить состояние
+=== "Cбросить состояние"
+    ```
+    await state.clear()
+    ```
 
-```python
-await state.clear()
-```
+    Сбрасывает текущее состояние **и** все сохранённые данные. После вызова `clear()` пользователь считается «без состояния» — хендлеры с `StateFilter` его больше не поймают.
 
-Сбрасывает текущее состояние **и** все сохранённые данные. После вызова `clear()` пользователь считается «без состояния» — хендлеры с `StateFilter` его больше не поймают.
-
-!!! warning "Разница между clear и set_state(None)"
-    - `await state.clear()` — сбрасывает состояние и **удаляет все данные**
-    - `await state.set_state(None)` — сбросит состояние, но **данные сохранятся**
-
-    Используйте `clear()` когда диалог полностью завершён и данные больше не нужны.
+    !!! warning "Разница между clear и set_state(None)"
+        - `await state.clear()` — сбрасывает состояние и **удаляет все данные**
+        - `await state.set_state(None)` — сбросит состояние, но **данные сохранятся**
+    
+        Используйте `clear()` когда диалог полностью завершён и данные больше не нужны.
 
 ## Хранение и чтение данных
 
-Помимо состояния (на каком шаге пользователь), FSM позволяет сохранять произвольные данные (что именно пользователь ввёл на каждом шаге).
+Помимо состояния — то есть шага, на котором находится пользователь, — FSM позволяет сохранять произвольные данные. Например, имя, возраст, выбранный пункт меню или любые другие значения, которые пользователь ввёл во время диалога.
 
-### update_data — сохранить данные
+=== "Сохранить данные"
+    ```python
+    await state.update_data(name="Иван", age=25)  
+    ```
 
-```python
-# Через именованные аргументы:
-await state.update_data(name="Иван", age=25)
+    `update_data()` добавляет новые данные к уже сохранённым. Если ключ уже существует, его значение будет обновлено.
 
-# Через словарь:
-await state.update_data({"name": "Иван", "age": 25})
+    Также можно передать данные через словарь:
+    
+    ```python
+    await state.update_data({"name": "Иван", "age": 25}) 
+    ```
 
-# Комбинация (словарь перезаписывает kwargs при конфликте):
-await state.update_data({"name": "Иван"}, age=25)
-```
+    Или совместить оба варианта:
 
-!!! note
-    `update_data` **объединяет** новые данные с уже существующими. Чтобы заменить все данные целиком, используйте `set_data`.
+    ```python
+    await state.update_data({"name": "Иван"}, age=25)
+    ```
 
-### get_data — получить все данные
+    !!! note
+        `update_data()` объединяет новые данные с уже существующими. Чтобы заменить все данные целиком, используйте `set_data()`.
 
-```python
-data = await state.get_data()
-# {"name": "Иван", "age": 25}
-```
+=== "Получить все данные"
+    ```python
+    data = await state.get_data()   
+    ```
 
-### get_value — получить одно значение
+    Метод возвращает словарь со всеми сохранёнными данными:
 
-```python
-name = await state.get_value("name")
-# "Иван"
+    ```python
+    {"name": "Иван","age": 25} 
+    ```
 
-name = await state.get_value("name", "Не указано")
-# "Иван" (или "Не указано", если ключа нет)
-```
+=== "Получить одно значение"
+    ```python
+    name = await state.get_value("name") 
+    # "Иван"
+    ```
 
-Это удобный шорткат — не нужно получать весь словарь ради одного поля.
+    Можно указать значение по умолчанию, которое вернётся, если такого ключа нет:
 
-### set_data — заменить все данные
+    ```python
+    name = await state.get_value("name", "Не указано")
+    ```
+    
+    Также советуем использовать получение значения именно так, чтобы не тянуть весь словарь ради одного поля.
 
-```python
-await state.set_data({"name": "Пётр"})
-```
+=== "Обновить все данные"
+    ```python
+     await state.set_data({"name": "Пётр"})     
+    ```
 
-Полностью заменяет хранимые данные. Предыдущие данные теряются.
+    Полностью заменяет все сохранённые данные новым словарём. Предыдущие данные будут удалены.
 
 ## Фильтрация по состоянию
 
-### StateFilter
-
-`StateFilter` — фильтр, который пропускает хендлер **только** когда текущее состояние пользователя совпадает с одним из указанных:
+Чтобы хендлер срабатывал только на определённом шаге диалога, используйте `StateFilter`. Он сравнивает текущее состояние пользователя с указанным состоянием и пропускает событие дальше только при совпадении.
 
 ```python
 from trueconf.fsm import StateFilter
@@ -274,29 +295,37 @@ async def process_name(msg: Message, state: FSMContext):
     ...
 ```
 
-### Несколько состояний
-
-Фильтр принимает несколько состояний — хендлер сработает, если текущее состояние совпадёт с **любым** из них:
+Для удобства мы сделали так, чтобы можно быдл передавать объект `State` напрямую в декоратор. Библиотека автоматически воспринимает его как `StateFilter`, поэтому следующие варианты эквивалентны:
 
 ```python
-@router.message(StateFilter(Form.name, Form.age))
+@router.message(StateFilter(Form.name))
+async def process_name(msg: Message, state: FSMContext): ...
+
+
+@router.message(Form.name)
+async def process_name(msg: Message, state: FSMContext): ...
+```
+
+Если один и тот же хендлер должен работать сразу в нескольких состояниях, передайте их через запятую. Хендлер будет вызван, если текущее состояние совпадёт хотя бы с одним из них:
+
+```python
+@router.message(Form.name, Form.age)
 async def process_name_or_age(msg: Message, state: FSMContext):
     ...
 ```
 
-### Отсутствие состояния
-
-`StateFilter(None)` пропускает хендлер только когда у пользователя **нет** активного состояния:
+Для пользователей без активного диалога можно использовать `StateFilter(None)`. 
+Такой хендлер сработает только в том случае, если состояние ещё не установлено или уже было сброшено:
 
 ```python
+from trueconf.fsm import StateFilter
+
 @router.message(StateFilter(None))
 async def no_active_state(msg: Message, state: FSMContext):
     await msg.answer("У вас нет активного диалога. Введите /start.")
 ```
 
-### Любой_state (wildcard)
-
-Импортируйте `any_state` для обработки сообщений **в любом состоянии**:
+Если нужно обработать сообщение независимо от текущего состояния, используйте `any_state`:
 
 ```python
 from trueconf.fsm import any_state
@@ -306,23 +335,9 @@ async def catch_all(msg: Message, state: FSMContext):
     await msg.answer("Я не понимаю. Введите /cancel для отмены.")
 ```
 
-### Сахар: State вместо StateFilter
-
-Для краткости можно передавать `State` напрямую в декоратор — библиотека автоматически обернёт его в `StateFilter`:
-
-```python
-# Эти два варианта эквивалентны:
-
-@router.message(StateFilter(Form.name))
-async def process_name(msg: Message, state: FSMContext): ...
-
-@router.message(Form.name)
-async def process_name(msg: Message, state: FSMContext): ...
-```
-
 ### Команды внутри состояний
 
-Можно комбинировать `StateFilter` с `Command` — хендлер сработает только если пользователь **в нужном состоянии** И отправил **конкретную команду**:
+Вы можете комбинировать `StateFilter` с `Command` — хендлер сработает тольк в том случае, если пользователь находится **в нужном состоянии** И отправил **конкретную команду**:
 
 ```python
 # /skip работает ТОЛЬКО в состоянии Form.name
@@ -333,7 +348,7 @@ async def skip_name(msg: Message, state: FSMContext):
     await msg.answer("Имя пропущено. Сколько вам лет?")
 ```
 
-Несколько команд в одном состоянии:
+Если нужно использовать несколько команд в одном состоянии, то это тоже допустимо:
 
 ```python
 @router.message(Form.confirm, Command("yes"))
@@ -380,104 +395,6 @@ async def process_age(msg: Message, state: FSMContext):
     await state.update_data(age=int(msg.text))
     await state.set_state(Form.city)
     await msg.answer("В каком городе вы живёте?")
-```
-
-## Полный пример: анкета с валидацией
-
-```python
-import asyncio
-from trueconf import Bot, Dispatcher, Router, F, Message
-from trueconf.filters import Command
-from trueconf.fsm import FSMContext, State, StatesGroup
-from trueconf.fsm.storage.memory import MemoryStorage
-
-
-class Survey(StatesGroup):
-    name = State()
-    age = State()
-    city = State()
-    confirm = State()
-
-
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
-router = Router()
-dp.include_router(router)
-
-
-@router.message(Command("cancel"))
-async def cmd_cancel(msg: Message, state: FSMContext):
-    current = await state.get_state()
-    if current is None:
-        await msg.answer("Нечего отменять.")
-        return
-    await state.clear()
-    await msg.answer("Анкета отменена.")
-
-
-@router.message(Command("start"))
-async def cmd_start(msg: Message, state: FSMContext):
-    await state.set_state(Survey.name)
-    await msg.answer("Как вас зовут?")
-
-
-@router.message(Survey.name)
-async def process_name(msg: Message, state: FSMContext):
-    if len(msg.text) < 2:
-        await msg.answer("Имя слишком короткое. Попробуйте ещё раз:")
-        return
-    await state.update_data(name=msg.text)
-    await state.set_state(Survey.age)
-    await msg.answer("Сколько вам лет?")
-
-
-@router.message(Survey.age)
-async def process_age(msg: Message, state: FSMContext):
-    if not msg.text.isdigit() or not (1 <= int(msg.text) <= 150):
-        await msg.answer("Введите корректный возраст (1–150):")
-        return
-    await state.update_data(age=int(msg.text))
-    await state.set_state(Survey.city)
-    await msg.answer("В каком городе вы живёте?")
-
-
-@router.message(Survey.city)
-async def process_city(msg: Message, state: FSMContext):
-    await state.update_data(city=msg.text)
-    await state.set_state(Survey.confirm)
-    data = await state.get_data()
-    await msg.answer(
-        f"Проверьте данные:\n\n"
-        f"Имя: {data['name']}\n"
-        f"Возраст: {data['age']}\n"
-        f"Город: {data['city']}\n\n"
-        f"Всё верно? (да/нет)"
-    )
-
-
-@router.message(Survey.confirm)
-async def process_confirm(msg: Message, state: FSMContext):
-    text = msg.text.lower().strip()
-    if text == "да":
-        data = await state.get_data()
-        await state.clear()
-        await msg.answer(f"Спасибо, {data['name']}! Анкета заполнена.")
-    elif text == "нет":
-        await state.clear()
-        await msg.answer("Анкета отменена. Начните заново: /start")
-    else:
-        await msg.answer("Ответьте 'да' или 'нет'.")
-
-
-bot = Bot.from_credentials(
-    server="your-server",
-    username="your-bot",
-    password="your-password",
-    dispatcher=dp,
-)
-
-if __name__ == "__main__":
-    asyncio.run(bot.run())
 ```
 
 ## Стратегии FSM
