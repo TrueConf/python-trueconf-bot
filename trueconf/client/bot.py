@@ -125,6 +125,7 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             receive_system_messages: bool = False,
+            skip_self_messages: bool = True,
             verify_ssl: SSLVerify = True,
             web_port: int | None = None,
             https: bool = True,
@@ -147,6 +148,8 @@ class Bot:
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
             receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
                 to the chat or chat title changes. Defaults to False.
+            skip_self_messages (bool, optional): If True, the bot will ignore messages sent by itself.
+                This prevents echo loops when multiple bot sessions are running. Defaults to True.
             verify_ssl (bool | str | ssl.SSLContext, optional): SSL verification mode. If True, verifies
                 the server certificate using the system trust store when available. If False, disables
                 certificate verification. If a string is provided, it must be a path to a CA bundle file.
@@ -200,10 +203,14 @@ class Bot:
         self._me_id: str
         self._on_health_check = on_health_check
 
+        if skip_self_messages:
+            from trueconf.middleware import SkipSelfMessages
+            self.dp.outer_middleware(SkipSelfMessages())
+
         loggers.chatbot.info(
             f"Bot initialized: server={server}:{self.port}, protocol={self._protocol}, "
             f"verify_ssl={_describe_ssl_context(self.ssl_context)}, ws_max_retries={ws_max_retries}, ws_max_delay={ws_max_delay}, "
-            f"receive_unread={receive_unread_messages}"
+            f"receive_unread={receive_unread_messages}, skip_self={skip_self_messages}"
         )
 
     async def __call__(self, method: TrueConfMethod[T]) -> T:
@@ -322,6 +329,7 @@ class Bot:
             dispatcher: Dispatcher | None = None,
             receive_unread_messages: bool = False,
             receive_system_messages: bool = False,
+            skip_self_messages: bool = True,
             verify_ssl: SSLVerify = True,
             web_port: int | None = None,
             https: bool = True,
@@ -345,19 +353,16 @@ class Bot:
             receive_unread_messages (bool, optional): Whether to receive unread messages on connection. Defaults to False.
             receive_system_messages (bool, optional): Whether to receive system messages, such as user additions
                 to the chat or chat title changes. Defaults to False.
-            verify_ssl (bool | str | ssl.SSLContext, optional): SSL verification mode. If True, verifies
-                the server certificate using the system trust store when available. If False, disables
-                certificate verification. If a string is provided, it must be a path to a CA bundle file.
-                A custom ssl.SSLContext can also be passed. Defaults to True.
+            skip_self_messages (bool, optional): If True, the bot will ignore messages sent by itself.
+                Defaults to True.
+            verify_ssl (bool | str | ssl.SSLContext, optional): SSL verification mode. Defaults to True.
             web_port (int, optional): WebSocket connection port. Defaults to 443.
             https (bool, optional): Whether to use HTTPS protocol. Defaults to True.
             ws_max_retries (int, optional): Max connection attempts on network/IP errors before giving up. Defaults to 5.
             ws_max_delay (int, optional): Maximum delay between reconnection attempts (in seconds). Defaults to 60.
             debug (bool, optional): Enables debug mode. Defaults to False.
             on_health_check (HealthCheckCallback | None, optional): Async callback called when the bot
-                connection health changes. The callback receives a dictionary with the current status,
-                WebSocket state, authorization state, server, port, protocol, timestamp, and optional
-                error details. Defaults to None.
+                connection health changes. Defaults to None.
 
         Returns:
             Bot: An authorized bot instance.
@@ -379,7 +384,8 @@ class Bot:
             https=https,
             dispatcher=dispatcher,
             receive_unread_messages=receive_unread_messages,
-            receive_system_messages = receive_system_messages,
+            receive_system_messages=receive_system_messages,
+            skip_self_messages=skip_self_messages,
             verify_ssl=ssl_context,
             ws_max_delay=ws_max_delay,
             ws_max_retries=ws_max_retries,
@@ -758,7 +764,7 @@ class Bot:
         if hasattr(payload, "bind"):
             payload.bind(self)
 
-        await self.dp._feed_update(data)
+        await self.dp._feed_update(data, {"bot": self})
 
     async def __on_raw_message(self, raw: str):
         try:

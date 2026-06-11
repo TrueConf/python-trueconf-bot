@@ -161,6 +161,8 @@ nav:
       - learn/getting-started.md
       - learn/parse-messages.md
       - learn/filters.md
+      - learn/middleware.md
+      - learn/fsm.md
       - learn/send_message.md
       - learn/shortcuts.md
       - learn/enums.md

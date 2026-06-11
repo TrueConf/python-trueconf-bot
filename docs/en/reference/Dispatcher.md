@@ -9,8 +9,11 @@ from trueconf import Dispatcher
 
 ::: trueconf.Dispatcher
     options:
-        filters:
-            - "!^_"
-            - "!^__"
+        inherited_members: false
+        members:
+            - include_router
+        show_root_heading: true
+        show_source: false
+        show_docstring_attributes: true
 
 
