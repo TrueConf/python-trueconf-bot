@@ -247,4 +247,180 @@ if __name__ == "__main__":
 ```
 
 
+## Questionnaire: FSM Implementation Example
+
+```python
+import asyncio
+from trueconf import Bot, Dispatcher, Router, F, Message
+from trueconf.filters import Command
+from trueconf.fsm import FSMContext, State, StatesGroup
+from trueconf.fsm.storage.memory import MemoryStorage
+
+
+class Survey(StatesGroup):
+    name = State()
+    age = State()
+    city = State()
+    confirm = State()
+
+
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
+router = Router()
+dp.include_router(router)
+
+
+@router.message(Command("cancel"))
+async def cmd_cancel(msg: Message, state: FSMContext):
+    current = await state.get_state()
+    if current is None:
+        await msg.answer("Нечего отменять.")
+        return
+    await state.clear()
+    await msg.answer("Анкета отменена.")
+
+
+@router.message(Command("start"))
+async def cmd_start(msg: Message, state: FSMContext):
+    await state.set_state(Survey.name)
+    await msg.answer("Как вас зовут?")
+
+
+@router.message(Survey.name)
+async def process_name(msg: Message, state: FSMContext):
+    if len(msg.text) < 2:
+        await msg.answer("Имя слишком короткое. Попробуйте ещё раз:")
+        return
+    await state.update_data(name=msg.text)
+    await state.set_state(Survey.age)
+    await msg.answer("Сколько вам лет?")
+
+
+@router.message(Survey.age)
+async def process_age(msg: Message, state: FSMContext):
+    if not msg.text.isdigit() or not (1 <= int(msg.text) <= 150):
+        await msg.answer("Введите корректный возраст (1–150):")
+        return
+    await state.update_data(age=int(msg.text))
+    await state.set_state(Survey.city)
+    await msg.answer("В каком городе вы живёте?")
+
+
+@router.message(Survey.city)
+async def process_city(msg: Message, state: FSMContext):
+    await state.update_data(city=msg.text)
+    await state.set_state(Survey.confirm)
+    data = await state.get_data()
+    await msg.answer(
+        f"Проверьте данные:\n\n"
+        f"Имя: {data['name']}\n"
+        f"Возраст: {data['age']}\n"
+        f"Город: {data['city']}\n\n"
+        f"Всё верно? (да/нет)"
+    )
+
+
+@router.message(Survey.confirm)
+async def process_confirm(msg: Message, state: FSMContext):
+    text = msg.text.lower().strip()
+    if text == "да":
+        data = await state.get_data()
+        await state.clear()
+        await msg.answer(f"Спасибо, {data['name']}! Анкета заполнена.")
+    elif text == "нет":
+        await state.clear()
+        await msg.answer("Анкета отменена. Начните заново: /start")
+    else:
+        await msg.answer("Ответьте 'да' или 'нет'.")
+
+
+bot = Bot.from_credentials(
+    server="your-server",
+    username="your-bot",
+    password="your-password",
+    dispatcher=dp,
+)
+
+if __name__ == "__main__":
+    asyncio.run(bot.run())
+```
+
+## Middleware
+
+```python
+import logging
+import time
+from trueconf import Bot, Dispatcher, Router, F
+from trueconf.types import Message
+from trueconf.filters import Command
+from trueconf.middleware import BaseMiddleware
+
+logger = logging.getLogger("bot")
+
+
+class LoggingMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event, data):
+        logger.info(f"Event: {type(event).__name__}")
+        await handler(event, data)
+
+
+class AntiFloodMiddleware(BaseMiddleware):
+    def __init__(self, limit: float = 1.0):
+        self.limit = limit
+        self.last: dict[str, float] = {}
+
+    async def __call__(self, handler, event, data):
+        if not isinstance(event, Message):
+            await handler(event, data)
+            return
+
+        user_id = event.author.id
+        now = time.monotonic()
+
+        if user_id in self.last and now - self.last[user_id] < self.limit:
+            return
+
+        self.last[user_id] = now
+        await handler(event, data)
+
+
+dp = Dispatcher()
+dp.outer_middleware(LoggingMiddleware())
+
+router = Router()
+router.outer_middleware(AntiFloodMiddleware(limit=0.5))
+dp.include_router(router)
+
+
+@router.message(Command("start"))
+async def cmd_start(msg: Message):
+    await msg.answer("Hello!")
+
+
+@router.message(F.text)
+async def echo(msg: Message):
+    await msg.answer(msg.text)
+
+
+bot = Bot.from_credentials(
+    server="your-server",
+    username="your-bot",
+    password="your-password",
+    dispatcher=dp,
+)
+
+import asyncio
+if __name__ == "__main__":
+    asyncio.run(bot.run())
+```
+
+Execution order for each message:
+
+```
+1. LoggingMiddleware (Dispatcher)     — logs the event
+2. AntiFloodMiddleware (Router)       — checks frequency
+3. Filter checks                      — Command("start") or F.text
+4. Handler                            — cmd_start or echo
+```
+
 
