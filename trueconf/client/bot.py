@@ -66,7 +66,7 @@ from trueconf.types.input_file import InputFile, URLInputFile
 from trueconf.types.parser import parse_update
 from trueconf.types.requests.uploading_progress import UploadingProgress
 from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
-from trueconf.types.responses import GetFileUploadLimitsResponse, ApiError, AuthResponsePayload
+from trueconf.types.responses import GetFileUploadLimitsResponse, ApiError
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 from trueconf.types.responses.clear_chat_history_response import ClearChatHistoryResponse
@@ -133,6 +133,7 @@ class Bot:
             ws_max_delay: int = 60,
             debug: bool = False,
             on_health_check: HealthCheckCallback | None = None,
+            timeout: float| int = 10.0
     ):
         """
         Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -163,6 +164,9 @@ class Bot:
                 connection health changes. The callback receives a dictionary with the current status,
                 WebSocket state, authorization state, server, port, protocol, timestamp, and optional
                 error details. Defaults to None.
+            timeout (float | int, optional): The maximum time in seconds to wait for network activity.
+                Instead of limiting the total upload duration, it protects against socket freezes during data
+                transmission and waiting for the server's response. Defaults to 10.0.
 
         Note:
             Alternatively, you can authorize using a username and password via the `from_credentials()` class method.
@@ -202,6 +206,7 @@ class Bot:
         self.file_extensions_list: set | None = None
         self._me_id: str
         self._on_health_check = on_health_check
+        self.timeout = timeout
 
         if skip_self_messages:
             from trueconf.middleware import SkipSelfMessages
@@ -216,7 +221,7 @@ class Bot:
     async def __call__(self, method: TrueConfMethod[T]) -> T:
         loggers.chatbot.info(f"📤 API call: {type(method).__name__}(id={method.id})")
         try:
-            result = await method(self)
+            result = await method(self, timeout=self.timeout)
             loggers.chatbot.info(
                 f"✅ API response: {type(method).__name__}(id={method.id})"
             )
@@ -229,7 +234,7 @@ class Bot:
 
     async def __get_domain_name(self):
         try:
-            async with httpx.AsyncClient(verify=self.ssl_context, timeout=5) as client:
+            async with httpx.AsyncClient(verify=self.ssl_context, timeout=self.timeout) as client:
                 response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
                 domain_name = response.json().get("product").get("display_name")
                 loggers.chatbot.info(f"🌐 Server domain_name resolved: {domain_name}")
@@ -240,7 +245,7 @@ class Bot:
 
     async def __get_server_version(self):
             try:
-                async with httpx.AsyncClient(verify=self.ssl_context, timeout=5) as client:
+                async with httpx.AsyncClient(verify=self.ssl_context, timeout=self.timeout) as client:
                     response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
                     version = response.json().get("product").get("version")
                     loggers.chatbot.info(f"📦 Server version resolved: {version}")
@@ -337,6 +342,7 @@ class Bot:
             ws_max_delay: int = 60,
             debug: bool = False,
             on_health_check: HealthCheckCallback | None = None,
+            timeout: float | int = 10.0
     ) -> Self:
         """
         Creates a bot instance using username and password authentication.
@@ -363,6 +369,9 @@ class Bot:
             debug (bool, optional): Enables debug mode. Defaults to False.
             on_health_check (HealthCheckCallback | None, optional): Async callback called when the bot
                 connection health changes. Defaults to None.
+            timeout (float | int, optional): The maximum time in seconds to wait for network activity.
+                Instead of limiting the total upload duration, it protects against socket freezes during data
+                transmission and waiting for the server's response. Defaults to 10.0.
 
         Returns:
             Bot: An authorized bot instance.
@@ -391,13 +400,13 @@ class Bot:
             ws_max_retries=ws_max_retries,
             debug=debug,
             on_health_check=on_health_check,
+            timeout=timeout,
         )
 
     async def __wait_upload_complete(
             self,
             file_id: str,
-            expected_size: int,
-            timeout: float | None = None,
+            expected_size: int
     ) -> bool:
         q = self._progress_queues.get(file_id)
         if q is None:
@@ -407,11 +416,7 @@ class Bot:
         await self.subscribe_file_progress(file_id)
         try:
             while True:
-                if timeout is None:
-                    update = await q.get()
-                else:
-                    update = await asyncio.wait_for(q.get(), timeout=timeout)
-
+                update = await asyncio.wait_for(q.get(), timeout=self.timeout)
                 if update.progress >= expected_size:
                     return True
         except asyncio.TimeoutError:
@@ -426,8 +431,6 @@ class Bot:
             url: str,
             file_name: str,
             dest_path: str | Path | None = None,
-            timeout: int = 60,
-            chunk_size: int = 64 * 1024,
     ) -> bytes | Path | None:
 
         """
@@ -438,8 +441,6 @@ class Bot:
             file_name (str): Name of the file to be saved.
             dest_path (str | Path | None): Destination path on disk.
                 If None, the file will be downloaded into memory. Defaults to None.
-            timeout (int): Request timeout in seconds. Defaults to 60.
-            chunk_size (int): Stream chunk size in bytes. Defaults to 65536 (64 KB).
 
         Returns:
             bytes | Path | None:
@@ -452,13 +453,13 @@ class Bot:
         if dest_path:
             loggers.chatbot.info(f"⬇️ Destination: {dest_path}")
         try:
-            async with httpx.AsyncClient(verify=self.ssl_context, timeout=httpx.Timeout(timeout)) as client:
+            async with httpx.AsyncClient(verify=self.ssl_context, timeout=httpx.Timeout(self.timeout)) as client:
                 async with client.stream("GET", url) as resp:
                     resp.raise_for_status()
 
                     if dest_path is None:
                         chunks = []
-                        async for chunk in resp.aiter_bytes(chunk_size):
+                        async for chunk in resp.aiter_bytes():
                             chunks.append(chunk)
                         result_data = b"".join(chunks)
                         loggers.chatbot.info(f"⬇️ Downloaded {len(result_data)} bytes into memory")
@@ -468,7 +469,7 @@ class Bot:
                     dest.parent.mkdir(parents=True, exist_ok=True)
 
                     async with aiofiles.open(dest, "wb") as f:
-                        async for chunk in resp.aiter_bytes(chunk_size):
+                        async for chunk in resp.aiter_bytes():
                             await f.write(chunk)
                     loggers.chatbot.info(f"⬇️ File saved to: {dest}")
                     return dest
@@ -484,7 +485,6 @@ class Bot:
             file: InputFile,
             preview: InputFile | None = None,
             is_sticker: bool = False,
-            timeout: float = 60.0,
     ) -> str:
         """
            Uploads a file to the server and returns a temporary file identifier (temporalFileId).
@@ -507,7 +507,6 @@ class Bot:
                file (InputFile): The primary file to upload.
                preview (InputFile | None, optional): Optional preview file (default is None).
                is_sticker (bool, optional): Whether the uploaded file is a sticker (affects MIME type). Defaults to False.
-               timeout (float, optional): Upload timeout in seconds. Defaults to 60.
 
            Returns:
                str | None: A temporary file ID (`temporalFileId`) on success, or None if the upload failed.
@@ -529,8 +528,15 @@ class Bot:
 
         connector = TCPConnector(ssl=self.ssl_context)
 
+        timeout = ClientTimeout(
+            total=None,
+            connect=min(10.0, self.timeout),
+            sock_connect=min(10.0, self.timeout),
+            sock_read=self.timeout
+        )
+
         try:
-            async with ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
+            async with ClientSession(connector=connector, timeout=timeout) as session:
                 data = FormData(quote_fields=False)
                 data.add_field(
                     name="file",
@@ -1107,7 +1113,7 @@ class Bot:
 
         if info.ready_state != FileReadyState.READY:
             loggers.chatbot.info(f"📥 File {file_id} not ready yet, waiting for upload ({info.size} bytes)")
-            ok = await self.__wait_upload_complete(file_id, expected_size=info.size, timeout=None)
+            ok = await self.__wait_upload_complete(file_id, expected_size=info.size)
             if not ok:
                 loggers.chatbot.error(f"Wait upload complete failed for {file_id}")
                 return None

@@ -70,7 +70,7 @@ class TrueConfMethod(ABC, Generic[T]):
 
         return ret(**payload)  # type: ignore[misc]
 
-    async def __call__(self, bot: "Bot", timeout: float = 10.0) -> T:
+    async def __call__(self, bot: "Bot", timeout: float | int = 10.0) -> T:
         loop = get_running_loop()
         future = loop.create_future()
         bot._register_future(self.id, future)
