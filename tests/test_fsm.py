@@ -341,6 +341,31 @@ class TestFSMMiddleware:
         await mw(handler, _make_message(), data)
         assert "state" not in data
 
+    async def test_system_event_without_chat_id_skips_fsm(self):
+        """System events like ChangedFileUploadLimits have no chat_id/user_id — FSM should skip."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class FakeSystemEvent:
+            """Simulates a system event without chat_id or author."""
+            max_size: int = 1000
+
+        storage = MemoryStorage()
+        fsm = FSMManager(storage=storage)
+        mw = FSMMiddleware(fsm)
+        data: dict = {"bot": FakeBot()}
+
+        received_data: dict = {}
+
+        async def handler(evt, d):
+            received_data.update(d)
+
+        event = FakeSystemEvent(max_size=5000)
+        await mw(handler, event, data)
+
+        assert "state" not in received_data
+        assert "raw_state" not in received_data
+
 
 # ──────────────────────────────────────────────
 # Dispatcher integration
