@@ -10,7 +10,7 @@ from trueconf import Router
 ## `` trueconf.Router ⚓︎
 
 ```
-Router(name=None, allow_child_on_event=False)
+Router(name=None, allow_child_on_event=False, _parent=None)
 ```
 
 Event router for handling incoming events in a structured and extensible way.
@@ -316,6 +316,14 @@ include_router(router)
 
 Include a child router for hierarchical event routing.
 
+### `` inner_middleware ⚓︎
+
+```
+inner_middleware(middleware)
+```
+
+Register inner middleware (runs after filter match, before handler).
+
 ### `` message ⚓︎
 
 ```
@@ -323,6 +331,14 @@ message(*filters)
 ```
 
 Register a handler for incoming `Message` events.
+
+### `` outer_middleware ⚓︎
+
+```
+outer_middleware(middleware)
+```
+
+Register outer middleware (runs before filter/handler matching).
 
 ### `` removed_chat ⚓︎
 

@@ -1,5 +1,19 @@
 # List of Changes⚓︎
 
+## 1.4.0b1⚓︎
+
+Added:
+
+- FSM (Finite State Machine) — a finite state machine mechanism. It allows you to implement step-by-step dialogs, such as questionnaires, forms, and setup wizards.
+States are declared declaratively using `StatesGroup`/`State`, while data is stored in `FSMContext`. It supports nested groups, multiple storage strategies, and state-based filtering via `StateFilter`. Learn more: FSM.
+
+- Middleware — a layer for processing events before and after handlers.
+It allows you to log events, block them, check access, and modify data.
+It supports two types: outer middleware, which runs before filters, and inner middleware, which runs after filters. Learn more: Middleware.
+
+- The `skip_self_messages` parameter in `Bot()`. By default, it is set to `True`, so the bot automatically ignores messages sent by itself.
+It can be disabled with `skip_self_messages=False`.
+
 ## 1.3.0⚓︎
 
 Added:

@@ -526,7 +526,7 @@ await bot.send_document(chat_id="...", file=file)
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -600,7 +600,7 @@ data = file
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -715,7 +715,7 @@ Parameters:
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -805,7 +805,7 @@ Parameters:
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎

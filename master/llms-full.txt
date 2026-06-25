@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** v1.3.0
-- **Generated:** 2026-05-14T11:13:48+00:00
+- **Version:** 1.4.2.dev1
+- **Generated:** 2026-06-25T16:25:01+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -13,6 +13,8 @@
   - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md)
   - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md)
   - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md)
+  - [Middleware ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/middleware.md)
+  - [FSM — Finite State Machine ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/fsm.md)
   - [Sending messages ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/send_message.md)
   - [Shortcuts ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md)
   - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md)
@@ -134,6 +136,20 @@ The library implements all core TrueConf API methods: sending messages, uploadin
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/release_notes.md
 
 # List of Changes⚓︎
+
+## 1.4.0b1⚓︎
+
+Added:
+
+- FSM (Finite State Machine) — a finite state machine mechanism. It allows you to implement step-by-step dialogs, such as questionnaires, forms, and setup wizards.
+States are declared declaratively using `StatesGroup`/`State`, while data is stored in `FSMContext`. It supports nested groups, multiple storage strategies, and state-based filtering via `StateFilter`. Learn more: FSM.
+
+- Middleware — a layer for processing events before and after handlers.
+It allows you to log events, block them, check access, and modify data.
+It supports two types: outer middleware, which runs before filters, and inner middleware, which runs after filters. Learn more: Middleware.
+
+- The `skip_self_messages` parameter in `Bot()`. By default, it is set to `True`, so the bot automatically ignores messages sent by itself.
+It can be disabled with `skip_self_messages=False`.
 
 ## 1.3.0⚓︎
 
@@ -1300,6 +1316,686 @@ await bot.send_message(chat_id=message.chat_id, text=f"Special: {command.command
 
 ---
 
+# DOCUMENT: Middleware ⚓︎
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/middleware.md
+
+# Middleware⚓︎
+
+Middleware is a layer that intercepts events before they reach a handler. Middleware can log, filter, modify data, or completely block events.
+
+## Why middleware is needed⚓︎
+
+- Logging — record every incoming event
+
+- Access control — block events from specific users
+
+- Data modification — add additional information to the event context
+
+- Anti-flood — limit request frequency
+
+## Two types of middleware⚓︎
+
+In python-trueconf-bot, there are two types of middleware that run at different stages of event processing:
+
+### Outer middleware⚓︎
+
+Runs before filters are checked. It allows you to block an event before it reaches any handler.
+
+```
+router.outer_middleware(my_middleware)
+```
+
+### Inner middleware⚓︎
+
+Runs after filters match, but before the handler itself is called. It is useful for checks that are needed only for specific handlers.
+
+```
+router.inner_middleware(my_middleware)
+```
+
+## Execution order⚓︎
+
+```
+Incoming event
+→ Outer middleware (Dispatcher)
+→ Outer middleware (Router)
+→ Filter checks
+→ Inner middleware (Router)
+→ Handler
+```
+
+Outer middleware runs before filters. If an outer middleware does not call `await handler(event, data)`, the event will be completely blocked — neither filters nor handlers will run.
+
+## Creating custom middleware⚓︎
+
+Any middleware is a class with a `__call__` method that inherits from `BaseMiddleware`:
+
+```
+from trueconf.middleware import BaseMiddleware
+
+class MyMiddleware(BaseMiddleware):
+async def __call__(self, handler, event, data):
+# Code BEFORE the handler
+print(f"Event received: {event}")
+
+await handler(event, data) # ← pass control further down the chain
+
+# Code AFTER the handler
+print(f"Processing completed")
+```
+
+Important
+
+- If you do not call `await handler(event, data)`, the event will be blocked
+
+- Code before `await handler(...)` runs before the handler
+
+- Code after `await handler(...)` runs after the handler
+
+### Example: logging all events⚓︎
+
+```
+import logging
+from trueconf.middleware import BaseMiddleware
+
+logger = logging.getLogger("bot")
+
+class LoggingMiddleware(BaseMiddleware):
+async def __call__(self, handler, event, data):
+logger.info(f"Incoming event: {type(event).__name__}")
+await handler(event, data)
+logger.info(f"Event processed")
+
+router.outer_middleware(LoggingMiddleware())
+```
+
+### Example: access control⚓︎
+
+```
+from trueconf.middleware import BaseMiddleware
+from trueconf.types import Message
+
+ALLOWED_USERS = {"admin_user", "moderator_user"}
+
+class AccessMiddleware(BaseMiddleware):
+async def __call__(self, handler, event, data):
+# Check only messages
+if not isinstance(event, Message):
+await handler(event, data)
+return
+
+if event.author.id not in ALLOWED_USERS:
+# Do not call handler — the event is blocked
+return
+
+await handler(event, data)
+
+router.outer_middleware(AccessMiddleware())
+```
+
+### Example: anti-flood⚓︎
+
+```
+import time
+from trueconf.middleware import BaseMiddleware
+from trueconf.types import Message
+
+class AntiFloodMiddleware(BaseMiddleware):
+def __init__(self, limit: float = 1.0):
+self.limit = limit
+self.last_message: dict[str, float] = {}
+
+async def __call__(self, handler, event, data):
+if not isinstance(event, Message):
+await handler(event, data)
+return
+
+user_id = event.author.id
+now = time.monotonic()
+
+if user_id in self.last_message:
+elapsed = now - self.last_message[user_id]
+if elapsed before middleware from child routers.
+
+### Middleware inheritance⚓︎
+
+In a nested router structure, middleware is inherited from a parent router by child routers:
+
+```
+parent = Router()
+parent.outer_middleware(LoggingMiddleware())
+
+child = Router()
+parent.include_router(child)
+```
+
+In this case, `child` inherits `LoggingMiddleware` from `parent`. Execution chain:
+
+```
+LoggingMiddleware (parent) → middleware (child) → filters → handler
+```
+
+Dispatcher is a special case
+
+`Dispatcher` inherits from `Router`, but its middleware is not inherited by child routers via `include_router()`. The dispatcher applies its middleware separately before passing the event to child routers.
+
+## Differences between middleware and filters⚓︎
+
+Middleware and filters solve different problems. Here are the key differences:
+
+| | Filters | Middleware |
+| --- | --- | --- |
+| Purpose | Routing — direct an event to the appropriate handler | Global processing — logging, blocking, data modification |
+| Scope | One specific handler | All events at once |
+| If it does not match | Router looks for the next handler | The event is fully blocked — no handler receives it |
+| Where it lives | In the handler decorator | Registered separately on Router/Dispatcher |
+
+### Example: blocking with a filter vs blocking with middleware⚓︎
+
+Filter — the event simply does not reach this handler, but it may reach another one:
+
+```
+# If the text is not "ping", this handler will not run,
+# but Router will check the next handlers
+@router.message(F.text == "ping")
+async def ping(msg: Message):
+await msg.answer("pong")
+
+# This handler will run for ALL other messages
+@router.message(F.text)
+async def echo(msg: Message):
+await msg.answer(msg.text)
+```
+
+Middleware — the event is blocked completely; no handler receives it:
+
+```
+class BanMiddleware(BaseMiddleware):
+async def __call__(self, handler, event, data):
+if isinstance(event, Message) and event.author.id == "spammer":
+return # ← do not call handler — the event dies here
+await handler(event, data)
+
+router.outer_middleware(BanMiddleware())
+```
+
+### When to use which⚓︎
+
+Use filters when you need to:
+
+- Route the `/start` command to one handler and text messages to another
+
+- Check a specific message field, such as type, content, or author
+
+- Respond only to certain events
+
+Use middleware when you need to:
+
+- Block a user or event before filters are checked
+
+- Log all incoming events
+
+- Limit request frequency (anti-flood)
+
+- Add shared data to the context, such as user information from a database
+
+- Check access to all handlers at once
+
+---
+
+# DOCUMENT: FSM — Finite State Machine ⚓︎
+**Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/fsm.md
+
+# FSM — Finite State Machine⚓︎
+
+## What it is⚓︎
+
+FSM (Finite State Machine) is a mechanism that allows a bot to “remember” which step of a conversation a user is currently on and respond to messages according to that step.
+
+Imagine a multi-step form:
+
+- The bot asks for a name → the user enters a name
+
+- The bot asks for an age → the user enters an age
+
+- The bot asks for a city → the user enters a city
+
+- The bot displays a summary
+
+Without FSM, the bot does not understand which answer it is expecting at the moment. If the user enters “25”, the bot cannot determine whether it is an age or something else. FSM solves this problem: the bot knows that at the `age` step, any message from the user should be treated as the age.
+
+## Why you need it⚓︎
+
+FSM is useful wherever you need a step-by-step dialog:
+
+- Questionnaires and forms — registration, surveys, data collection
+
+- Setup wizards — step-by-step parameter configuration
+
+- Support workflows — request → issue description → file attachment → confirmation
+
+- Section-based menus — navigation using commands or text
+
+## Core concepts⚓︎
+
+| Concept | What it is | Example |
+| --- | --- | --- |
+| State | A single specific state (step) | `name`, `age`, `confirm` |
+| StatesGroup | A group of related states | `Form` with the `name`, `age`, and `confirm` states |
+| FSMContext | An object for reading and writing state and data | `await state.get_state()`, `await state.set_state(...)` |
+| StateFilter | A filter that allows a handler to run only in the required state | `@router.message(StateFilter(Form.name))` |
+| Storage | State storage (in memory) | `MemoryStorage()` |
+
+## Quick start⚓︎
+
+### Step 1. Imports⚓︎
+
+```
+from trueconf import Bot, Dispatcher, Router, F
+from trueconf.types import Message
+from trueconf.filters import Command
+from trueconf.fsm import FSMContext, State, StatesGroup, StateFilter
+from trueconf.fsm.storage.memory import MemoryStorage
+```
+
+### Step 2. Creating storage and a dispatcher⚓︎
+
+```
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
+router = Router()
+dp.include_router(router)
+```
+
+Info
+
+`MemoryStorage` stores states in RAM. After the bot restarts, all states are reset. This is enough for development and testing. For production, you can implement your own persistent storage.
+
+### Step 3. Declaring states⚓︎
+
+Create a class that inherits from `StatesGroup` and declare states in it as attributes:
+
+```
+from trueconf.fsm import State, StatesGroup
+
+class Form(StatesGroup):
+name = State() # "Form:name"
+age = State() # "Form:age"
+city = State() # "Form:city"
+```
+
+Each state automatically receives a string identifier in the `GroupName:StateName` format. You do not define it manually — it is generated from the class name and the attribute name.
+
+### Step 4. Handlers⚓︎
+
+```
+@router.message(Command("start"))
+async def cmd_start(msg: Message, state: FSMContext):
+await state.set_state(Form.name)
+await msg.answer("What is your name?")
+
+@router.message(Form.name)
+async def process_name(msg: Message, state: FSMContext):
+await state.update_data(name=msg.text)
+await state.set_state(Form.age)
+await msg.answer("How old are you?")
+
+@router.message(Form.age)
+async def process_age(msg: Message, state: FSMContext):
+await state.update_data(age=msg.text)
+data = await state.get_data()
+await state.clear()
+await msg.answer(f"Nice to meet you, {data['name']}!\nYou are {data['age']} years old.")
+
+@router.message(Command("cancel"))
+async def cmd_cancel(msg: Message, state: FSMContext):
+await state.clear()
+await msg.answer("Cancelled.")
+```
+
+### Step 5. Running the bot⚓︎
+
+```
+bot = Bot.from_credentials(
+server="your-server",
+username="your-bot",
+password="your-password",
+dispatcher=dp,
+)
+
+async def main():
+await bot.run()
+
+import asyncio
+if __name__ == "__main__":
+asyncio.run(main())
+```
+
+Tip
+
+Note that `state: FSMContext` is passed to the handler automatically as a parameter. You do not need to create it manually — the library injects the required object for you.
+
+## Declaring states⚓︎
+
+Rules
+
+- The class must inherit from `StatesGroup`.
+
+- Each state is a class attribute created with `State()`.
+
+- State names are generated automatically from the group name and the attribute name.
+
+- Do not use the same `State()` object in different groups — each `State` is bound to one group.
+
+```
+from trueconf.fsm import State, StatesGroup
+
+class OrderForm(StatesGroup):
+product = State() # "OrderForm:product"
+quantity = State() # "OrderForm:quantity"
+address = State() # "OrderForm:address"
+confirm = State() # "OrderForm:confirm"
+```
+
+### Multiple groups⚓︎
+
+You can create multiple state groups for different bot scenarios:
+
+- for questionnaires;
+
+- for support requests;
+
+- for placing an order in a warehouse system or 1C.
+
+This prevents states from different dialogs from being mixed together and keeps the code easier to understand and extend.
+
+```
+from trueconf.fsm import State, StatesGroup
+
+class FeedbackForm(StatesGroup):
+rating = State()
+comment = State()
+
+class SupportTicket(StatesGroup):
+topic = State()
+description = State()
+priority = State()
+```
+
+### Nested groups⚓︎
+
+Groups can be nested inside one another. This is useful for complex multi-step forms where one scenario contains separate logical blocks. For example, during registration, you can move the address into a separate nested group so that the `city`, `street`, and `zip_code` states are associated specifically with the address and are not mixed with the main form steps.
+
+```
+from trueconf.fsm import State, StatesGroup
+
+class Registration(StatesGroup):
+name = State() # "Registration:name"
+age = State() # "Registration:age"
+
+class Address(StatesGroup): # nested group
+city = State() # "Registration.Address:city"
+street = State() # "Registration.Address:street"
+zip_code = State() # "Registration.Address:zip_code"
+
+confirm = State() # "Registration:confirm"
+```
+
+Tip
+
+Nested state identifiers are generated using a dot: `Registration.Address:city`.
+
+## Working with states⚓︎
+
+When working with a form, it is important to check which state the user is currently in. The examples below show how to work with the state machine:
+
+Set stateGet stateClear state
+
+```
+await state.set_state(Form.name)
+```
+
+All subsequent messages from this user will be handled by handlers bound to `Form.name`.
+
+```
+current = await state.get_state()
+```
+
+`"Form:name"` or `None` if there is no active state.
+
+```
+await state.clear()
+```
+
+Clears the current state and all saved data. After calling `clear()`, the user is considered to have “no state” — handlers with `StateFilter` will no longer match them.
+
+Difference between clear and set_state(None)
+
+- `await state.clear()` clears the state and deletes all data
+
+- `await state.set_state(None)` clears the state, but keeps the data
+
+Use `clear()` when the dialog is fully completed and the data is no longer needed.
+
+## Storing and reading data⚓︎
+
+In addition to the state — that is, the step the user is currently on — FSM allows you to store arbitrary data. For example, a name, age, selected menu item, or any other values the user entered during the dialog.
+
+Save dataGet all dataGet one valueUpdate all data
+
+```
+await state.update_data(name="Ivan", age=25)
+```
+
+`update_data()` adds new data to the data that has already been saved. If a key already exists, its value will be updated.
+
+You can also pass data as a dictionary:
+
+```
+await state.update_data({"name": "Ivan", "age": 25})
+```
+
+Or combine both approaches:
+
+```
+await state.update_data({"name": "Ivan"}, age=25)
+```
+
+Note
+
+`update_data()` merges new data with the existing data. To replace all data completely, use `set_data()`.
+
+```
+data = await state.get_data()
+```
+
+The method returns a dictionary with all saved data:
+
+```
+{"name": "Ivan","age": 25}
+```
+
+```
+name = await state.get_value("name")
+# "Ivan"
+```
+
+You can specify a default value that will be returned if the key does not exist:
+
+```
+name = await state.get_value("name", "Not specified")
+```
+
+We also recommend retrieving a value this way when you only need one field and do not want to load the entire dictionary.
+
+```
+await state.set_data({"name": "Peter"})
+```
+
+Completely replaces all saved data with a new dictionary. Previous data will be deleted.
+
+## Filtering by state⚓︎
+
+To make a handler run only at a specific step of the dialog, use `StateFilter`. It compares the user's current state with the specified state and lets the event pass only if they match.
+
+```
+from trueconf.fsm import StateFilter
+
+@router.message(StateFilter(Form.name))
+async def process_name(msg: Message, state: FSMContext):
+...
+```
+
+For convenience, we made it possible to pass a `State` object directly to the decorator. The library automatically treats it as a `StateFilter`, so the following options are equivalent:
+
+```
+@router.message(StateFilter(Form.name))
+async def process_name(msg: Message, state: FSMContext): ...
+
+@router.message(Form.name)
+async def process_name(msg: Message, state: FSMContext): ...
+```
+
+If the same handler should work in several states at once, pass them separated by commas. The handler will be called if the current state matches at least one of them:
+
+```
+@router.message(Form.name, Form.age)
+async def process_name_or_age(msg: Message, state: FSMContext):
+...
+```
+
+For users without an active dialog, use `StateFilter(None)`. This handler will run only if the state has not been set yet or has already been cleared:
+
+```
+from trueconf.fsm import StateFilter
+
+@router.message(StateFilter(None))
+async def no_active_state(msg: Message, state: FSMContext):
+await msg.answer("You do not have an active dialog. Enter /start.")
+```
+
+If you need to handle a message regardless of the current state, use `any_state`:
+
+```
+from trueconf.fsm import any_state
+
+@router.message(any_state)
+async def catch_all(msg: Message, state: FSMContext):
+await msg.answer("I do not understand. Enter /cancel to cancel.")
+```
+
+### Commands inside states⚓︎
+
+You can combine `StateFilter` with `Command` — the handler will run only if the user is in the required state AND has sent the specified command:
+
+```
+# /skip works ONLY in the Form.name state
+@router.message(Form.name, Command("skip"))
+async def skip_name(msg: Message, state: FSMContext):
+await state.update_data(name="Anonymous")
+await state.set_state(Form.age)
+await msg.answer("Name skipped. How old are you?")
+```
+
+You can also use multiple commands in the same state:
+
+```
+@router.message(Form.confirm, Command("yes"))
+async def confirm_yes(msg: Message, state: FSMContext):
+data = await state.get_data()
+await state.clear()
+await msg.answer(f"Done, {data['name']}!")
+
+@router.message(Form.confirm, Command("no"))
+async def confirm_no(msg: Message, state: FSMContext):
+await state.clear()
+await msg.answer("Cancelled.")
+```
+
+Handler order matters!
+
+Router checks handlers in registration order and stops at the first match.
+
+If you have a handler with `Command("cancel")` and a handler with `Form.name`, register commands first, otherwise `/cancel` will be handled by the state handler and will not work as cancellation:
+
+```
+# Correct:
+@router.message(Command("cancel"))
+async def cmd_cancel(msg: Message, state: FSMContext):
+await state.clear()
+await msg.answer("Cancelled.")
+
+@router.message(Form.name)
+async def process_name(msg: Message, state: FSMContext):
+...
+```
+
+## Input validation⚓︎
+
+If the user enters invalid data, do not call `set_state()`. The user will remain in the current state and will be able to try again:
+
+```
+@router.message(Form.age)
+async def process_age(msg: Message, state: FSMContext):
+if not msg.text.isdigit():
+await msg.answer("Please enter a number. How old are you?")
+return # ← stay in Form.age
+
+await state.update_data(age=int(msg.text))
+await state.set_state(Form.city)
+await msg.answer("Which city do you live in?")
+```
+
+## FSM strategies⚓︎
+
+By default, the state is stored separately for each user in each chat. This works for most bots. However, in some cases, you may need different behavior.
+
+### FSMStrategy⚓︎
+
+```
+from trueconf.fsm import FSMStrategy
+
+dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
+```
+
+| Strategy | Behavior | When to use |
+| --- | --- | --- |
+| `USER_IN_CHAT` | Each user in each chat has a separate state | Default. Private messages, questionnaires |
+| `CHAT` | The entire chat has one state shared by all users | Polls, collaborative games |
+| `GLOBAL_USER` | A user has one state across all chats | Global user settings |
+
+## Creating custom storage⚓︎
+
+`MemoryStorage` is suitable for development, but data is lost after a restart. For production, you can implement your own storage.
+
+Tip
+
+If you need to store data in a storage backend so it survives bot restarts, implement the abstract `BaseStorage` class:
+
+```
+from trueconf.fsm.storage.base import BaseStorage
+from trueconf.fsm.key_builder import StorageKey
+
+class MyCustomStorage(BaseStorage):
+async def get_state(self, key: StorageKey) -> str | None: ...
+async def set_state(self, key: StorageKey, state: str | None) -> None: ...
+async def get_data(self, key: StorageKey) -> dict: ...
+async def set_data(self, key: StorageKey, data: dict) -> None: ...
+async def update_data(self, key: StorageKey, updates: dict) -> dict: ...
+async def clear(self, key: StorageKey) -> None: ...
+async def close(self) -> None: ...
+```
+
+Connect it just as easily:
+
+```
+dp = Dispatcher(storage=MyCustomStorage())
+```
+
+All user code (`state.set_state()`, `state.get_data()`, and so on) works without changes — only the storage implementation changes.
+
+---
+
 # DOCUMENT: Sending messages ⚓︎
 **Source:** https://trueconf.github.io/python-trueconf-bot/master/learn/send_message.md
 
@@ -1991,7 +2687,7 @@ from trueconf import Bot
 ## `` trueconf.Bot ⚓︎
 
 ```
-Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
+Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, skip_self_messages=True, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None, timeout=10.0)
 ```
 
 Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -2010,6 +2706,7 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
+| `skip_self_messages` | `bool` | If True, the bot will ignore messages sent by itself. This prevents echo loops when multiple bot sessions are running. Defaults to True. | `True` |
 | `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
@@ -2017,6 +2714,7 @@ Parameters:
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
 | `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
+| `timeout` | `float | int` | The maximum time in seconds to wait for network activity. Instead of limiting the total upload duration, it protects against socket freezes during data transmission and waiting for the server's response. Defaults to 10.0. | `10.0` |
 
 ### Note
 
@@ -2025,13 +2723,13 @@ Alternatively, you can authorize using a username and password via the `from_cre
 ### `` authorized_event `instance-attribute` ⚓︎
 
 ```
-authorized_event = Event()
+authorized_event = asyncio.Event()
 ```
 
 ### `` connected_event `instance-attribute` ⚓︎
 
 ```
-connected_event = Event()
+connected_event = asyncio.Event()
 ```
 
 ### `` debug `instance-attribute` ⚓︎
@@ -2079,7 +2777,7 @@ me_id
 ### `` port `instance-attribute` ⚓︎
 
 ```
-port = 443 if https else 4309
+port = 443 if self.https else 4309
 ```
 
 ### `` receive_system_messages `instance-attribute` ⚓︎
@@ -2109,7 +2807,13 @@ ssl_context = _build_ssl_context(verify_ssl)
 ### `` stopped_event `instance-attribute` ⚓︎
 
 ```
-stopped_event = Event()
+stopped_event = asyncio.Event()
+```
+
+### `` timeout `instance-attribute` ⚓︎
+
+```
+timeout = timeout
 ```
 
 ### `` token `property` ⚓︎
@@ -2576,7 +3280,7 @@ Returns:
 ### `` from_credentials `classmethod` ⚓︎
 
 ```
-from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
+from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, skip_self_messages=True, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None, timeout=10.0)
 ```
 
 Creates a bot instance using username and password authentication.
@@ -2596,13 +3300,15 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
+| `skip_self_messages` | `bool` | If True, the bot will ignore messages sent by itself. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
-| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. Defaults to None. | `None` |
+| `timeout` | `float | int` | The maximum time in seconds to wait for network activity. Instead of limiting the total upload duration, it protects against socket freezes during data transmission and waiting for the server's response. Defaults to 10.0. | `10.0` |
 
 Returns:
 
@@ -3396,7 +4102,7 @@ from trueconf import Router
 ## `` trueconf.Router ⚓︎
 
 ```
-Router(name=None, allow_child_on_event=False)
+Router(name=None, allow_child_on_event=False, _parent=None)
 ```
 
 Event router for handling incoming events in a structured and extensible way.
@@ -3702,6 +4408,14 @@ include_router(router)
 
 Include a child router for hierarchical event routing.
 
+### `` inner_middleware ⚓︎
+
+```
+inner_middleware(middleware)
+```
+
+Register inner middleware (runs after filter match, before handler).
+
 ### `` message ⚓︎
 
 ```
@@ -3709,6 +4423,14 @@ message(*filters)
 ```
 
 Register a handler for incoming `Message` events.
+
+### `` outer_middleware ⚓︎
+
+```
+outer_middleware(middleware)
+```
+
+Register outer middleware (runs before filter/handler matching).
 
 ### `` removed_chat ⚓︎
 
@@ -3759,38 +4481,46 @@ from trueconf import Dispatcher
 ## `` trueconf.Dispatcher ⚓︎
 
 ```
-Dispatcher()
+Dispatcher(*, storage=None, fsm_manager=None, key_builder=None, strategy=None)
 ```
 
-Central event dispatcher for processing and routing incoming events.
+Central dispatcher for routing incoming events.
 
-The `Dispatcher` aggregates one or more `Router` instances and feeds each incoming event through them. The routers are traversed recursively via their `subrouters` (using `_iter_all()`), and each event is passed to `_feed()` of each router in order until it is handled.
+The dispatcher is the root router of an application. It receives incoming events, applies its own outer middleware chain, and then passes each event to the included root routers in order. Processing stops when a router handles the event, unless that router allows propagation to its child routers.
 
-Typical usage includes registering routers with handlers and then calling `feed_update()` with incoming events.
+`Dispatcher` inherits from `Router`, so it supports the same handler, middleware, and subrouter registration APIs.
 
-Examples:
+### Example
 
 ```
->>> dispatcher = Dispatcher()
->>> dispatcher.include_router(my_router)
+dispatcher = Dispatcher()
+dispatcher.include_router(router)
 ```
+
+### FSM example
+
+```
+from trueconf.fsm.storage.memory import MemoryStorage
+
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
+```
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `storage` | `BaseStorage | None` | Storage backend used to create an FSM manager. Cannot be used together with `fsm_manager`. | `None` |
+| `fsm_manager` | `FSMManager | None` | Existing FSM manager instance. Cannot be used together with `storage`. | `None` |
+| `key_builder` | `KeyBuilder | None` | Key builder used when creating an FSM manager from `storage`. Ignored when `fsm_manager` is passed. | `None` |
+| `strategy` | `FSMStrategy | None` | FSM strategy used when creating an FSM manager from `storage`. Ignored when `fsm_manager` is passed. | `None` |
 
 Attributes:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `` routers
-
-`instance-attribute`
-(`trueconf.Dispatcher.routers`)' href=#trueconf.Dispatcher.routers>routers | `List[` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router] | List of root routers included in the dispatcher. |
-
-Initializes an empty dispatcher with no routers.
-
-### `` routers `instance-attribute` ⚓︎
-
-```
-routers = []
-```
+| `routers` | `List[` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router] | Root routers included in the dispatcher. |
+| `fsm` | `FSMManager | None` | FSM manager configured for the dispatcher, or `None` if FSM support has not been enabled. |
 
 ### `` include_router ⚓︎
 
@@ -3798,13 +4528,9 @@ routers = []
 include_router(router)
 ```
 
-Includes a router to be used by the dispatcher.
+Include a root router in the dispatcher.
 
-Parameters:
-
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| `router` | `` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router | A `Router` instance to include. | required |
+The dispatcher's own middleware is applied in `_feed_update` before the event reaches child routers. Therefore we do NOT set `_parent` — child routers should not inherit the dispatcher's middleware through the ancestor chain.
 
 ---
 
@@ -4764,7 +5490,7 @@ await bot.send_document(chat_id="...", file=file)
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -4838,7 +5564,7 @@ data = file
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -4953,7 +5679,7 @@ Parameters:
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎
@@ -5043,7 +5769,7 @@ Parameters:
 ### `` extension `instance-attribute` ⚓︎
 
 ```
-extension = lower()[1:]
+extension = Path(file_name).suffix.lower()[1:]
 ```
 
 ### `` file_name `instance-attribute` ⚓︎

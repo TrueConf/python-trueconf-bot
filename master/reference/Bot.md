@@ -10,7 +10,7 @@ from trueconf import Bot
 ## `` trueconf.Bot ⚓︎
 
 ```
-Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
+Bot(server, token, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, skip_self_messages=True, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None, timeout=10.0)
 ```
 
 Initializes a TrueConf chatbot instance with WebSocket connection and configuration options.
@@ -29,6 +29,7 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
+| `skip_self_messages` | `bool` | If True, the bot will ignore messages sent by itself. This prevents echo loops when multiple bot sessions are running. Defaults to True. | `True` |
 | `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
@@ -36,6 +37,7 @@ Parameters:
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
 | `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
+| `timeout` | `float | int` | The maximum time in seconds to wait for network activity. Instead of limiting the total upload duration, it protects against socket freezes during data transmission and waiting for the server's response. Defaults to 10.0. | `10.0` |
 
 ### Note
 
@@ -44,13 +46,13 @@ Alternatively, you can authorize using a username and password via the `from_cre
 ### `` authorized_event `instance-attribute` ⚓︎
 
 ```
-authorized_event = Event()
+authorized_event = asyncio.Event()
 ```
 
 ### `` connected_event `instance-attribute` ⚓︎
 
 ```
-connected_event = Event()
+connected_event = asyncio.Event()
 ```
 
 ### `` debug `instance-attribute` ⚓︎
@@ -98,7 +100,7 @@ me_id
 ### `` port `instance-attribute` ⚓︎
 
 ```
-port = 443 if https else 4309
+port = 443 if self.https else 4309
 ```
 
 ### `` receive_system_messages `instance-attribute` ⚓︎
@@ -128,7 +130,13 @@ ssl_context = _build_ssl_context(verify_ssl)
 ### `` stopped_event `instance-attribute` ⚓︎
 
 ```
-stopped_event = Event()
+stopped_event = asyncio.Event()
+```
+
+### `` timeout `instance-attribute` ⚓︎
+
+```
+timeout = timeout
 ```
 
 ### `` token `property` ⚓︎
@@ -595,7 +603,7 @@ Returns:
 ### `` from_credentials `classmethod` ⚓︎
 
 ```
-from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None)
+from_credentials(server, username, password, *, dispatcher=None, receive_unread_messages=False, receive_system_messages=False, skip_self_messages=True, verify_ssl=True, web_port=None, https=True, ws_max_retries=5, ws_max_delay=60, debug=False, on_health_check=None, timeout=10.0)
 ```
 
 Creates a bot instance using username and password authentication.
@@ -615,13 +623,15 @@ Parameters:
 | `dispatcher` | `` trueconf.Dispatcher (`trueconf.dispatcher.dispatcher.Dispatcher`)' href=../Dispatcher/#trueconf.Dispatcher>Dispatcher | None | Dispatcher instance for registering handlers. | `None` |
 | `receive_unread_messages` | `bool` | Whether to receive unread messages on connection. Defaults to False. | `False` |
 | `receive_system_messages` | `bool` | Whether to receive system messages, such as user additions to the chat or chat title changes. Defaults to False. | `False` |
-| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. If True, verifies the server certificate using the system trust store when available. If False, disables certificate verification. If a string is provided, it must be a path to a CA bundle file. A custom ssl.SSLContext can also be passed. Defaults to True. | `True` |
+| `skip_self_messages` | `bool` | If True, the bot will ignore messages sent by itself. Defaults to True. | `True` |
+| `verify_ssl` | `bool | str | SSLContext` | SSL verification mode. Defaults to True. | `True` |
 | `web_port` | `int` | WebSocket connection port. Defaults to 443. | `None` |
 | `https` | `bool` | Whether to use HTTPS protocol. Defaults to True. | `True` |
 | `ws_max_retries` | `int` | Max connection attempts on network/IP errors before giving up. Defaults to 5. | `5` |
 | `ws_max_delay` | `int` | Maximum delay between reconnection attempts (in seconds). Defaults to 60. | `60` |
 | `debug` | `bool` | Enables debug mode. Defaults to False. | `False` |
-| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. The callback receives a dictionary with the current status, WebSocket state, authorization state, server, port, protocol, timestamp, and optional error details. Defaults to None. | `None` |
+| `on_health_check` | `HealthCheckCallback | None` | Async callback called when the bot connection health changes. Defaults to None. | `None` |
+| `timeout` | `float | int` | The maximum time in seconds to wait for network activity. Instead of limiting the total upload duration, it protects against socket freezes during data transmission and waiting for the server's response. Defaults to 10.0. | `10.0` |
 
 Returns:
 

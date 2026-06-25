@@ -10,38 +10,46 @@ from trueconf import Dispatcher
 ## `` trueconf.Dispatcher ⚓︎
 
 ```
-Dispatcher()
+Dispatcher(*, storage=None, fsm_manager=None, key_builder=None, strategy=None)
 ```
 
-Central event dispatcher for processing and routing incoming events.
+Central dispatcher for routing incoming events.
 
-The `Dispatcher` aggregates one or more `Router` instances and feeds each incoming event through them. The routers are traversed recursively via their `subrouters` (using `_iter_all()`), and each event is passed to `_feed()` of each router in order until it is handled.
+The dispatcher is the root router of an application. It receives incoming events, applies its own outer middleware chain, and then passes each event to the included root routers in order. Processing stops when a router handles the event, unless that router allows propagation to its child routers.
 
-Typical usage includes registering routers with handlers and then calling `feed_update()` with incoming events.
+`Dispatcher` inherits from `Router`, so it supports the same handler, middleware, and subrouter registration APIs.
 
-Examples:
+### Example
 
 ```
->>> dispatcher = Dispatcher()
->>> dispatcher.include_router(my_router)
+dispatcher = Dispatcher()
+dispatcher.include_router(router)
 ```
+
+### FSM example
+
+```
+from trueconf.fsm.storage.memory import MemoryStorage
+
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
+```
+
+Parameters:
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `storage` | `BaseStorage | None` | Storage backend used to create an FSM manager. Cannot be used together with `fsm_manager`. | `None` |
+| `fsm_manager` | `FSMManager | None` | Existing FSM manager instance. Cannot be used together with `storage`. | `None` |
+| `key_builder` | `KeyBuilder | None` | Key builder used when creating an FSM manager from `storage`. Ignored when `fsm_manager` is passed. | `None` |
+| `strategy` | `FSMStrategy | None` | FSM strategy used when creating an FSM manager from `storage`. Ignored when `fsm_manager` is passed. | `None` |
 
 Attributes:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `` routers
-
-`instance-attribute`
-(`trueconf.Dispatcher.routers`)' href=#trueconf.Dispatcher.routers>routers | `List[` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router] | List of root routers included in the dispatcher. |
-
-Initializes an empty dispatcher with no routers.
-
-### `` routers `instance-attribute` ⚓︎
-
-```
-routers = []
-```
+| `routers` | `List[` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router] | Root routers included in the dispatcher. |
+| `fsm` | `FSMManager | None` | FSM manager configured for the dispatcher, or `None` if FSM support has not been enabled. |
 
 ### `` include_router ⚓︎
 
@@ -49,10 +57,6 @@ routers = []
 include_router(router)
 ```
 
-Includes a router to be used by the dispatcher.
+Include a root router in the dispatcher.
 
-Parameters:
-
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| `router` | `` trueconf.Router (`trueconf.dispatcher.router.Router`)' href=../Router/#trueconf.Router>Router | A `Router` instance to include. | required |
+The dispatcher's own middleware is applied in `_feed_update` before the event reaches child routers. Therefore we do NOT set `_parent` — child routers should not inherit the dispatcher's middleware through the ancestor chain.

@@ -6,6 +6,8 @@
   - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/getting-started.md)
   - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/parse-messages.md)
   - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/filters.md)
+  - [Middleware ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/middleware.md)
+  - [FSM — Finite State Machine ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/fsm.md)
   - [Sending messages ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/send_message.md)
   - [Shortcuts ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/shortcuts.md)
   - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/master/learn/enums.md)
