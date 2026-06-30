@@ -10,8 +10,7 @@
 {% block extrahead %}
   {{ super() }}
   {% if page and page.file %}
-    {% set full_path = base_url ~ '/' ~ page.file.src_uri %}
-    <link rel="alternate" type="text/markdown" href="{{ full_path | replace('/ru/', '/en/') }}">
+    <link rel="alternate" type="text/markdown" href="{{ config.site_url }}{{ page.file.src_uri }}">
   {% endif %}
   <script
           src="https://context7.com/widget.js"
