@@ -74,6 +74,10 @@ theme:
 
 plugins:
   - mike
+  - social:
+      cards_layout: default/variant
+      cards_layout_options:
+        background_color: "#00B4CC"
   - autorefs:
       resolve_closest: true
   - macros

@@ -68,7 +68,8 @@ docs = [
     "mkdocs-minify-plugin==0.8.0",
     "mkdocs-macros-plugin==1.5.0",
     "mkdocstrings-python==2.0.5",
-    "griffe-typingdoc==0.3.1"
+    "griffe-typingdoc==0.3.1",
+    "mkdocs-material[imaging]>=9.7.6",
 ]
 
 [tool.setuptools]
