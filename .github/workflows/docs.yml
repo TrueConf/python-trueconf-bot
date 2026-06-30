@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          persist-credentials: true
+          sparse-checkout: |
+            docs
+            trueconf 
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
