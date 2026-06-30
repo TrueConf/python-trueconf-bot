@@ -11,7 +11,7 @@
   {{ super() }}
   {% if page and page.file %}
     {% set src = page.file.src_uri.replace('en/', '').replace('ru/', '') %}
-    <link rel="alternate" type="text/markdown" href="{{ config.site_url }}{{ src }}">
+  <link rel="alternate" type="text/markdown" href="{{ config.site_url.rstrip('/') }}/{{ src }}">
   {% endif %}
   <script
           src="https://context7.com/widget.js"
