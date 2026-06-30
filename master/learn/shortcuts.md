@@ -63,3 +63,7 @@ For example, `message.answer(...)` automatically uses the chat where the message
 Tip
 
 You can find the full list of available shortcuts in the Message class reference.
+
+June 30, 2026
+
+May 5, 2026

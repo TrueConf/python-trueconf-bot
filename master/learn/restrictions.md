@@ -39,3 +39,7 @@ When sending a file, the library checks its size and extension. If the file exce
 Note
 
 File restrictions depend on the configuration of the specific TrueConf Server. If the administrator changes the maximum file size or the list of allowed extensions, the bot will automatically receive updated values on the next limits update event.
+
+June 30, 2026
+
+May 5, 2026

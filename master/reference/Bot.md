@@ -1407,3 +1407,7 @@ Returns:
 ### Note
 
 If necessary, you can unsubscribe from file upload events that were previously subscribed to using the `subscribe_file_progress()` method.
+
+June 30, 2026
+
+September 3, 2025

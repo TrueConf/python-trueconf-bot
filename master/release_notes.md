@@ -307,3 +307,7 @@ Modified:
 - Documentation: trueconf.github.io/python-trueconf-bot/
 
 - PyPI: pypi.org/project/python-trueconf-bot/
+
+June 30, 2026
+
+November 12, 2025

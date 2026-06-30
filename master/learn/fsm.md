@@ -445,3 +445,7 @@ dp = Dispatcher(storage=MyCustomStorage())
 ```
 
 All user code (`state.set_state()`, `state.get_data()`, and so on) works without changes — only the storage implementation changes.
+
+June 30, 2026
+
+June 11, 2026

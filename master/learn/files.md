@@ -172,3 +172,7 @@ We also recommend reviewing the repository: https://github.com/ahupp/python-magi
 ### Notes⚓︎
 
 - When `python-magic` is available, the MIME type is detected from the file bytes, which is usually more accurate than detecting it by filename or extension.
+
+June 30, 2026
+
+November 12, 2025

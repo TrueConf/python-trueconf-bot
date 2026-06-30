@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** 1.4.2.dev9
-- **Generated:** 2026-06-30T11:11:54+00:00
+- **Version:** 1.4.2.dev11
+- **Generated:** 2026-06-30T13:22:14+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -129,6 +129,10 @@ await msg.answer(f"File downloaded to {path}")
 ## Full Set of Public API Methods⚓︎
 
 The library implements all core TrueConf API methods: sending messages, uploading/downloading files, polls, conferences, participant management, and more.
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -445,6 +449,10 @@ Modified:
 
 - PyPI: pypi.org/project/python-trueconf-bot/
 
+June 30, 2026
+
+November 12, 2025
+
 ---
 
 # DOCUMENT: Python Library for TrueConf Chatbot Connector ⚓︎
@@ -503,6 +511,10 @@ pip install python-trueconf-bot
 - llms.txt
 
 - llms-full.txt
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -776,6 +788,10 @@ return bot_status
 
 In this setup, the bot reports state changes through the callback, while external monitoring systems retrieve the current status through HTTP requests.
 
+June 30, 2026
+
+September 3, 2025
+
 ---
 
 # DOCUMENT: Handling Requests ⚓︎
@@ -987,6 +1003,10 @@ For better logic separation, it's recommended to create multiple routers (e.g., 
 - This helps separate handlers by responsibility: messages, photos, commands, etc.
 
 - The dispatcher (`Dispatcher`) can be viewed as the central managing component that coordinates the logic for handling all incoming events.
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -1314,6 +1334,10 @@ async def handle_special_echo(message: Message, command: CommandObject):
 await bot.send_message(chat_id=message.chat_id, text=f"Special: {command.command} -> {command.args}")
 ```
 
+June 30, 2026
+
+September 3, 2025
+
 ---
 
 # DOCUMENT: Middleware ⚓︎
@@ -1540,6 +1564,10 @@ Use middleware when you need to:
 - Add shared data to the context, such as user information from a database
 
 - Check access to all handlers at once
+
+June 30, 2026
+
+June 11, 2026
 
 ---
 
@@ -1994,6 +2022,10 @@ dp = Dispatcher(storage=MyCustomStorage())
 
 All user code (`state.set_state()`, `state.get_data()`, and so on) works without changes — only the storage implementation changes.
 
+June 30, 2026
+
+June 11, 2026
+
 ---
 
 # DOCUMENT: Sending messages ⚓︎
@@ -2219,6 +2251,10 @@ Sending files
 
 This section covers text messages. To send documents, images, videos, voice messages, and other attachments, see the Working with files section.
 
+June 30, 2026
+
+May 6, 2026
+
 ---
 
 # DOCUMENT: Shortcuts ⚓︎
@@ -2290,6 +2326,10 @@ Tip
 
 You can find the full list of available shortcuts in the Message class reference.
 
+June 30, 2026
+
+May 5, 2026
+
 ---
 
 # DOCUMENT: Using enumerations ⚓︎
@@ -2349,6 +2389,10 @@ await message.answer("This is a group chat")
 ```
 
 Thus, `enums` help you write cleaner and safer code.
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -2442,6 +2486,10 @@ pass
 if event.method == "SendMessage":
 pass
 ```
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -2623,6 +2671,10 @@ We also recommend reviewing the repository: https://github.com/ahupp/python-magi
 
 - When `python-magic` is available, the MIME type is detected from the file bytes, which is usually more accurate than detecting it by filename or extension.
 
+June 30, 2026
+
+November 12, 2025
+
 ---
 
 # DOCUMENT: Restrictions ⚓︎
@@ -2669,6 +2721,10 @@ When sending a file, the library checks its size and extension. If the file exce
 Note
 
 File restrictions depend on the configuration of the specific TrueConf Server. If the administrator changes the maximum file size or the list of allowed extensions, the bot will automatically receive updated values on the next limits update event.
+
+June 30, 2026
+
+May 5, 2026
 
 ---
 
@@ -4085,6 +4141,10 @@ Returns:
 
 If necessary, you can unsubscribe from file upload events that were previously subscribed to using the `subscribe_file_progress()` method.
 
+June 30, 2026
+
+September 3, 2025
+
 ---
 
 # DOCUMENT: Class Router ⚓︎
@@ -4464,6 +4524,10 @@ uploading_progress(*filters)
 
 Register a handler for file uploading progress events.
 
+June 30, 2026
+
+September 3, 2025
+
 ---
 
 # DOCUMENT: Class Dispatcher ⚓︎
@@ -4531,6 +4595,10 @@ include_router(router)
 Include a root router in the dispatcher.
 
 The dispatcher's own middleware is applied in `_feed_update` before the event reaches child routers. Therefore we do NOT set `_parent` — child routers should not inherit the dispatcher's middleware through the ancestor chain.
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -4956,6 +5024,10 @@ RESERVED = 0
 ```
 RESPONSE = 2
 ```
+
+June 30, 2026
+
+September 3, 2025
 
 ---
 
@@ -6923,6 +6995,10 @@ file_id = field(metadata={'alias': 'fileId'})
 progress
 ```
 
+June 30, 2026
+
+September 3, 2025
+
 ---
 
 # DOCUMENT: Formatting
@@ -7487,6 +7563,10 @@ Returns:
 | --- | --- | --- |
 | `str` | `str` | Rendered underlined text. |
 
+June 30, 2026
+
+May 5, 2026
+
 ---
 
 # DOCUMENT: Exceptions
@@ -7837,6 +7917,10 @@ This error indicates that the token value has an invalid format or cannot be use
 Base exception for all TrueConf ChatBot Connector errors.
 
 All custom exceptions raised by the library inherit from this class. You can catch this exception to handle any library-specific error in a single place.
+
+June 30, 2026
+
+May 5, 2026
 
 ---
 
@@ -8420,5 +8504,9 @@ UploadFileResponse(upload_task_id)
 ```
 upload_task_id = field(metadata={'alias': 'uploadTaskId'})
 ```
+
+June 30, 2026
+
+February 27, 2026
 
 ---

@@ -264,3 +264,7 @@ return bot_status
 ```
 
 In this setup, the bot reports state changes through the callback, while external monitoring systems retrieve the current status through HTTP requests.
+
+June 30, 2026
+
+September 3, 2025

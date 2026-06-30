@@ -343,3 +343,7 @@ This error indicates that the token value has an invalid format or cannot be use
 Base exception for all TrueConf ChatBot Connector errors.
 
 All custom exceptions raised by the library inherit from this class. You can catch this exception to handle any library-specific error in a single place.
+
+June 30, 2026
+
+May 5, 2026

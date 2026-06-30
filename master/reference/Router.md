@@ -371,3 +371,7 @@ uploading_progress(*filters)
 ```
 
 Register a handler for file uploading progress events.
+
+June 30, 2026
+
+September 3, 2025

@@ -204,3 +204,7 @@ For better logic separation, it's recommended to create multiple routers (e.g., 
 - This helps separate handlers by responsibility: messages, photos, commands, etc.
 
 - The dispatcher (`Dispatcher`) can be viewed as the central managing component that coordinates the logic for handling all incoming events.
+
+June 30, 2026
+
+September 3, 2025

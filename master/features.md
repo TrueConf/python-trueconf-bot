@@ -88,3 +88,7 @@ await msg.answer(f"File downloaded to {path}")
 ## Full Set of Public API Methods⚓︎
 
 The library implements all core TrueConf API methods: sending messages, uploading/downloading files, polls, conferences, participant management, and more.
+
+June 30, 2026
+
+September 3, 2025

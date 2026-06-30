@@ -217,3 +217,7 @@ In message handlers, it is often more convenient to use `message.answer(...)`, `
 Sending files
 
 This section covers text messages. To send documents, images, videos, voice messages, and other attachments, see the Working with files section.
+
+June 30, 2026
+
+May 6, 2026

@@ -60,3 +60,7 @@ include_router(router)
 Include a root router in the dispatcher.
 
 The dispatcher's own middleware is applied in `_feed_update` before the event reaches child routers. Therefore we do NOT set `_parent` — child routers should not inherit the dispatcher's middleware through the ancestor chain.
+
+June 30, 2026
+
+September 3, 2025
