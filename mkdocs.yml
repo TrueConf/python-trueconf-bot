@@ -156,6 +156,8 @@ plugins:
                 link: https://t.me/trueconf_talks
               - icon: fontawesome/brands/vk
                 link: https://vk.com/trueconf_club
+  - git-revision-date-localized:
+      enable_creation_date: true
   - typeset
 
 nav:
@@ -233,3 +235,4 @@ extra:
 
 hooks:
   - docs/hooks/llms_txt.py
+  - docs/hooks/sitemap_dates.py
