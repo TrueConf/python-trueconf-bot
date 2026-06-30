@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** 1.4.2.dev1
-- **Generated:** 2026-06-25T16:25:01+00:00
+- **Version:** 1.4.2.dev5
+- **Generated:** 2026-06-30T10:30:02+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
@@ -137,7 +137,7 @@ The library implements all core TrueConf API methods: sending messages, uploadin
 
 # List of Changes⚓︎
 
-## 1.4.0b1⚓︎
+## 1.4.0⚓︎
 
 Added:
 
