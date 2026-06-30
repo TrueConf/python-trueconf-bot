@@ -1,5 +1,6 @@
 ---
 title: Getting Started
+description: How to install the library and create your first bot
 icon: material/run
 ---
 

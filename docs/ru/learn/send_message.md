@@ -1,5 +1,6 @@
 ---
 title: Отправка сообщений
+description: Как отправлять, отвечать, пересылать и форматировать сообщения
 icon: material/message-text-fast-outline
 ---
 

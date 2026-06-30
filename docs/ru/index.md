@@ -1,5 +1,6 @@
 ---
 title: Главная
+description: Как создавать чат-ботов для TrueConf Server на Python
 icon: material/home-variant
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: Перечисления (Enums)
+description: Как использовать перечисления для безопасной передачи параметров
 icon: material/alphabet-latin
 ---
 

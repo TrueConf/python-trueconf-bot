@@ -1,6 +1,7 @@
 ---
 title: Types
-icon: 
+description: 'Reference for all data types: Message, events, and file classes'
+icon: material/code-braces-box
 ---
 
 #  Types

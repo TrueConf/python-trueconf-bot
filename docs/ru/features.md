@@ -1,5 +1,6 @@
 ---
 title: Возможности
+description: 'Что умеет библиотека: асинхронность, API в стиле aiogram, WebSocket и другое'
 icon: material/feather
 ---
 

@@ -1,3 +1,9 @@
+---
+title: Bot
+description: 'Reference for the Bot class: methods, parameters, and attributes'
+icon: material/robot
+---
+
 # Class `Bot`
 
 Here is the reference information for the `Bot` class, including all its parameters, attributes, and methods.  

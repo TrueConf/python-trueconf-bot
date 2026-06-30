@@ -1,5 +1,6 @@
 ---
 title: Filters
+description: How to route events to the right handlers using filters
 icon: material/filter
 ---
 

@@ -1,6 +1,7 @@
 ---
 title: Working with files
-icon: material/file-sync 
+description: How to send and receive files of any type
+icon: material/file-sync
 ---
 
 # Working with Files

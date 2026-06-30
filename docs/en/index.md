@@ -1,5 +1,6 @@
 ---
 title: Home
+description: How to build chatbots for TrueConf Server with Python
 icon: material/home-variant
 ---
 

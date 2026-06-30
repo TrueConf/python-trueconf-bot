@@ -1,5 +1,6 @@
 ---
 title: Примеры кода
+description: Готовые примеры кода для распространённых сценариев
 icon: material/console
 ---
 

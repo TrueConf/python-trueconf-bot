@@ -1,5 +1,6 @@
 ---
 title: Sending messages
+description: How to send, reply, forward, and format messages
 icon: material/message-text-fast-outline
 ---
 

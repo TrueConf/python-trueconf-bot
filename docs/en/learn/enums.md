@@ -1,5 +1,6 @@
 ---
 title: Using enumerations
+description: Use enums for ParseMode, ChatType, FileReadyState and other parameters
 icon: material/alphabet-latin
 ---
 

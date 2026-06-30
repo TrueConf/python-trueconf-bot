@@ -1,5 +1,6 @@
 ---
 title: Code examples
+description: Ready-to-use code examples for common bot scenarios
 icon: material/console
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: Shortcuts
+description: How to use shortcut methods on the Message object
 icon: material/knife
 ---
 

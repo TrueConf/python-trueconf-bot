@@ -1,5 +1,6 @@
 ---
 title: FSM (Finite State Machine)
+description: How to build multi-step dialogs with a finite state machine
 icon: material/transit-connection-variant
 ---
 

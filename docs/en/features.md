@@ -1,5 +1,6 @@
 ---
 title: Features
+description: 'What the library offers: async, aiogram-like API, WebSocket, and more'
 icon: material/feather
 ---
 

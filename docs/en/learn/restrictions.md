@@ -1,5 +1,6 @@
 ---
 title: Restrictions
+description: What limits apply to messages, files, and chat titles
 icon: material/alert-octagon-outline
 ---
 

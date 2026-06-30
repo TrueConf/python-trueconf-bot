@@ -1,5 +1,6 @@
 ---
 title: Ограничения
+description: Какие ограничения есть на сообщения, файлы и названия чатов
 icon: material/alert-octagon-outline
 ---
 

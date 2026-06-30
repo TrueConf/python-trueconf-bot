@@ -1,3 +1,9 @@
+---
+title: Responses
+description: Response types for bot API methods
+icon: material/file-document-multiple
+---
+
 # Responses
 
 ```python

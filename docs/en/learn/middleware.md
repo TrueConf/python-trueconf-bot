@@ -1,5 +1,6 @@
 ---
 title: Middleware
+description: How to intercept and modify events before they reach handlers
 icon: material/layers-triple
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: Data Types
+description: How to use type hints for autocompletion and type checking
 icon: material/database-search
 ---
 

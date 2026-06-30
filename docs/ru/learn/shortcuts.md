@@ -1,5 +1,6 @@
 ---
 title: Шорткаты
+description: Как использовать удобные методы на объекте Message
 icon: material/knife
 ---
 

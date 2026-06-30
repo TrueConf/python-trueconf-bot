@@ -1,3 +1,9 @@
+---
+title: Router
+description: Router class reference — event handler decorators
+icon: material/router-network
+---
+
 # Class `Router`
 
 Here is the reference information for the `Router` class, including all its parameters, attributes, and methods.  

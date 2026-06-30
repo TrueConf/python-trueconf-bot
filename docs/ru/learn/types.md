@@ -1,5 +1,6 @@
 ---
 title: Типы данных
+description: Как использовать типизацию для автодополнения и проверки типов
 icon: material/database-search
 ---
 

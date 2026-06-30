@@ -1,3 +1,9 @@
+---
+title: Dispatcher
+description: 'Reference for the Dispatcher class: routers, events, and storage'
+icon: material/sitemap
+---
+
 # Class `Dispatcher`
 
 Here is the reference information for the `Dispatcher` class, including all its parameters, attributes, and methods.  

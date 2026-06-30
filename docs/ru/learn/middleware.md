@@ -1,5 +1,6 @@
 ---
 title: Middleware
+description: Как перехватывать и изменять события до попадания в обработчик
 icon: material/layers-triple
 ---
 

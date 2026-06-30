@@ -1,11 +1,12 @@
 ---
 title: Release notes
+description: Changelog — features, fixes, and deprecations
 icon: material/note-text
 ---
 
 # List of Changes
 
-## 1.4.0b1
+## 1.4.0
 
 **Added:**
 

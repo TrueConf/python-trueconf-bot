@@ -1,5 +1,6 @@
 ---
 title: Handling Requests
+description: How to handle incoming events with routers and dispatcher
 icon: material/routes
 ---
 

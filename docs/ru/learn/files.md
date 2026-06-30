@@ -1,5 +1,6 @@
 ---
 title: Работа с файлами
+description: Как отправлять и получать файлы любого типа
 icon: material/file-sync
 ---
 
