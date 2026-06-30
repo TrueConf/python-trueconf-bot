@@ -10,7 +10,9 @@
 {% block extrahead %}
   {{ super() }}
   {% if page and page.file %}
-    <link rel="alternate" type="text/markdown" href="{{ config.site_url }}{{ page.file.src_uri }}">
+    {% set src = page.file.src_uri.replace('en/', '').replace('ru/', '') %}
+    {% set version = base_url.lstrip('.').lstrip('/').rstrip('/') or 'latest' %}
+    <link rel="alternate" type="text/markdown" href="{{ config.site_url }}{{ version }}/{{ src }}">
   {% endif %}
   <script
           src="https://context7.com/widget.js"
