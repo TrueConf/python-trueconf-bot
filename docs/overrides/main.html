@@ -8,6 +8,11 @@
 {% endblock %}
 
 {% block extrahead %}
+  {{ super() }}
+  {% if page and page.file %}
+    {% set full_path = base_url ~ '/' ~ page.file.src_uri %}
+    <link rel="alternate" type="text/markdown" href="{{ full_path | replace('/ru/', '/en/') }}">
+  {% endif %}
   <script
           src="https://context7.com/widget.js"
           data-library="/websites/trueconf_github_io_python-trueconf-bot"
