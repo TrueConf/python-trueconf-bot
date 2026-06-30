@@ -1,7 +1,7 @@
 # Python TrueConf Bot SDK
 ## METADATA
-- **Version:** 1.4.2.dev7
-- **Generated:** 2026-06-30T10:58:45+00:00
+- **Version:** 1.4.2.dev8
+- **Generated:** 2026-06-30T11:08:14+00:00
 - **URL:** https://trueconf.github.io/python-trueconf-bot/master/
 
 ---
