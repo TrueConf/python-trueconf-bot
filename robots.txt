@@ -48,4 +48,4 @@ User-agent: Bytespider
 Disallow: /
 
 # --- Sitemaps ---
-Sitemap: https://trueconf.github.io/python-trueconf-bot/latest/sitemap.xml
+Sitemap: https://trueconf.github.io/python-trueconf-bot/sitemap.xml
