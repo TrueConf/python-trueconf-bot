@@ -1,0 +1,51 @@
+# ==============================
+# python-trueconf-bot documentation
+# https://trueconf.github.io/python-trueconf-bot/
+# ==============================
+
+# --- Default: allow all ---
+User-agent: *
+Allow: /
+Disallow: /*.fld$
+Disallow: /master/search/
+Disallow: /latest/search/
+
+# --- Google ---
+User-agent: Googlebot
+Allow: /
+
+# --- Bing ---
+User-agent: Bingbot
+Allow: /
+
+# --- AI Agents ---
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Bytespider
+Disallow: /
+
+# --- Sitemaps ---
+Sitemap: https://trueconf.github.io/python-trueconf-bot/latest/sitemap.xml
