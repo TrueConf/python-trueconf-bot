@@ -4,7 +4,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Optional
 
-from httpx import Client, HTTPStatusError
+from httpx import Client, HTTPStatusError, ConnectTimeout
 from ._ssl import SSLVerify
 from ..exceptions import TokenValidationError, InvalidGrantError
 
@@ -27,10 +27,11 @@ def _get_auth_token(
         "password": str(password)
     }
     with Client(timeout=timeout, verify=ssl_context) as client:
-        r = client.post(url, json=params)
-
         try:
+            r = client.post(url, json=params)
             r.raise_for_status()
+        except ConnectTimeout:
+            raise ConnectionError(f"Cannot connect to {server}:{port}. Server may be down or unreachable.") from None
         except HTTPStatusError as e:
             if e.response.status_code == 401:
                 if r.json().get("error_description", False):

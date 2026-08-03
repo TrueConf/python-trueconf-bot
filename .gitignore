@@ -178,7 +178,7 @@ cython_debug/
 config_models.py
 
 trueconf/_version.py
-
+.opencode
 .idea
 .workfiles
 *.DS_Store
