@@ -7,6 +7,7 @@ import signal
 import websockets
 import warnings
 import random
+from re import search
 from pathlib import Path
 from aiohttp import ClientSession, ClientTimeout, TCPConnector, FormData
 from async_property import async_cached_property
@@ -244,15 +245,30 @@ class Bot:
             return None
 
     async def __get_server_version(self):
+        port = "4307"
+        async with httpx.AsyncClient(verify=self.ssl_context, timeout=self.timeout) as client:
             try:
-                async with httpx.AsyncClient(verify=self.ssl_context, timeout=self.timeout) as client:
-                    response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
-                    version = response.json().get("product").get("version")
-                    loggers.chatbot.info(f"📦 Server version resolved: {version}")
+                response = await client.get(
+                    f"{self._protocol}://{self.server}:{self.port}/api/v4/endpoints/connects"
+                )
+                port = response.json()["connects"][0].split(":")[-1]
+            except (httpx.RequestError, KeyError, IndexError) as e:
+                loggers.chatbot.debug(f"Failed to get endpoints/connects: {e}")
+
+            try:
+                resp = await client.get(
+                    f"http://{self.server}:{port}/vsstatus",
+                    timeout=self.timeout,
+                )
+                m = search(r"TrueConf Server \b(\d{1,2}\.\d{1,2}\.\d{1,2}\.\d{1,5})\b", resp.text)
+                if m:
+                    version = m.group(1)
+                    loggers.chatbot.info(f"📦 Server engine version resolved: {version}")
                     return version
-            except Exception as e:
-                loggers.chatbot.error(f"Failed to get server version: {e}")
-                return None
+            except httpx.RequestError as e:
+                loggers.chatbot.debug(f"Failed to get server engine version: {e}")
+
+        return None
 
     @property
     def token(self) -> str:
@@ -277,12 +293,12 @@ class Bot:
         return await self.__get_domain_name()
 
     @async_cached_property
-    async def server_version(self) -> str:
+    async def server_version(self) -> str | None:
         """
-        Returns the domain name of the TrueConf server.
+        Returns the server version of the TrueConf server.
 
         Returns:
-            str: Domain name of the connected server.
+            str | None: Version of the connected server, or None if unavailable.
         """
 
         return await self.__get_server_version()
