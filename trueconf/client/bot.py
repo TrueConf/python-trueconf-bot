@@ -245,17 +245,37 @@ class Bot:
             return None
 
     async def __get_server_version(self):
-        port = "4307"
+        version = None
         async with httpx.AsyncClient(verify=self.ssl_context, timeout=self.timeout) as client:
+            loggers.chatbot.info("🔍 Checking server version...")
             try:
+                loggers.chatbot.info("📡 Attempt 1: querying version via /api/v4/server")
+                response = await client.get(f"{self._protocol}://{self.server}:{self.port}/api/v4/server")
+                response.raise_for_status()
+                version = response.json().get("product").get("version")
+            except httpx.HTTPStatusError as e:
+                loggers.chatbot.error(f"❌ Failed to get server version (HTTP {e.response.status_code}): {e}")
+            except httpx.TimeoutException as e:
+                loggers.chatbot.error(f"❌ Failed to get server version (timeout): {e}")
+
+            if version:
+                loggers.chatbot.info(f"📦 Server version resolved: {version}")
+                return version
+            loggers.chatbot.warning("⚠️ Server version not resolved via /api/v4/server, trying fallback...")
+
+
+            port = "4307"
+            try:
+                loggers.chatbot.info("📡 Attempt 2: querying TrueConf service via /api/v4/endpoints/connects")
                 response = await client.get(
                     f"{self._protocol}://{self.server}:{self.port}/api/v4/endpoints/connects"
                 )
                 port = response.json()["connects"][0].split(":")[-1]
             except (httpx.RequestError, KeyError, IndexError) as e:
-                loggers.chatbot.debug(f"Failed to get endpoints/connects: {e}")
+                loggers.chatbot.error(f"❌ Failed to get endpoints/connects: {e}")
 
             try:
+                loggers.chatbot.info(f"🔍 Using port {port} to check /vsstatus")
                 resp = await client.get(
                     f"http://{self.server}:{port}/vsstatus",
                     timeout=self.timeout,
@@ -265,8 +285,9 @@ class Bot:
                     version = m.group(1)
                     loggers.chatbot.info(f"📦 Server engine version resolved: {version}")
                     return version
+                loggers.chatbot.error("❌ Could not parse server version from /vsstatus response")
             except httpx.RequestError as e:
-                loggers.chatbot.debug(f"Failed to get server engine version: {e}")
+                loggers.chatbot.error(f"❌ Failed to get server engine version: {type(e).__name__}: {e}")
 
         return None
 
@@ -305,7 +326,13 @@ class Bot:
 
     async def check_version(self):
         current_version = await self.server_version
-        _VersionChecker.check(current_version)
+        if current_version:
+            _VersionChecker.check(current_version)
+        else:
+            loggers.chatbot.warning(
+                "️‼️ Could not determine the server version. "
+                "The library may not work correctly on this server."
+            )
 
     @property
     def me_id(self) -> str:
@@ -686,7 +713,6 @@ class Bot:
                 delay = min(delay * 2, self._ws_max_delay) + random.uniform(0, 1)
                 msg = f"🔌 Connection issue: {reason}. Retrying in {delay:.1f}s..."
                 loggers.chatbot.warning(msg)
-                print(msg)
                 continue
 
             except websockets.exceptions.InvalidURI as e:
@@ -714,7 +740,6 @@ class Bot:
                 delay = 5
                 msg = f"⚠️ Cant reach server: {e}. Attempt {retry_count}/{self._ws_max_retries}. Retrying in {delay}s..."
                 loggers.chatbot.warning(msg)
-                print(msg)
                 continue
 
             finally:
