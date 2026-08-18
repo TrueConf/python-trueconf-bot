@@ -11,6 +11,7 @@ from trueconf.types.content.remove_participant import RemoveParticipant
 from trueconf.types.content.forward_message import ForwardMessage
 from trueconf.types.content.chat_created import ParticipantRoleContent
 from trueconf.types.content.edit_chat_title import EditChatTitleContent
+from trueconf.types.content.edit_chat_avatar import EditChatAvatarContent
 from trueconf.types.content.location import Location
 
 
@@ -28,7 +29,8 @@ class LastMessage(DataClassDictMixin):
         RemoveParticipant,
         ForwardMessage,
         Location,
-        EditChatTitleContent
+        EditChatTitleContent,
+        EditChatAvatarContent
     ]
 
     @property
