@@ -25,7 +25,7 @@ This library is designed to simplify the development of chatbots by providing re
 ### Requirements
 
 * Python **3.10+**
-* Installed dependencies: `websockets`, `httpx`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`
+* Installed dependencies: `websockets`, `httpx2`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`
 * It is recommended to use [virtualenv](https://docs.python.org/3/library/venv.html) or [poetry](https://python-poetry.org/) for dependency isolation.
 
 ### Installation using pip

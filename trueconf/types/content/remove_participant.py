@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from trueconf.types.content.base import AbstractEnvelopeContent

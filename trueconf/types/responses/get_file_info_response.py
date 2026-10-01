@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional, List, Any
+from typing import Any, List
+
 from mashumaro import DataClassDictMixin
+
 from trueconf.enums.file_ready_state import FileReadyState
 
 
@@ -20,8 +23,8 @@ class GetFileInfoResponse(DataClassDictMixin):
     mimetype: str = field(metadata={"alias": "mimeType"})
     ready_state: FileReadyState = field(metadata={"alias": "readyState"})
     file_id: str = field(metadata={"alias": "fileId"})
-    previews: Optional[List[Previews]] = field(default=None)
-    download_url: Optional[str] = field(default=None, metadata={"alias": "downloadUrl"})
+    previews: List[Previews] | None = field(default=None)
+    download_url: str | None = field(default=None, metadata={"alias": "downloadUrl"})
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:

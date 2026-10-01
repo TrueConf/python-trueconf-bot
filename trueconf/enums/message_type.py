@@ -21,11 +21,12 @@ class MessageType(int, Enum):
     ATTACHMENT = 202
     LOCATION = 203
     SURVEY = 204
+    VOICE_MESSAGE = 205
 
     async def __call__(self, event: Any) -> bool:
         if getattr(event, "type", None) is None:
             return False
         try:
-            return int(getattr(event, "type")) == int(self)
+            return int(event.type) == int(self)
         except Exception:
             return False

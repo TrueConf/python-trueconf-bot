@@ -8,12 +8,8 @@ chatbot.setLevel(logging.INFO)
 
 if not chatbot.handlers:
     chatbot.addHandler(logging.StreamHandler())
-    chatbot.handlers[0].setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    )
+    chatbot.handlers[0].setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
 
 if not dispatcher.handlers:
     dispatcher.addHandler(logging.StreamHandler())
-    dispatcher.handlers[0].setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    )
+    dispatcher.handlers[0].setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))

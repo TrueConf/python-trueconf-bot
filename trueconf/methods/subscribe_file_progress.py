@@ -1,6 +1,7 @@
 from __future__ import annotations
-from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.subscribe_file_progress_response import SubscribeFileProgressResponse
 
@@ -16,6 +17,4 @@ class SubscribeFileProgress(TrueConfMethod[SubscribeFileProgressResponse]):
         super().__init__()
 
     def payload(self):
-        return {
-            "fileId": self.file_id
-        }
+        return {"fileId": self.file_id}

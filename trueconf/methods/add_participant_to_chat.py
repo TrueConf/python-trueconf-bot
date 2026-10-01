@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.add_chat_participant_response import AddChatParticipantResponse
 

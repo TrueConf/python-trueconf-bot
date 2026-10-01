@@ -33,6 +33,49 @@ To handle updates, the handler function is wrapped with a decorator. For example
 async def on_message(message): ...
 ```
 
+`@r.message()` receives user messages only. To receive system Envelopes, enable `receive_system_messages` when
+creating the bot and register a separate handler:
+
+```python
+from trueconf import Bot, F
+from trueconf.enums import MessageType
+from trueconf.types import SystemMessage
+
+bot = Bot(
+    server="video.example.net",
+    token="JWT-token",
+    receive_system_messages=True,
+)
+
+
+@r.system_message(F.type == MessageType.CLEAR_CHAT_HISTORY)
+async def on_history_cleared(message: SystemMessage):
+    print(message.content.for_all)
+```
+
+System Envelopes may be present in `get_chat_history()` results regardless of the `receive_system_messages` setting.
+
+### Replied-to message
+
+When an incoming message is a reply, its `reply_message` field contains the directly referenced `Message` object:
+
+```python
+@r.message()
+async def on_message(message):
+    if message.reply_message is not None:
+        print(message.reply_message.text)
+```
+
+The server expands only one level of the reply chain. If the referenced message is itself a reply, its
+`reply_message_id` is populated while its `reply_message` remains `None`. Load the next level explicitly when needed:
+
+```python
+quoted = message.reply_message
+
+if quoted is not None and quoted.reply_message_id is not None:
+    previous = await bot.get_message_by_id(quoted.reply_message_id)
+```
+
 ### Filter support
 
 Routers support filters based on the [magic-filter](https://github.com/aiogram/magic-filter) library using the `F` object:
@@ -46,8 +89,10 @@ Filters allow you to handle only those events (incoming updates) that match spec
 === "Text message"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
-    
+
+
     @r.message(F.text)
     async def on_message(message): ...
     ```
@@ -55,7 +100,9 @@ Filters allow you to handle only those events (incoming updates) that match spec
 === "Image"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
+
 
     @r.message(F.photo)
     async def on_photo(message): ...
@@ -64,8 +111,10 @@ Filters allow you to handle only those events (incoming updates) that match spec
 === "Message from a specific user"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
-    
+
+
     @r.message(F.from_user.id == "elisa")
     async def on_elisa(message): ...
     ```
@@ -89,6 +138,7 @@ As a rule, you may have many routers, but only one dispatcher:
 
 ```python hl_lines="7 14"
 from trueconf import Bot, Router, Dispatcher
+
 r1 = Router()
 r2 = Router()
 r3 = Router()
@@ -110,7 +160,9 @@ We have looked at an example of creating a simple router that is defined in code
 
 ```python
 from trueconf import Router, F
+
 r = Router()
+
 
 @r.message(F.from_user.id == "elisa")
 async def on_elisa(message): ...
@@ -146,9 +198,9 @@ The dispatcher keeps a list of all registered routers in `dp.routers`.
 Accordingly, if you assigned a name like `Router(name="Cool")`, you can remove it as follows:
 
 ```python
-for router in dp.routers[:]:# (1)!
+for router in dp.routers[:]:  # (1)!
     if router.name == "Cool":
-         dp.routers.remove(router)
+        dp.routers.remove(router)
 ```
 
 1. We iterate over a slice (a copy) of the list so the **for** loop does not break when an element is removed.
@@ -157,8 +209,8 @@ for router in dp.routers[:]:# (1)!
 
 Routers can also be:
 
-* **parallel**, processed independently of each other;
-* **child** (dependent), processed in a chain.
+* independent roots, which receive the same event sequentially regardless of each other's result;
+* child routers, which form an ordered tree of fallback routes.
 
 ![router_scheme_en.svg](../img/router_scheme_en.svg)
 
@@ -178,9 +230,14 @@ Here, the event will be processed as follows:
 
 As a result, **Handler 2** from **Router 2.3** will run only if no previous handler matched.
 
+If a parent has multiple child routers, they are checked in registration order. Once a child or one of its
+descendants handles the event, the remaining sibling branches are not checked. By default, children are not visited
+after their parent handles the event; `Router(allow_child_on_event=True)` enables that propagation.
+
 ## Handler priorities
 
-* Routers and their handlers are checked in the order they were added via `Dispatcher.include_router()`.
+* Independent root routers run in the order they were added via `Dispatcher.include_router()`, and every root receives the event.
+* Child routers are checked in `Router.include_router()` order until the first tree handles the event.
 * Inside a single router, handlers are evaluated in the order they are declared.
 * Upon the first filter match, the handler is executed and no further handlers are checked (default behavior).
 
@@ -190,6 +247,7 @@ This means that if you have multiple handlers with the same filter:
 @r.message(F.text == "Hello")
 async def handler1(message):
     await message.answer("First")
+
 
 @r.message(F.text == "Hello")
 async def handler2(message):

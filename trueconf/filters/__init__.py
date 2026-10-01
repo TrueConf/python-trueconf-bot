@@ -1,11 +1,11 @@
-from .base import Filter, Event
+from .base import Event, Filter
 from .command import Command
 from .instance_of import InstanceOfFilter
-from .method import MethodFilter
+from .message import MessageFilter
 
 __all__ = [
-    'Command',
-    'Filter',
-    'MethodFilter',
-    'InstanceOfFilter',
+    "Command",
+    "Filter",
+    "InstanceOfFilter",
+    "MessageFilter",
 ]

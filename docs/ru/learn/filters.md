@@ -136,9 +136,9 @@ F.photo  # message.photo
 **Равенство:**
 
 ```python
-F.text == "hello"        # message.text == "hello"
-F.from_user.id == 42     # message.from_user.id == 42
-F.text != "spam"         # message.text != "spam"
+F.text == "hello"  # message.text == "hello"
+F.from_user.id == 42  # message.from_user.id == 42
+F.text != "spam"  # message.text != "spam"
 ```
 
 **Принадлежность множеству:**
@@ -148,7 +148,7 @@ F.text != "spam"         # message.text != "spam"
 F.from_user.id.in_({42, 1000, 123123})
 
 # query.data in {"foo", "bar", "baz"}
-F.data.in_({"foo", "bar", "baz"})       
+F.data.in_({"foo", "bar", "baz"})
 ```
 
 **Содержит:**
@@ -161,7 +161,7 @@ F.text.contains("foo")  # "foo" in message.text
 
 ```python
 F.text.startswith("foo")  # message.text.startswith("foo")
-F.text.endswith("bar")    # message.text.endswith("bar")
+F.text.endswith("bar")  # message.text.endswith("bar")
 ```
 
 **Регулярные выражения:**
@@ -174,13 +174,13 @@ F.text.regexp(r"Hello, .+")  # re.match(r"Hello, .+", message.text)
 
 ```python
 # (lambda chat: chat.id == -42)(message.chat)
-F.chat.func(lambda chat: chat.id == -42)  
+F.chat.func(lambda chat: chat.id == -42)
 ```
 
 **Инверсия результата:**
 
 ```python
-~F.text                     # not message.text
+~F.text  # not message.text
 ~F.text.startswith("spam")  # not message.text.startswith("spam")
 ```
 
@@ -191,15 +191,15 @@ F.chat.func(lambda chat: chat.id == -42)
 
 F.text.startswith("a") | F.text.endswith("b")
 
-(F.from_user.id.in_({42, 777, 911})) & (F.text.startswith("!") | F.text.startswith("/")) & F.text.contains("ban")   
+(F.from_user.id.in_({42, 777, 911})) & (F.text.startswith("!") | F.text.startswith("/")) & F.text.contains("ban")
 ```
 
 **Модификаторы атрибутов (строки):**
 
 ```python
-F.text.lower() == "test"           # message.text.lower() == "test"
-F.text.upper().in_({"FOO", "BAR"}) # message.text.upper() in {"FOO", "BAR"}
-F.text.len() == 5                  # len(message.text) == 5
+F.text.lower() == "test"  # message.text.lower() == "test"
+F.text.upper().in_({"FOO", "BAR"})  # message.text.upper() in {"FOO", "BAR"}
+F.text.len() == 5  # len(message.text) == 5
 ```
 
 ## Создание своих фильтров
@@ -245,10 +245,12 @@ class MyFilter:
 
 ```python hl_lines="8"
 from aiogram import Router, Message
+
 # Импортируйте ваш класс фильтра
-from my_filters import MyFilter 
+from my_filters import MyFilter
 
 router = Router()
+
 
 # Подключаем фильтр аналогично Command или F
 @router.message(MyFilter(target_group="0032"))

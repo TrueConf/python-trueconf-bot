@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import io
-import re
 import os
+import re
+import warnings
+from abc import ABC, abstractmethod
+from mimetypes import guess_extension, guess_type
+from pathlib import Path
+from typing import Any, Dict
+from urllib.parse import unquote, urlparse
+
 import aiofiles
 import filetype
-from urllib.parse import urlparse, unquote
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Dict, Optional
+from httpx2 import AsyncClient
 from typing_extensions import Self
-from mimetypes import guess_type, guess_extension
+
 from trueconf import loggers
-from httpx import AsyncClient
-import warnings
+from trueconf.utils._user_agent import get_user_agent
 
 try:
     import magic
@@ -32,6 +35,7 @@ except ImportError as e:
         "  https://trueconf.github.io/python-trueconf-bot/latest/learn/files/#mime-detection-with-python-magic\n"
     ) from e
 
+
 def detect_mime_type(data: bytes, file_name: str = "") -> str:
     mime_type, _ = guess_type(file_name) if file_name else (None, None)
 
@@ -47,15 +51,18 @@ def detect_mime_type(data: bytes, file_name: str = "") -> str:
             loggers.chatbot.debug(f"Failed to detect mime_type via magic: {error}")
     return mime_type or "application/octet-stream"
 
+
 def file_name_from_url(url: str) -> str:
     path = urlparse(url).path
     return Path(unquote(path)).name
+
 
 def file_name_from_content_disposition(header: str) -> str | None:
     match = re.search(r'file_name\*?=(?:UTF-8\'\')?"?([^\";]+)"?', header)
     if match:
         return unquote(match.group(1))
     return None
+
 
 class InputFile(ABC):
     """
@@ -92,21 +99,20 @@ class InputFile(ABC):
     """
 
     def __init__(
-            self,
-            file_name: str | None = None,
-            file_size: int | None = None,
-            mime_type: str | None = None,
+        self,
+        file_name: str | None = None,
+        file_size: int | None = None,
+        mime_type: str | None = None,
     ):
 
-        if not guess_type(file_name)[0]:
+        if file_name and not guess_type(file_name)[0]:
             if ext := guess_extension(mime_type):
-                file_name = file_name+ext
+                file_name = file_name + ext
 
         self.file_name = file_name
         self.file_size = file_size
         self.mime_type = mime_type
-        self.extension =  Path(file_name).suffix.lower()[1:]
-
+        self.extension = Path(file_name).suffix.lower()[1:] if file_name else ""
 
     @abstractmethod
     async def read(self):  # pragma: no cover
@@ -115,6 +121,7 @@ class InputFile(ABC):
     @abstractmethod
     def clone(self) -> Self:
         raise NotImplementedError("This file type does not support cloning.")
+
 
 class BufferedInputFile(InputFile):
     """
@@ -135,12 +142,12 @@ class BufferedInputFile(InputFile):
     """
 
     def __init__(
-            self,
-            file: bytes,
-            file_name: str | None = None,
-            file_size: int | None = None,
-            mime_type: str | None = None,
-            **kwargs
+        self,
+        file: bytes,
+        file_name: str | None = None,
+        file_size: int | None = None,
+        mime_type: str | None = None,
+        **kwargs,
     ):
         """
         Initializes a file from a bytes buffer.
@@ -152,21 +159,21 @@ class BufferedInputFile(InputFile):
             mime_type (str, optional): MIME type of the file. Auto-detected if not specified.
         """
 
-        if 'filename' in kwargs:
+        if "filename" in kwargs:
             warnings.warn(
                 "'filename' is deprecated; use 'file_name' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            file_name = file_name or kwargs.pop('filename')
+            file_name = file_name or kwargs.pop("filename")
 
-        if 'mimetype' in kwargs:
+        if "mimetype" in kwargs:
             warnings.warn(
                 "'mimetype' is deprecated; use 'mime_type' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            mime_type = mime_type or kwargs.pop('mimetype')
+            mime_type = mime_type or kwargs.pop("mimetype")
 
         if file_name is None:
             raise TypeError("BufferedInputFile.__init__() missing 1 required argument: 'file_name'")
@@ -185,9 +192,9 @@ class BufferedInputFile(InputFile):
         cls,
         path: str | Path,
         file_name: str | None = None,
-        file_size: int  | None= None,
-        mime_type: str  | None= None,
-        **kwargs
+        file_size: int | None = None,
+        mime_type: str | None = None,
+        **kwargs,
     ) -> BufferedInputFile:
         """
         Creates a `BufferedInputFile` from a file on disk.
@@ -205,21 +212,21 @@ class BufferedInputFile(InputFile):
             BufferedInputFile: A new instance ready for upload.
         """
 
-        if 'filename' in kwargs:
+        if "filename" in kwargs:
             warnings.warn(
                 "'filename' is deprecated; use 'file_name' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            file_name = file_name or kwargs.pop('filename')
+            file_name = file_name or kwargs.pop("filename")
 
-        if 'mimetype' in kwargs:
+        if "mimetype" in kwargs:
             warnings.warn(
                 "'mimetype' is deprecated; use 'mime_type' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            mime_type = mime_type or kwargs.pop('mimetype')
+            mime_type = mime_type or kwargs.pop("mimetype")
 
         if file_name is None:
             file_name = os.path.basename(path)
@@ -242,7 +249,6 @@ class BufferedInputFile(InputFile):
             BytesIO: A stream containing the file content.
         """
         return io.BytesIO(self.data)
-
 
     def clone(self) -> BufferedInputFile:
         """
@@ -276,13 +282,14 @@ class FSInputFile(InputFile):
         await bot.send_document(chat_id="...", file=file)
         ```
     """
+
     def __init__(
         self,
         path: str | Path,
-        file_name: str  | None = None,
-        file_size: int  | None= None,
-        mime_type: str  | None= None,
-        **kwargs
+        file_name: str | None = None,
+        file_size: int | None = None,
+        mime_type: str | None = None,
+        **kwargs,
     ):
         """
         Initializes an `FSInputFile` instance from a local file.
@@ -300,22 +307,21 @@ class FSInputFile(InputFile):
             mime_type (str, optional): File MIME type.
         """
 
-        if 'filename' in kwargs:
+        if "filename" in kwargs:
             warnings.warn(
                 "'filename' is deprecated; use 'file_name' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            file_name = file_name or kwargs.pop('filename')
+            file_name = file_name or kwargs.pop("filename")
 
-        if 'mimetype' in kwargs:
+        if "mimetype" in kwargs:
             warnings.warn(
                 "'mimetype' is deprecated; use 'mime_type' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            mime_type = mime_type or kwargs.pop('mimetype')
-
+            mime_type = mime_type or kwargs.pop("mimetype")
 
         if file_name is None:
             file_name = os.path.basename(path)
@@ -373,6 +379,7 @@ class URLInputFile(InputFile):
         await bot.send_document(chat_id="...", file=file)
         ```
     """
+
     def __init__(
         self,
         url: str,
@@ -381,8 +388,8 @@ class URLInputFile(InputFile):
         file_size: int | None = None,
         mime_type: str | None = None,
         timeout: int = 30,
-        verify_ssl = True,
-        **kwargs
+        verify_ssl=True,
+        **kwargs,
     ):
         """
         Initializes a `URLInputFile` instance from a remote URL.
@@ -396,21 +403,21 @@ class URLInputFile(InputFile):
             timeout (int): Timeout (in seconds) for the HTTP request.
         """
 
-        if 'filename' in kwargs:
+        if "filename" in kwargs:
             warnings.warn(
                 "'filename' is deprecated; use 'file_name' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            file_name = file_name or kwargs.pop('filename')
+            file_name = file_name or kwargs.pop("filename")
 
-        if 'mimetype' in kwargs:
+        if "mimetype" in kwargs:
             warnings.warn(
                 "'mimetype' is deprecated; use 'mime_type' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            mime_type = mime_type or kwargs.pop('mimetype')
+            mime_type = mime_type or kwargs.pop("mimetype")
 
         super().__init__(file_name=file_name, file_size=file_size, mime_type=mime_type)
         if headers is None:
@@ -437,25 +444,23 @@ class URLInputFile(InputFile):
         if self.file_size is not None and self.mime_type is not None:
             return
 
-        async with AsyncClient(verify=self.verify_ssl) as client:
-            async with client.stream("HEAD", self.url, headers=self.headers, timeout=self.timeout) as response:
-                if self.mime_type is None:
-                    content_type = response.headers.get("Content-Type")
-                    if content_type:
-                        self.mime_type = content_type.split(";")[0].strip()
+        async with AsyncClient(
+            verify=self.verify_ssl, headers={"User-Agent": get_user_agent(), **self.headers}
+        ) as client, client.stream("HEAD", self.url, headers=self.headers, timeout=self.timeout) as response:
+            if self.mime_type is None:
+                content_type = response.headers.get("Content-Type")
+                if content_type:
+                    self.mime_type = content_type.split(";")[0].strip()
 
-                content_length = response.headers.get("Content-Length")
-                if content_length and content_length.isdigit():
-                    self.file_size = int(content_length)
-                else:
-                    raise ValueError("Server did not provide Content-Length, unable to determine file size.")
+            content_length = response.headers.get("Content-Length")
+            if content_length and content_length.isdigit():
+                self.file_size = int(content_length)
+            else:
+                raise ValueError("Server did not provide Content-Length, unable to determine file size.")
 
-                content_disp = response.headers.get("Content-Disposition", "")
-                if self.file_name is None:
-                    self.file_name = (
-                            file_name_from_content_disposition(content_disp)
-                            or file_name_from_url(self.url)
-                    )
+            content_disp = response.headers.get("Content-Disposition", "")
+            if self.file_name is None:
+                self.file_name = file_name_from_content_disposition(content_disp) or file_name_from_url(self.url)
         return
 
     async def read(self):
@@ -467,14 +472,16 @@ class URLInputFile(InputFile):
         Returns:
             bytes: File content.
         """
-        async with AsyncClient(verify=self.verify_ssl) as client:
+        async with AsyncClient(
+            verify=self.verify_ssl, headers={"User-Agent": get_user_agent(), **self.headers}
+        ) as client:
             data = bytearray()
             async with client.stream(
-                    "GET",
-                    self.url,
-                    headers=self.headers,
-                    timeout=self.timeout,
-                    follow_redirects=True,
+                "GET",
+                self.url,
+                headers=self.headers,
+                timeout=self.timeout,
+                follow_redirects=True,
             ) as response:
                 async for chunk in response.aiter_bytes():
                     data.extend(chunk)
@@ -497,4 +504,3 @@ class URLInputFile(InputFile):
             timeout=self.timeout,
             verify_ssl=self.verify_ssl,
         )
-

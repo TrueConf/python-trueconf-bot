@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
+
 from mashumaro import DataClassDictMixin
+
 from trueconf.exceptions import ApiErrorException
 
 
@@ -15,14 +18,12 @@ class ApiError(DataClassDictMixin):
         102: "TLS/SSL error",
         103: "Unsupported protocol",
         104: "Route not found",
-
         # Authorization Errors
         200: "Not authorized",
         201: "Invalid credentials",
         202: "User disabled",
         203: "Credentials expired",
         204: "Unsupported Credentials",
-
         # Chat Errors
         300: "Internal server error",
         301: "Operation timeout",
@@ -37,6 +38,17 @@ class ApiError(DataClassDictMixin):
         310: "File upload failed",
         311: "File not ready",
         312: "Role not found",
+        399: "Wrong payload format",
+        # File Errors
+        400: "Unknown file error",
+        401: "Not enough space",
+        402: "Bad file name",
+        403: "File upload forbidden",
+        404: "File not found",
+        405: "File not ready",
+        406: "Max file size exceeded",
+        407: "Upload task not found",
+        408: "Invalid file",
     }
 
     def message(self) -> str:

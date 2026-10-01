@@ -1,19 +1,22 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Annotated
+from typing import Annotated, List
+
 from mashumaro import DataClassDictMixin
+
 from trueconf.client.context_controller import BoundToBot
 
 DecimalBytes = Annotated[int, "bytes", "SI"]
+
 
 @dataclass
 class Extensions(DataClassDictMixin):
     mode: str
     list: List[str]
 
+
 @dataclass
 class ChangedFileUploadLimits(BoundToBot, DataClassDictMixin):
     extensions: Extensions | None
     max_size: DecimalBytes | None = field(metadata={"alias": "maxSize"})
-
-

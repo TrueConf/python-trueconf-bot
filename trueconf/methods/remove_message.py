@@ -1,6 +1,7 @@
 from __future__ import annotations
-from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.remove_message_response import RemoveMessageResponse
 
@@ -17,7 +18,4 @@ class RemoveMessage(TrueConfMethod[RemoveMessageResponse]):
         super().__init__()
 
     def payload(self):
-        return {
-            "messageId": self.message_id,
-            "forAll": self.for_all
-        }
+        return {"messageId": self.message_id, "forAll": self.for_all}

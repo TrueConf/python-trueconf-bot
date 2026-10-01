@@ -55,6 +55,7 @@ Any middleware is a class with a `__call__` method that inherits from `BaseMiddl
 ```python
 from trueconf.middleware import BaseMiddleware
 
+
 class MyMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         # Code BEFORE the handler
@@ -79,11 +80,13 @@ from trueconf.middleware import BaseMiddleware
 
 logger = logging.getLogger("bot")
 
+
 class LoggingMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         logger.info(f"Incoming event: {type(event).__name__}")
         await handler(event, data)
         logger.info(f"Event processed")
+
 
 router.outer_middleware(LoggingMiddleware())
 ```
@@ -95,6 +98,7 @@ from trueconf.middleware import BaseMiddleware
 from trueconf.types import Message
 
 ALLOWED_USERS = {"admin_user", "moderator_user"}
+
 
 class AccessMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
@@ -109,6 +113,7 @@ class AccessMiddleware(BaseMiddleware):
 
         await handler(event, data)
 
+
 router.outer_middleware(AccessMiddleware())
 ```
 
@@ -118,6 +123,7 @@ router.outer_middleware(AccessMiddleware())
 import time
 from trueconf.middleware import BaseMiddleware
 from trueconf.types import Message
+
 
 class AntiFloodMiddleware(BaseMiddleware):
     def __init__(self, limit: float = 1.0):
@@ -139,6 +145,7 @@ class AntiFloodMiddleware(BaseMiddleware):
 
         self.last_message[user_id] = now
         await handler(event, data)
+
 
 router.outer_middleware(AntiFloodMiddleware(limit=0.5))
 ```
@@ -249,6 +256,7 @@ Middleware and filters solve different problems. Here are the key differences:
 async def ping(msg: Message):
     await msg.answer("pong")
 
+
 # This handler will run for ALL other messages
 @router.message(F.text)
 async def echo(msg: Message):
@@ -263,6 +271,7 @@ class BanMiddleware(BaseMiddleware):
         if isinstance(event, Message) and event.author.id == "spammer":
             return  # ← do not call handler — the event dies here
         await handler(event, data)
+
 
 router.outer_middleware(BanMiddleware())
 ```

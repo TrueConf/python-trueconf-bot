@@ -1,5 +1,5 @@
 ---
-title: Возможности
+title: Возможности библиотеки
 description: 'Что умеет библиотека: асинхронность, API в стиле aiogram, WebSocket и другое'
 icon: material/feather
 ---
@@ -29,16 +29,18 @@ from trueconf.filters import F
 
 router = Router()
 
+
 @router.message(F.text.startswith("/start"))
 async def on_start(msg: Message):
-  await msg.answer("Привет! Я TrueConf бот 👋")
+    await msg.answer("Привет! Я TrueConf бот 👋")
+
 
 @router.message(F.document.mime_type == "application/pdf")
 async def on_pdf(msg: Message):
-  await msg.reply("Спасибо за PDF!")
+    await msg.reply("Спасибо за PDF!")
 ```
 
-### Два варианта подключения
+### Три варианта подключения
 
 1. Используя заранее полученный JWT-токен:
     ```python
@@ -49,6 +51,31 @@ async def on_pdf(msg: Message):
     ```python
     bot = Bot.from_credentials(server, username, password)
     ```
+
+3. или через OAuth2-приложение, если на сервере отключены логин и пароль:
+    ```python
+    bot = Bot.from_oauth(server, username, password, client_id)
+    ```
+
+Подробнее — в разделе [Авторизация](learn/authentication.md).
+
+### Интерактивные кнопки
+
+В сообщения можно добавлять inline-клавиатуры, а нажатия обрабатывать через `CallbackQuery`:
+
+```python
+from trueconf import InlineKeyboardButton, InlineKeyboardMarkup
+
+keyboard = InlineKeyboardMarkup(
+    buttons=[
+        [InlineKeyboardButton(text="Команда", command="/help")],
+    ]
+)
+
+await message.answer("Выберите действие:", buttons=keyboard)
+```
+
+Подробнее — в разделе [Интерактивные кнопки и Callback](learn/buttons.md).
   
 ### Алиасы и шорткаты в стиле aiogram
 
@@ -75,6 +102,7 @@ await msg.copy_to(chat_id="other_chat")
 ```python
 @router.message(F.photo)
 async def on_photo(msg: Message): ...
+
 
 @router.message(F.document.mime_type.in_(["application/pdf", "application/msword"]))
 async def on_doc(msg: Message): ...

@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.edit_survey_response import EditSurveyResponse
 
@@ -22,11 +24,11 @@ class EditSurvey(TrueConfMethod[EditSurveyResponse]):
     def payload(self):
         return {
             "messageId": self.message_id,
-                "content": {
-                    "path": self.path,
-                    "title": self.title,
-                    "description": self.description,
-                    "buttonText": self.button_text,
-                    "alt": f"📊 <a href='https://{self.server}/webtools/survey?id={self.path}&error=autologin_not_supported'>{self.title}</a>"
-                }
+            "content": {
+                "path": self.path,
+                "title": self.title,
+                "description": self.description,
+                "buttonText": self.button_text,
+                "alt": f"📊 <a href='https://{self.server}/webtools/survey?id={self.path}&error=autologin_not_supported'>{self.title}</a>",
+            },
         }

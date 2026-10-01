@@ -44,3 +44,16 @@ When sending a file, the library checks its size and extension. If the file exce
 
 !!! Note
     File restrictions depend on the configuration of the specific TrueConf Server. If the administrator changes the maximum file size or the list of allowed extensions, the bot will automatically receive updated values on the next limits update event.
+
+#### Inline Buttons
+
+The library validates inline keyboard restrictions when an `InlineKeyboardMarkup` object is created:
+
+- no more than `8` rows;
+- no more than `8` buttons per row;
+- no more than `64` buttons in total;
+- button text must contain `1` to `32` characters;
+- a button command can contain up to `255` ASCII characters;
+- `custom_data` can contain up to `4096` ASCII characters and is available only for `command` buttons.
+
+If a limit is exceeded, the library raises `ValueError`. For details, see [Interactive Buttons](buttons.md).

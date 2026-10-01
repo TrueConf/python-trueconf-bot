@@ -23,7 +23,7 @@ pip install {{product_name}}
 ```
 
 !!! info
-    Upon installation, dependencies will be automatically pulled in: `websockets`, `httpx`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.
+    Upon installation, dependencies will be automatically pulled in: `websockets`, `httpx2`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.
 
 ## Creating a Basic Echo Bot
 
@@ -42,11 +42,11 @@ dp = Dispatcher()
 # dp.include_router(r)
 ```
 
-The bot supports two types of authentication: token-based or login/password. You can choose the most convenient method.
+The bot supports three authentication methods: token, login and password, or OAuth2. Choose the method that best fits your setup. For details, see [Authentication](authentication.md).
 
 ### Token-Based Authentication
 
-If you're using token-based connection, obtain the token as described in the [official API documentation](https://trueconf.ru/docs/chatbot-connector/ru/connect-and-auth/#access-token).
+If you're using token-based connection, obtain the token as described in the [official API documentation](https://trueconf.com/docs/chatbot-connector/en/connect-and-auth/#access-token).
 
 It is recommended to store the token in an environment variable or `.env` file. Don’t forget to add `.env` to `.gitignore` if working with public repositories.
 
@@ -67,17 +67,23 @@ bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
 Use the `.from_credentials` method:
 
 ```python
-bot = Bot.from_credentials(
-    username="echo_bot",
-    password="123tr",
-    server="10.110.2.240",
-    dispatcher=dp
-)
+bot = Bot.from_credentials(username="echo_bot", password="123tr", server="10.110.2.240", dispatcher=dp)
 ```
 
 !!! info
     Each time **from\_credentials()** is called, the bot requests a new token from the server.
     The token lifespan is 1 month.
+
+### Authentication with Login and Password Disabled
+
+If login and password authentication is disabled on the server for security reasons, authenticate the bot through an OAuth application with `.from_oauth`. In addition to the login and password, you need the application's `client_id`:
+
+```python
+bot = Bot.from_oauth(username="elisa", password="123tr", client_id="client_id_of_app", server="10.110.2.240", dispatcher=dp)
+```
+
+!!! tip
+    For authentication methods, requirements, parameters, and errors, see [Authentication](authentication.md).
 
 ### Message Handler
 
@@ -96,7 +102,8 @@ Run the bot inside an asynchronous `main()` function passed to `asyncio.run()`:
 ```python
 async def main():
     await bot.run()
-    
+
+
 import asyncio
 
 if __name__ == "__main__":

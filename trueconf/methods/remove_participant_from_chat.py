@@ -1,6 +1,7 @@
 from __future__ import annotations
-from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.remove_chat_participant_response import RemoveChatParticipantResponse
 
@@ -18,8 +19,4 @@ class RemoveChatParticipant(TrueConfMethod[RemoveChatParticipantResponse]):
         super().__init__()
 
     def payload(self):
-        return {
-            "chatId": self.chat_id,
-            "userId": self.user_id,
-            "clearHistory": self.clear_history
-        }
+        return {"chatId": self.chat_id, "userId": self.user_id, "clearHistory": self.clear_history}

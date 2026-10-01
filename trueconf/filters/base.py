@@ -1,7 +1,7 @@
-from typing import Any
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 Event = Any
+
 
 @runtime_checkable
 class Filter(Protocol):

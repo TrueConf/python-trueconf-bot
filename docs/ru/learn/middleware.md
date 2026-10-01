@@ -55,6 +55,7 @@ Outer middleware выполняется раньше фильтров. Если 
 ```python
 from trueconf.middleware import BaseMiddleware
 
+
 class MyMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         # Код ДО обработчика
@@ -79,11 +80,13 @@ from trueconf.middleware import BaseMiddleware
 
 logger = logging.getLogger("bot")
 
+
 class LoggingMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         logger.info(f"Входящее событие: {type(event).__name__}")
         await handler(event, data)
         logger.info(f"Событие обработано")
+
 
 router.outer_middleware(LoggingMiddleware())
 ```
@@ -95,6 +98,7 @@ from trueconf.middleware import BaseMiddleware
 from trueconf.types import Message
 
 ALLOWED_USERS = {"admin_user", "moderator_user"}
+
 
 class AccessMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
@@ -109,6 +113,7 @@ class AccessMiddleware(BaseMiddleware):
 
         await handler(event, data)
 
+
 router.outer_middleware(AccessMiddleware())
 ```
 
@@ -118,6 +123,7 @@ router.outer_middleware(AccessMiddleware())
 import time
 from trueconf.middleware import BaseMiddleware
 from trueconf.types import Message
+
 
 class AntiFloodMiddleware(BaseMiddleware):
     def __init__(self, limit: float = 1.0):
@@ -139,6 +145,7 @@ class AntiFloodMiddleware(BaseMiddleware):
 
         self.last_message[user_id] = now
         await handler(event, data)
+
 
 router.outer_middleware(AntiFloodMiddleware(limit=0.5))
 ```
@@ -249,6 +256,7 @@ Middleware и фильтры решают разные задачи. Вот кл
 async def ping(msg: Message):
     await msg.answer("pong")
 
+
 # Этот хендлер сработает на ВСЕ остальные сообщения
 @router.message(F.text)
 async def echo(msg: Message):
@@ -263,6 +271,7 @@ class BanMiddleware(BaseMiddleware):
         if isinstance(event, Message) and event.author.id == "spammer":
             return  # ← не вызываем handler — событие умирает
         await handler(event, data)
+
 
 router.outer_middleware(BanMiddleware())
 ```

@@ -1,6 +1,6 @@
+import re
 from abc import ABC, abstractmethod
 from html import escape
-import re
 
 
 class TextDecoration(ABC):
@@ -28,6 +28,9 @@ class TextDecoration(ABC):
     @abstractmethod
     def all_mention(self) -> str: ...
 
+    @abstractmethod
+    def line_break(self) -> str: ...
+
 
 class HtmlDecoration(TextDecoration):
     def escape(self, value: str) -> str:
@@ -54,6 +57,9 @@ class HtmlDecoration(TextDecoration):
     def all_mention(self) -> str:
         return "@all"
 
+    def line_break(self) -> str:
+        return "<br>"
+
 
 class MarkdownDecoration(TextDecoration):
     PATTERN = re.compile(r"([_*\[\]()~`>#+\-=|{}.!\\])")
@@ -68,7 +74,7 @@ class MarkdownDecoration(TextDecoration):
         return f"*{value}*"
 
     def underline(self, value: str) -> str:
-        return value
+        return f"__{value}__"
 
     def strikethrough(self, value: str) -> str:
         return f"~~{value}~~"
@@ -81,6 +87,9 @@ class MarkdownDecoration(TextDecoration):
 
     def all_mention(self) -> str:
         return "@all"
+
+    def line_break(self) -> str:
+        return "\n"
 
 
 html_decoration = HtmlDecoration()

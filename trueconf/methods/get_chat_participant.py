@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.get_chat_participant_response import GetChatParticipantResponse
 
@@ -16,7 +18,4 @@ class GetChatParticipant(TrueConfMethod[GetChatParticipantResponse]):
         super().__init__()
 
     def payload(self):
-        return {
-            "chatId": self.chat_id,
-            "userId": self.user_id
-        }
+        return {"chatId": self.chat_id, "userId": self.user_id}

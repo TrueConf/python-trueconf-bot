@@ -1,9 +1,11 @@
 import ssl
 from pathlib import Path
 from typing import TypeAlias
+
 import truststore
 
 SSLVerify: TypeAlias = bool | str | ssl.SSLContext
+
 
 def _build_ssl_context(verify_ssl: SSLVerify) -> ssl.SSLContext:
     if isinstance(verify_ssl, ssl.SSLContext):
@@ -28,9 +30,8 @@ def _build_ssl_context(verify_ssl: SSLVerify) -> ssl.SSLContext:
             )
         return ssl.create_default_context(cafile=str(cafile))
 
-    raise TypeError(
-        "verify_ssl must be bool, str path to CA bundle, or ssl.SSLContext"
-    )
+    raise TypeError("verify_ssl must be bool, str path to CA bundle, or ssl.SSLContext")
+
 
 def _describe_ssl_context(ctx: ssl.SSLContext) -> str:
     if ctx.verify_mode == ssl.CERT_NONE:

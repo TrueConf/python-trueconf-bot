@@ -1,20 +1,24 @@
 from __future__ import annotations
-import asyncio
+
+import anyio
 import pytest
-from trueconf.fsm.state import State, StatesGroup
-from trueconf.fsm.context import FSMContext
-from trueconf.fsm.storage.memory import MemoryStorage
-from trueconf.fsm.key_builder import StorageKey, DefaultKeyBuilder
-from trueconf.fsm.manager import FSMManager
-from trueconf.fsm.filters import StateFilter
-from trueconf.fsm.middleware import FSMMiddleware
-from trueconf.dispatcher.router import Router
+
 from trueconf.dispatcher.dispatcher import Dispatcher
-from trueconf.types.message import Message
-from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
-from trueconf.types.content.text import TextContent
-from trueconf.enums.message_type import MessageType
+from trueconf.dispatcher.router import Router
+from trueconf.enums.chat_type import ChatType
 from trueconf.enums.envelope_author_type import EnvelopeAuthorType
+from trueconf.enums.message_type import MessageType
+from trueconf.fsm.context import FSMContext
+from trueconf.fsm.filters import StateFilter
+from trueconf.fsm.key_builder import DefaultKeyBuilder, StorageKey
+from trueconf.fsm.manager import FSMManager
+from trueconf.fsm.middleware import FSMMiddleware
+from trueconf.fsm.state import State, StatesGroup
+from trueconf.fsm.storage.memory import MemoryStorage
+from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
+from trueconf.types.chat import Chat
+from trueconf.types.content.text import TextContent
+from trueconf.types.message import Message
 
 pytestmark = pytest.mark.anyio
 
@@ -27,7 +31,7 @@ def _make_message(author_id: str = "user1", text: str = "hello", chat_id: str = 
         box=EnvelopeBox(id=1, position="top"),
         content=TextContent(text=text, parse_mode="text"),
         message_id=f"msg_{author_id}",
-        chat_id=chat_id,
+        chat=Chat(chat_id=chat_id, chat_title="Test Chat", chat_type=ChatType.P2P),
         is_edited=False,
     )
 
@@ -40,11 +44,13 @@ class FakeBot:
 # State declaration
 # ──────────────────────────────────────────────
 
+
 class TestStateDeclaration:
     def test_state_str_format(self):
         class Form(StatesGroup):
             name = State()
             age = State()
+
         assert str(Form.name) == "Form:name"
         assert str(Form.age) == "Form:age"
 
@@ -61,24 +67,28 @@ class TestStateDeclaration:
         class Form(StatesGroup):
             name = State()
             age = State()
+
         assert len(Form.__states__) == 2
         assert all(isinstance(s, State) for s in Form.__states__)
 
     def test_state_equality(self):
         class Form(StatesGroup):
             name = State()
+
         assert Form.name == "Form:name"
         assert Form.name == Form.name
 
     def test_state_hashable(self):
         class Form(StatesGroup):
             name = State()
+
         d = {Form.name: "value"}
         assert d["Form:name"] == "value"
 
     def test_state_bind_double_raises(self):
         class Form(StatesGroup):
             name = State()
+
         with pytest.raises(RuntimeError, match="already bound"):
             Form.name.bind(Form, "other")
 
@@ -91,6 +101,7 @@ class TestStateDeclaration:
 # ──────────────────────────────────────────────
 # StorageKey
 # ──────────────────────────────────────────────
+
 
 class TestStorageKey:
     def test_frozen(self):
@@ -119,6 +130,7 @@ class TestStorageKey:
 # DefaultKeyBuilder
 # ──────────────────────────────────────────────
 
+
 class TestDefaultKeyBuilder:
     def test_builds_from_message(self):
         builder = DefaultKeyBuilder()
@@ -131,7 +143,7 @@ class TestDefaultKeyBuilder:
     def test_raises_on_missing_chat_id(self):
         builder = DefaultKeyBuilder()
         msg = _make_message("user1")
-        msg.chat_id = None  # type: ignore[assignment]
+        msg.chat.chat_id = None  # type: ignore[assignment]
         with pytest.raises(RuntimeError, match="chat_id"):
             builder.build(FakeBot(), msg)
 
@@ -146,6 +158,7 @@ class TestDefaultKeyBuilder:
 # ──────────────────────────────────────────────
 # MemoryStorage
 # ──────────────────────────────────────────────
+
 
 class TestMemoryStorage:
     async def test_get_set_state(self):
@@ -204,6 +217,7 @@ class TestMemoryStorage:
 # FSMContext
 # ──────────────────────────────────────────────
 
+
 class TestFSMContext:
     async def test_state_lifecycle(self):
         storage = MemoryStorage()
@@ -253,6 +267,7 @@ class TestFSMContext:
 # ──────────────────────────────────────────────
 # StateFilter
 # ──────────────────────────────────────────────
+
 
 class TestStateFilter:
     async def test_matches_current_state(self):
@@ -312,6 +327,7 @@ class TestStateFilter:
 # FSMMiddleware
 # ──────────────────────────────────────────────
 
+
 class TestFSMMiddleware:
     async def test_injects_state_into_data(self):
         storage = MemoryStorage()
@@ -348,6 +364,7 @@ class TestFSMMiddleware:
         @dataclass
         class FakeSystemEvent:
             """Simulates a system event without chat_id or author."""
+
             max_size: int = 1000
 
         storage = MemoryStorage()
@@ -366,10 +383,50 @@ class TestFSMMiddleware:
         assert "state" not in received_data
         assert "raw_state" not in received_data
 
+    async def test_callback_query_without_user_id_skips_fsm(self):
+        """CallbackQuery has chat (from the nested message) but no user_id of the clicker on
+        server 5.5.6 — FSM must not create a state, matching the documented real behaviour."""
+        from trueconf.types import CallbackQuery
+
+        callback = CallbackQuery.from_dict(
+            {
+                "commandSource": {
+                    "type": "inlineKeyboard",
+                    "message": {
+                        "messageId": "message-1",
+                        "chat": {"chatId": "chat_1", "chatTitle": "Chat", "chatType": 1},
+                        "timestamp": 1_725_000_000,
+                        "author": {"id": "bot@server.trueconf.name", "type": 1},
+                        "box": {"id": 1, "position": "incoming"},
+                        "type": 200,
+                        "content": {"text": "Кнопки", "parseMode": "html"},
+                        "isEdited": False,
+                    },
+                },
+                "commandPayload": {"type": "userCommand", "command": "confirm"},
+            }
+        )
+
+        storage = MemoryStorage()
+        fsm = FSMManager(storage=storage)
+        mw = FSMMiddleware(fsm)
+        data: dict = {"bot": FakeBot()}
+
+        received_data: dict = {}
+
+        async def handler(evt, d):
+            received_data.update(d)
+
+        await mw(handler, callback, data)
+
+        assert "state" not in received_data
+        assert "raw_state" not in received_data
+
 
 # ──────────────────────────────────────────────
 # Dispatcher integration
 # ──────────────────────────────────────────────
+
 
 class TestDispatcherFSMIntegration:
     async def test_setup_fsm_registers_middleware(self):
@@ -413,7 +470,7 @@ class TestDispatcherFSMIntegration:
 
         msg = _make_message("user1")
         await dp._feed_update(msg, {"bot": FakeBot()})
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         assert calls == ["name_handler"]
 
     async def test_state_filter_rejects_wrong_state(self):
@@ -440,11 +497,12 @@ class TestDispatcherFSMIntegration:
 
         msg = _make_message("user1")
         await dp._feed_update(msg, {"bot": FakeBot()})
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         assert calls == ["age"]
 
     async def test_sugar_state_in_router_message(self):
         """Test that @router.message(Form.name) works as sugar for @router.message(StateFilter(Form.name))."""
+
         class Form(StatesGroup):
             name = State()
 
@@ -463,11 +521,12 @@ class TestDispatcherFSMIntegration:
 
         msg = _make_message("user1")
         await dp._feed_update(msg, {"bot": FakeBot()})
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         assert calls == ["sugar_works"]
 
     async def test_handler_receives_state_via_di(self):
         """Test that state: FSMContext is injected into handler via DI."""
+
         class Form(StatesGroup):
             name = State()
 
@@ -487,7 +546,7 @@ class TestDispatcherFSMIntegration:
 
         msg = _make_message("user1")
         await dp._feed_update(msg, {"bot": FakeBot()})
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
 
         assert received_state is not None
         assert isinstance(received_state, FSMContext)
@@ -497,6 +556,7 @@ class TestDispatcherFSMIntegration:
 # ──────────────────────────────────────────────
 # Nested StatesGroups
 # ──────────────────────────────────────────────
+
 
 class TestNestedStatesGroups:
     def test_nested_state_str_format(self):
@@ -618,6 +678,7 @@ class TestNestedStatesGroups:
 
     def test_nested_state_as_filter(self):
         """Test that nested State works as StateFilter sugar."""
+
         class Form(StatesGroup):
             class Address(StatesGroup):
                 city = State()
@@ -627,6 +688,7 @@ class TestNestedStatesGroups:
 
     def test_nested_state_in_storage(self):
         """Test that nested states work with storage."""
+
         class Form(StatesGroup):
             class Address(StatesGroup):
                 city = State()
@@ -636,6 +698,7 @@ class TestNestedStatesGroups:
 
     async def test_nested_state_in_pipeline(self):
         """Test nested states work end-to-end in the dispatcher pipeline."""
+
         class Form(StatesGroup):
             name = State()
 
@@ -668,27 +731,28 @@ class TestNestedStatesGroups:
         # Test Form.Address:city
         await dp.fsm.storage.set_state(key, "Form.Address:city")
         await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["city"]
 
         # Test Form.Address:street
         calls.clear()
         await dp.fsm.storage.set_state(key, "Form.Address:street")
         await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["street"]
 
         # Test Form:name (not nested)
         calls.clear()
         await dp.fsm.storage.set_state(key, "Form:name")
         await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["name"]
 
 
 # ──────────────────────────────────────────────
 # get_value
 # ──────────────────────────────────────────────
+
 
 class TestGetValue:
     async def test_get_value_returns_value(self):
@@ -716,6 +780,7 @@ class TestGetValue:
 # ──────────────────────────────────────────────
 # update_data with Mapping
 # ──────────────────────────────────────────────
+
 
 class TestUpdateDataMapping:
     async def test_update_data_with_kwargs(self):
@@ -752,6 +817,7 @@ class TestUpdateDataMapping:
 # clear() semantics
 # ──────────────────────────────────────────────
 
+
 class TestClearSemantics:
     async def test_clear_resets_state_and_data(self):
         storage = MemoryStorage()
@@ -783,13 +849,16 @@ class TestClearSemantics:
 # any_state wildcard
 # ──────────────────────────────────────────────
 
+
 class TestAnyState:
     def test_any_state_str(self):
         from trueconf.fsm.state import any_state
+
         assert str(any_state) == "*"
 
     async def test_any_state_filter_matches_any(self):
         from trueconf.fsm.state import any_state
+
         storage = MemoryStorage()
         key = StorageKey(bot_id="b", chat_id="c", user_id="u")
         ctx = FSMContext(storage, key)
@@ -820,7 +889,7 @@ class TestAnyState:
         key = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user1")
         await dp.fsm.storage.set_state(key, "Whatever:state")
         await dp._feed_update(_make_message("user1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["any_state"]
 
 
@@ -828,9 +897,11 @@ class TestAnyState:
 # FSMStrategy
 # ──────────────────────────────────────────────
 
+
 class TestFSMStrategy:
     async def test_user_in_chat_strategy(self):
         from trueconf.fsm.strategy import FSMStrategy
+
         dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.USER_IN_CHAT)
         router = Router()
         dp.include_router(router)
@@ -849,11 +920,12 @@ class TestFSMStrategy:
         key2 = StorageKey(bot_id="bot_id", chat_id="chat_1", user_id="user2")
 
         await dp._feed_update(_make_message("user1", chat_id="chat_1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["name:user1"]
 
     async def test_chat_strategy(self):
         from trueconf.fsm.strategy import FSMStrategy
+
         dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
         router = Router()
         dp.include_router(router)
@@ -870,11 +942,12 @@ class TestFSMStrategy:
 
         # Any user in the same chat should match
         await dp._feed_update(_make_message("user1", chat_id="chat_1"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["matched"]
 
     async def test_global_user_strategy(self):
         from trueconf.fsm.strategy import FSMStrategy
+
         dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.GLOBAL_USER)
         router = Router()
         dp.include_router(router)
@@ -891,13 +964,14 @@ class TestFSMStrategy:
 
         # User should match from any chat
         await dp._feed_update(_make_message("user1", chat_id="other_chat"), {"bot": FakeBot()})
-        await asyncio.sleep(0.05)
+        await anyio.sleep(0.05)
         assert calls == ["matched"]
 
 
 # ──────────────────────────────────────────────
 # raw_state in data
 # ──────────────────────────────────────────────
+
 
 class TestRawState:
     async def test_raw_state_injected(self):

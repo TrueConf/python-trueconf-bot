@@ -16,6 +16,7 @@ from trueconf.types import Message
 
 r = Router()
 
+
 @r.message()
 async def on_message(message: Message):
     await message.answer("Сообщение получено")
@@ -48,10 +49,7 @@ async def on_message(message: Message):
 ```python hl_lines="3-5"
 @r.message()
 async def on_message(message: Message):
-    await message.bot.send_message(
-        chat_id=message.chat_id,
-        text="Привет!"
-)
+    await message.bot.send_message(chat_id=message.chat_id, text="Привет!")
 ```
 
 можно использовать шорткат:
@@ -70,4 +68,70 @@ async def on_message(message: Message):
 
 !!! Tip
     Список всех доступных шорткатов вы можете изучить в разделе с [описанием класса Message](../reference/Types.md/#trueconf.types.Message).
+
+## Контакты
+
+`Message.contact` возвращает контакт текущего сообщения в виде объекта
+[`Contact`](../reference/Types.md/#trueconf.types.contact.Contact) или `None`, если сообщение
+не является контактом. Результат кэшируется на сообщении, поэтому vCard-файл
+скачивается с сервера только один раз:
+
+```python
+contact = await message.contact
+```
+
+Распознаются два формата:
+
+- **vCard-вложение** — файл `.vcf` (`mimeType: text/vcard`). Файл скачивается
+  с сервера и парсится: структурированное поле `N` даёт имя и фамилию, `TEL` —
+  номер телефона, а сырой текст vCard доступен как `Contact.vcard`.
+- **Ссылка на контакт TrueConf** — текстовое сообщение, содержимое которого —
+  ровно одна ссылка `<a href="trueconf:login&do=profile">Имя</a>`.
+  `Contact.user_id` содержит логин, а `Contact.first_name` — отображаемое имя,
+  полученное с сервера (если пользователь уже удалён — берётся текст ссылки).
+
+```python
+@r.message()
+async def on_message(message: Message):
+    contact = await message.contact
+    if contact is not None:
+        await message.answer(f"{contact.first_name}: {contact.phone_number}")
+```
+
+Отображаемое имя никогда не разбивается на имя и фамилию: конвенция имени на
+сервере (ФИ, ИФ, ФИО) различается от инсталляции к инсталляции, поэтому для
+контактов TrueConf `Contact.last_name` всегда `None`.
+
+## Геолокация
+
+`Message.location` возвращает объект [`Location`](../reference/Types.md/#trueconf.types.content.location.Location) для сообщений с геолокацией или `None`:
+
+```python
+@r.message()
+async def on_message(message: Message):
+    if message.location is not None:
+        print(location.latitude, location.longitude, location.title)
+```
+
+## Цитата
+
+`Message.quote` возвращает процитированную часть сообщения-ответа, а `Message.text` — без блока цитаты. Процитированный фрагмент можно передать в параметр `quote` методов `message.reply(...)` и `bot.send_message(...)`:
+
+```python
+@r.message()
+async def on_message(message: Message):
+    if message.quote is not None:
+        await message.reply("Спасибо за цитату!", quote=message.quote)
+```
+
+## Голосовые сообщения
+
+`Message.voice` возвращает объект [`Voice`](../reference/Types.md/#trueconf.types.content.voice.Voice) для голосовых сообщений или `None`. Для него доступны те же файловые шорткаты, что и для других вложений: `download()`, `url`, `preview_url`:
+
+```python
+@r.message()
+async def on_message(message: Message):
+    if message.voice is not None:
+        await voice.download(file_path="voice.ogg")
+```
 

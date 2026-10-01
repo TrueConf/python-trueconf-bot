@@ -39,13 +39,10 @@ await bot.send_document(
     chat_id="a1b2c3d4",
     file=FSInputFile("docs/report.pdf"),
     caption="📄 Annual report for **2025**",
-    parse_mode=ParseMode.MARKDOWN
+    parse_mode=ParseMode.MARKDOWN,
 )
 
-await bot.send_sticker(
-    chat_id="a1b2c3d4",
-    file=FSInputFile("stickers/cat.webp")
-)
+await bot.send_sticker(chat_id="a1b2c3d4", file=FSInputFile("stickers/cat.webp"))
 ```
 
 ### 🧠 BufferedInputFile
@@ -60,15 +57,9 @@ preview_bytes = open("preview.jpg", "rb").read()
 
 await bot.send_photo(
     chat_id="a1b2c3d4",
-    file=BufferedInputFile(
-        file=image_bytes,
-        filename="image.jpg"
-    ),
-    preview=BufferedInputFile(
-        file=preview_bytes,
-        filename="preview.jpg"
-    ),
-    caption="This is my photo"
+    file=BufferedInputFile(file=image_bytes, filename="image.jpg"),
+    preview=BufferedInputFile(file=preview_bytes, filename="preview.jpg"),
+    caption="This is my photo",
 )
 ```
 
@@ -119,20 +110,21 @@ pip install python-trueconf-bot[python-magic]
 ```python
 @router.message(F.document)
 async def handle_doc(msg: Message):
-    await msg.document.download(dest_path="document.pdf")
+    await msg.document.download(file_path="document.pdf")
 ```
 
 !!! Notes
-    Путь `dest_path` может быть как относительным, так и абсолютным.
+    Путь `file_path` может быть как относительным, так и абсолютным. Родительские
+    каталоги создаются автоматически.
 
 Также доступен метод `download_file_by_id(...)`, если требуется более гибкий контроль:
 
 ```python
-await bot.download_file_by_id(
-    file_id=msg.document.file_id, 
-    dest_path="document.pdf"
-)
+await bot.download_file_by_id(file_id=msg.document.file_id, file_path="document.pdf")
 ```
+
+Устаревший параметр `dest_path` трактуется как каталог, к которому добавляется
+имя файла с сервера. Для точного пути используйте `file_path`.
 
 ## Определение MIME-типа с помощью python-magic
 
@@ -178,7 +170,6 @@ MIME‑тип файла может определяться автоматич�
 ### Примечания
 
 * При наличии `python-magic` MIME‑тип определяется **по байтам файла**, что обычно точнее, чем определение по имени или расширению.
-
 
 
 

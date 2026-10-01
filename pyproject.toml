@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "python-trueconf-bot"
 dynamic = ["version"]
 description = "Lightweight and powerful framework for the TrueConf Server Chatbot API"
-readme = {file = "README-PyPI.md", content-type = "text/markdown"}
+readme = { file = "README-PyPI.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 license = "BSD-3-Clause-Clear"
 license-files = ["LICENSE*"]
@@ -42,13 +42,13 @@ classifiers = [
 
 dependencies = [
     "websockets",
-    "httpx",
-    "mashumaro",
+    "httpx2>=2.13.0",
+    "mashumaro>=3.23",
     "aiofiles",
     "magic-filter",
     "aiohttp",
     "async-property",
-    "typing_extensions>=4.15.0",
+    "typing_extensions>=4.16.0",
     "python-magic>=0.4.27 ; sys_platform != 'win32'",
     "python-magic-bin==0.4.14 ; sys_platform == 'win32'",
     "filetype",
@@ -57,10 +57,18 @@ dependencies = [
 ]
 
 [dependency-groups]
+dev = [
+    "ruff>=0.16.7",
+]
 
+test = [
+    "pytest>=8.4",
+    "anyio>=4.10",
+    "trio>=0.34.0",
+]
 docs = [
     "mkdocs==1.6.1",
-    "mkdocs-material==9.7.6",
+    "mkdocs-material[imaging]==9.7.7",
     "mkdocs-material-extensions==1.3.1",
     "mkdocstrings==1.0.4",
     "mike==2.2.0",
@@ -69,7 +77,6 @@ docs = [
     "mkdocs-macros-plugin==1.5.0",
     "mkdocstrings-python==2.0.5",
     "griffe-typingdoc==0.3.1",
-    "mkdocs-material[imaging]==9.7.6",
     "mkdocs-git-revision-date-localized-plugin==1.5.3"
 ]
 
@@ -89,3 +96,24 @@ Issues = "https://github.com/TrueConf/python-trueconf-bot/issues"
 version_file = "trueconf/_version.py"
 version_scheme = "guess-next-dev"
 local_scheme = "no-local-version"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "build",
+    "dist",
+    "__pycache__"
+]
+src = [".", "examples", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C90", "B", "BLE", "ERA", "UP007", "UP045", "RUF", "SIM", "C4", "ASYNC", "N", "A", "PT"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["trueconf"]
+combine-as-imports = true

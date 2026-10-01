@@ -33,6 +33,51 @@ icon: material/routes
 async def on_message(message): ...
 ```
 
+`@r.message()` получает только обычные пользовательские сообщения. Чтобы получать системные Envelope, включите
+`receive_system_messages` при создании бота и зарегистрируйте отдельный обработчик:
+
+```python
+from trueconf import Bot, F
+from trueconf.enums import MessageType
+from trueconf.types import SystemMessage
+
+bot = Bot(
+    server="video.example.net",
+    token="JWT-token",
+    receive_system_messages=True,
+)
+
+
+@r.system_message(F.type == MessageType.CLEAR_CHAT_HISTORY)
+async def on_history_cleared(message: SystemMessage):
+    print(message.content.for_all)
+```
+
+Системные Envelope могут присутствовать в результате `get_chat_history()` независимо от значения
+`receive_system_messages`.
+
+### Сообщение, на которое отправлен ответ
+
+Если входящее сообщение является ответом, его поле `reply_message` содержит непосредственно цитируемый объект
+`Message`:
+
+```python
+@r.message()
+async def on_message(message):
+    if message.reply_message is not None:
+        print(message.reply_message.text)
+```
+
+Сервер раскрывает только один уровень цепочки. Если цитируемое сообщение само было ответом, у него будет заполнен
+`reply_message_id`, но `reply_message` останется `None`. Следующий уровень можно загрузить отдельно:
+
+```python
+quoted = message.reply_message
+
+if quoted is not None and quoted.reply_message_id is not None:
+    previous = await bot.get_message_by_id(quoted.reply_message_id)
+```
+
 ### Поддержка фильтров
 
 Роутеры поддерживают фильтры на основе библиотеки [magic-filter](https://github.com/aiogram/magic-filter). Для этого используется объект `F`:
@@ -47,8 +92,10 @@ from trueconf import F
 === "Текстовое сообщение"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
-    
+
+
     @r.message(F.text)
     async def on_message(message): ...
     ```
@@ -56,7 +103,9 @@ from trueconf import F
 === "Изображение"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
+
 
     @r.message(F.photo)
     async def on_photo(message): ...
@@ -65,8 +114,10 @@ from trueconf import F
 === "Сообщение от пользователя"
     ```python hl_lines="4"
     from trueconf import Router, F
+
     r = Router()
-    
+
+
     @r.message(F.from_user.id == "elisa")
     async def on_elisa(message): ...
     ```
@@ -90,6 +141,7 @@ dp.include_router(r)
 
 ```python hl_lines="7 14"
 from trueconf import Bot, Router, Dispatcher
+
 r1 = Router()
 r2 = Router()
 r3 = Router()
@@ -111,7 +163,9 @@ bot = Bot(token="JWT-token", dispatcher=dp)
 
 ```python
 from trueconf import Router, F
+
 r = Router()
+
 
 @r.message(F.from_user.id == "elisa")
 async def on_elisa(message): ...
@@ -156,10 +210,10 @@ for router in dp.routers[:]:# (1)!
 
 ### Параллельные и дочерние роутеры
 
-Роутеры также могут быть: 
+Роутеры также могут быть:
 
-- параллельные, которые обрабатываются независимо друг от друга.
-- дочерние (зависимые), которые обрабатываются по цепочке. 
+- независимые корневые, которые последовательно получают одно и то же событие независимо от результата друг друга;
+- дочерние (зависимые), которые образуют упорядоченное дерево fallback-маршрутов.
 
 ![router_scheme_ru.svg](../img/router_scheme_ru.svg)
 
@@ -168,7 +222,7 @@ for router in dp.routers[:]:# (1)!
 1. Отправит на обработку в **Роутер 1**.
 2. Проверит условие первого обработчика **Хендлер 1**. Если он сработал, переходит к **Роутер 2**. 
 Если нет, то проверяет следующий обработчик **Хендлер 2**.
-3. В независимости от срабатывания обработчиков в **Роутере 1**, диспетчер переходит к выполнению **Роутер 2**. 
+3. Независимо от срабатывания обработчиков в **Роутере 1**, диспетчер переходит к выполнению **Роутера 2**.
 
 В **Роутер 2**, как мы видим, два дочерних роутера: **Роутер 2.3** является потомком **Роутер 2.2**, а **Роутер 2.2** является потомком **Роутер 2**.
 
@@ -179,9 +233,14 @@ for router in dp.routers[:]:# (1)!
 
 Таким образом обработчик **Хендлер 2** из **Роутера 2.3** сработает только в том случае, если никакой до него не сработал. 
 
+Если у одного родителя несколько дочерних роутеров, они проверяются в порядке подключения. Когда один из них или
+его потомков обрабатывает событие, остальные дочерние ветви этого родителя не проверяются. По умолчанию дочерние
+роутеры не вызываются после срабатывания родителя; `Router(allow_child_on_event=True)` разрешает такой переход.
+
 ## Приоритеты обработчиков
 
-* Роутеры и их обработчики проверяются в порядке подключения через Dispatcher.include_router().
+* Независимые корневые роутеры вызываются в порядке подключения через `Dispatcher.include_router()`, и каждый из них получает событие.
+* Дочерние роутеры проверяются в порядке подключения через `Router.include_router()` до первого обработавшего событие дерева.
 * Внутри одного роутера обработчики также идут по порядку объявления.
 * При первом совпадении фильтров обработчик выполняется, и дальнейшие совпадения не проверяются (поведение по умолчанию).
 
@@ -191,6 +250,7 @@ for router in dp.routers[:]:# (1)!
 @r.message(F.text == "Hello")
 async def handler1(message):
     await message.answer("Первый")
+
 
 @r.message(F.text == "Hello")
 async def handler2(message):
@@ -209,5 +269,3 @@ async def handler2(message):
 - Обычно роутеры выносят в отдельные модули (например, handlers/messages.py), а затем подключают их в главном модуле бота через include_router.
 - Это позволяет разделять обработчики по областям ответственности: сообщения, фото, командыа и т. д.
 - Диспетчер (Dispatcher) можно рассматривать как центральный управляющий компонент, объединяющий логику обработки всех событий.
-
-

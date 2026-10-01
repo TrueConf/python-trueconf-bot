@@ -1,8 +1,9 @@
-from trueconf import Bot
-from trueconf.exceptions import ApiErrorException
 import asyncio
 import logging
 from pathlib import Path
+
+from trueconf import Bot
+from trueconf.exceptions import ApiErrorException
 
 SERVER_ADDR = ""
 BOT_USERNAME = ""
@@ -26,6 +27,7 @@ logging.basicConfig(
     encoding="utf-8",
 )
 
+
 async def main():
     await bot.start()
     await bot.connected_event.wait()
@@ -43,6 +45,7 @@ async def main():
                         continue
 
     await bot.shutdown()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

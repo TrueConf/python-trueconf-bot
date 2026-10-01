@@ -12,16 +12,16 @@ from .removed_message import RemovedMessage
 from .uploading_progress import UploadingProgress
 
 __all__ = [
-    'AddedChatParticipant',
-    'ChangedFileUploadLimits',
-    'ChangedParticipantRole',
-    'CreatedChannel',
-    'CreatedGroupChat',
-    'CreatedPersonalChat',
-    'EditedChatTitle',
-    'EditedMessage',
-    'RemovedChat',
-    'RemovedChatParticipant',
-    'RemovedMessage',
-    'UploadingProgress',
+    "AddedChatParticipant",
+    "ChangedFileUploadLimits",
+    "ChangedParticipantRole",
+    "CreatedChannel",
+    "CreatedGroupChat",
+    "CreatedPersonalChat",
+    "EditedChatTitle",
+    "EditedMessage",
+    "RemovedChat",
+    "RemovedChatParticipant",
+    "RemovedMessage",
+    "UploadingProgress",
 ]

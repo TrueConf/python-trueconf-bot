@@ -43,13 +43,10 @@ await bot.send_document(
     chat_id="a1b2c3d4",
     file=FSInputFile("docs/report.pdf"),
     caption="📄 Annual report for **2025**",
-    parse_mode=ParseMode.MARKDOWN
+    parse_mode=ParseMode.MARKDOWN,
 )
 
-await bot.send_sticker(
-    chat_id="a1b2c3d4",
-    file=FSInputFile("stickers/cat.webp")
-)
+await bot.send_sticker(chat_id="a1b2c3d4", file=FSInputFile("stickers/cat.webp"))
 ```
 
 ### 🧠 BufferedInputFile
@@ -65,15 +62,9 @@ preview_bytes = open("preview.jpg", "rb").read()
 
 await bot.send_photo(
     chat_id="a1b2c3d4",
-    file=BufferedInputFile(
-        file=image_bytes,
-        filename="image.jpg"
-    ),
-    preview=BufferedInputFile(
-        file=preview_bytes,
-        filename="preview.jpg"
-    ),
-    caption="This is my photo"
+    file=BufferedInputFile(file=image_bytes, filename="image.jpg"),
+    preview=BufferedInputFile(file=preview_bytes, filename="preview.jpg"),
+    caption="This is my photo",
 )
 ```
 
@@ -129,19 +120,21 @@ It is recommended to use `.download()` because it:
 ```python
 @router.message(F.document)
 async def handle_doc(msg: Message):
-    await msg.document.download(dest_path="document.pdf")
+    await msg.document.download(file_path="document.pdf")
 ```
 
-!!! Notes The `dest_path` can be either relative or absolute.
+!!! Notes
+    The `file_path` can be either relative or absolute. Parent directories are
+    created automatically.
 
 The method `download_file_by_id(...)` is also available for more flexible control:
 
 ```python
-await bot.download_file_by_id(
-    file_id=msg.document.file_id, 
-    dest_path="document.pdf"
-)
+await bot.download_file_by_id(file_id=msg.document.file_id, file_path="document.pdf")
 ```
+
+The deprecated `dest_path` parameter is treated as a directory and appends the
+server file name. Use `file_path` for an exact output path.
 
 ## MIME Type Detection with python-magic
 
@@ -187,4 +180,3 @@ We also recommend reviewing the repository: [https://github.com/ahupp/python-mag
 ### Notes
 
 * When `python-magic` is available, the MIME type is detected **from the file bytes**, which is usually more accurate than detecting it by filename or extension.
-

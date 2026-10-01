@@ -70,10 +70,11 @@ dp.include_router(router)
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class Form(StatesGroup):
-    name = State()     # "Form:name"
-    age = State()      # "Form:age"
-    city = State()     # "Form:city"
+    name = State()  # "Form:name"
+    age = State()  # "Form:age"
+    city = State()  # "Form:city"
 ```
 
 Каждое состояние автоматически получает строковый идентифиатор в формате `ИмяГруппы:ИмяСостояния`. 
@@ -119,10 +120,13 @@ bot = Bot.from_credentials(
     dispatcher=dp,
 )
 
+
 async def main():
     await bot.run()
 
+
 import asyncio
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
@@ -142,11 +146,12 @@ if __name__ == "__main__":
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class OrderForm(StatesGroup):
-    product = State()    # "OrderForm:product"
-    quantity = State()   # "OrderForm:quantity"
-    address = State()    # "OrderForm:address"
-    confirm = State()    # "OrderForm:confirm"
+    product = State()  # "OrderForm:product"
+    quantity = State()  # "OrderForm:quantity"
+    address = State()  # "OrderForm:address"
+    confirm = State()  # "OrderForm:confirm"
 ```
 
 ### Несколько групп
@@ -162,9 +167,11 @@ class OrderForm(StatesGroup):
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class FeedbackForm(StatesGroup):
     rating = State()
     comment = State()
+
 
 class SupportTicket(StatesGroup):
     topic = State()
@@ -180,16 +187,17 @@ class SupportTicket(StatesGroup):
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class Registration(StatesGroup):
-    name = State()                       # "Registration:name"
-    age = State()                        # "Registration:age"
+    name = State()  # "Registration:name"
+    age = State()  # "Registration:age"
 
-    class Address(StatesGroup):          # вложенная группа
-        city = State()                   # "Registration.Address:city"
-        street = State()                 # "Registration.Address:street"
-        zip_code = State()               # "Registration.Address:zip_code"
+    class Address(StatesGroup):  # вложенная группа
+        city = State()  # "Registration.Address:city"
+        street = State()  # "Registration.Address:street"
+        zip_code = State()  # "Registration.Address:zip_code"
 
-    confirm = State()                    # "Registration:confirm"
+    confirm = State()  # "Registration:confirm"
 ```
 
 !!! Tip
@@ -232,7 +240,7 @@ class Registration(StatesGroup):
 
 === "Сохранить данные"
     ```python
-    await state.update_data(name="Иван", age=25)  
+    await state.update_data(name="Иван", age=25)
     ```
 
     `update_data()` добавляет новые данные к уже сохранённым. Если ключ уже существует, его значение будет обновлено.
@@ -240,7 +248,7 @@ class Registration(StatesGroup):
     Также можно передать данные через словарь:
     
     ```python
-    await state.update_data({"name": "Иван", "age": 25}) 
+    await state.update_data({"name": "Иван", "age": 25})
     ```
 
     Или совместить оба варианта:
@@ -254,18 +262,18 @@ class Registration(StatesGroup):
 
 === "Получить все данные"
     ```python
-    data = await state.get_data()   
+    data = await state.get_data()
     ```
 
     Метод возвращает словарь со всеми сохранёнными данными:
 
     ```python
-    {"name": "Иван","age": 25} 
+    {"name": "Иван", "age": 25}
     ```
 
 === "Получить одно значение"
     ```python
-    name = await state.get_value("name") 
+    name = await state.get_value("name")
     # "Иван"
     ```
 
@@ -279,7 +287,7 @@ class Registration(StatesGroup):
 
 === "Обновить все данные"
     ```python
-     await state.set_data({"name": "Пётр"})     
+    await state.set_data({"name": "Пётр"})
     ```
 
     Полностью заменяет все сохранённые данные новым словарём. Предыдущие данные будут удалены.
@@ -291,9 +299,9 @@ class Registration(StatesGroup):
 ```python
 from trueconf.fsm import StateFilter
 
+
 @router.message(StateFilter(Form.name))
-async def process_name(msg: Message, state: FSMContext):
-    ...
+async def process_name(msg: Message, state: FSMContext): ...
 ```
 
 Для удобства мы сделали так, чтобы можно быдл передавать объект `State` напрямую в декоратор. Библиотека автоматически воспринимает его как `StateFilter`, поэтому следующие варианты эквивалентны:
@@ -311,8 +319,7 @@ async def process_name(msg: Message, state: FSMContext): ...
 
 ```python
 @router.message(Form.name, Form.age)
-async def process_name_or_age(msg: Message, state: FSMContext):
-    ...
+async def process_name_or_age(msg: Message, state: FSMContext): ...
 ```
 
 Для пользователей без активного диалога можно использовать `StateFilter(None)`. 
@@ -320,6 +327,7 @@ async def process_name_or_age(msg: Message, state: FSMContext):
 
 ```python
 from trueconf.fsm import StateFilter
+
 
 @router.message(StateFilter(None))
 async def no_active_state(msg: Message, state: FSMContext):
@@ -330,6 +338,7 @@ async def no_active_state(msg: Message, state: FSMContext):
 
 ```python
 from trueconf.fsm import any_state
+
 
 @router.message(any_state)
 async def catch_all(msg: Message, state: FSMContext):
@@ -358,6 +367,7 @@ async def confirm_yes(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer(f"Готово, {data['name']}!")
 
+
 @router.message(Form.confirm, Command("no"))
 async def confirm_no(msg: Message, state: FSMContext):
     await state.clear()
@@ -377,9 +387,9 @@ async def confirm_no(msg: Message, state: FSMContext):
         await state.clear()
         await msg.answer("Отменено.")
 
+
     @router.message(Form.name)
-    async def process_name(msg: Message, state: FSMContext):
-        ...
+    async def process_name(msg: Message, state: FSMContext): ...
     ```
 
 ## Валидация ввода
@@ -426,6 +436,7 @@ dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
 ```python
 from trueconf.fsm.storage.base import BaseStorage
 from trueconf.fsm.key_builder import StorageKey
+
 
 class MyCustomStorage(BaseStorage):
     async def get_state(self, key: StorageKey) -> str | None: ...

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.send_survey_response import SendSurveyResponse
 
@@ -35,6 +36,6 @@ class SendSurvey(TrueConfMethod[SendSurveyResponse]):
                 "description": self.description,
                 "buttonText": self.button_text,
                 "secret": self.secret,
-                "alt": f"📊 <a href='https://{self.server}/webtools/survey?id={self.path}&error=autologin_not_supported'>{self.title}</a>"
-            }
+                "alt": f"📊 <a href='https://{self.server}/webtools/survey?id={self.path}&error=autologin_not_supported'>{self.title}</a>",
+            },
         }

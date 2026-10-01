@@ -70,10 +70,11 @@ Create a class that inherits from `StatesGroup` and declare states in it as attr
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class Form(StatesGroup):
-    name = State()     # "Form:name"
-    age = State()      # "Form:age"
-    city = State()     # "Form:city"
+    name = State()  # "Form:name"
+    age = State()  # "Form:age"
+    city = State()  # "Form:city"
 ```
 
 Each state automatically receives a string identifier in the `GroupName:StateName` format. 
@@ -119,10 +120,13 @@ bot = Bot.from_credentials(
     dispatcher=dp,
 )
 
+
 async def main():
     await bot.run()
 
+
 import asyncio
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
@@ -142,11 +146,12 @@ if __name__ == "__main__":
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class OrderForm(StatesGroup):
-    product = State()    # "OrderForm:product"
-    quantity = State()   # "OrderForm:quantity"
-    address = State()    # "OrderForm:address"
-    confirm = State()    # "OrderForm:confirm"
+    product = State()  # "OrderForm:product"
+    quantity = State()  # "OrderForm:quantity"
+    address = State()  # "OrderForm:address"
+    confirm = State()  # "OrderForm:confirm"
 ```
 
 ### Multiple groups
@@ -162,9 +167,11 @@ This prevents states from different dialogs from being mixed together and keeps 
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class FeedbackForm(StatesGroup):
     rating = State()
     comment = State()
+
 
 class SupportTicket(StatesGroup):
     topic = State()
@@ -180,16 +187,17 @@ For example, during registration, you can move the address into a separate neste
 ```python
 from trueconf.fsm import State, StatesGroup
 
+
 class Registration(StatesGroup):
-    name = State()                       # "Registration:name"
-    age = State()                        # "Registration:age"
+    name = State()  # "Registration:name"
+    age = State()  # "Registration:age"
 
-    class Address(StatesGroup):          # nested group
-        city = State()                   # "Registration.Address:city"
-        street = State()                 # "Registration.Address:street"
-        zip_code = State()               # "Registration.Address:zip_code"
+    class Address(StatesGroup):  # nested group
+        city = State()  # "Registration.Address:city"
+        street = State()  # "Registration.Address:street"
+        zip_code = State()  # "Registration.Address:zip_code"
 
-    confirm = State()                    # "Registration:confirm"
+    confirm = State()  # "Registration:confirm"
 ```
 
 !!! Tip
@@ -232,7 +240,7 @@ In addition to the state — that is, the step the user is currently on — FSM 
 
 === "Save data"
     ```python
-    await state.update_data(name="Ivan", age=25)  
+    await state.update_data(name="Ivan", age=25)
     ```
 
     `update_data()` adds new data to the data that has already been saved. If a key already exists, its value will be updated.
@@ -240,7 +248,7 @@ In addition to the state — that is, the step the user is currently on — FSM 
     You can also pass data as a dictionary:
     
     ```python
-    await state.update_data({"name": "Ivan", "age": 25}) 
+    await state.update_data({"name": "Ivan", "age": 25})
     ```
 
     Or combine both approaches:
@@ -254,18 +262,18 @@ In addition to the state — that is, the step the user is currently on — FSM 
 
 === "Get all data"
     ```python
-    data = await state.get_data()   
+    data = await state.get_data()
     ```
 
     The method returns a dictionary with all saved data:
 
     ```python
-    {"name": "Ivan","age": 25} 
+    {"name": "Ivan", "age": 25}
     ```
 
 === "Get one value"
     ```python
-    name = await state.get_value("name") 
+    name = await state.get_value("name")
     # "Ivan"
     ```
 
@@ -279,7 +287,7 @@ In addition to the state — that is, the step the user is currently on — FSM 
 
 === "Update all data"
     ```python
-     await state.set_data({"name": "Peter"})     
+    await state.set_data({"name": "Peter"})
     ```
 
     Completely replaces all saved data with a new dictionary. Previous data will be deleted.
@@ -291,9 +299,9 @@ To make a handler run only at a specific step of the dialog, use `StateFilter`. 
 ```python
 from trueconf.fsm import StateFilter
 
+
 @router.message(StateFilter(Form.name))
-async def process_name(msg: Message, state: FSMContext):
-    ...
+async def process_name(msg: Message, state: FSMContext): ...
 ```
 
 For convenience, we made it possible to pass a `State` object directly to the decorator. The library automatically treats it as a `StateFilter`, so the following options are equivalent:
@@ -311,8 +319,7 @@ If the same handler should work in several states at once, pass them separated b
 
 ```python
 @router.message(Form.name, Form.age)
-async def process_name_or_age(msg: Message, state: FSMContext):
-    ...
+async def process_name_or_age(msg: Message, state: FSMContext): ...
 ```
 
 For users without an active dialog, use `StateFilter(None)`. 
@@ -320,6 +327,7 @@ This handler will run only if the state has not been set yet or has already been
 
 ```python
 from trueconf.fsm import StateFilter
+
 
 @router.message(StateFilter(None))
 async def no_active_state(msg: Message, state: FSMContext):
@@ -330,6 +338,7 @@ If you need to handle a message regardless of the current state, use `any_state`
 
 ```python
 from trueconf.fsm import any_state
+
 
 @router.message(any_state)
 async def catch_all(msg: Message, state: FSMContext):
@@ -358,6 +367,7 @@ async def confirm_yes(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer(f"Done, {data['name']}!")
 
+
 @router.message(Form.confirm, Command("no"))
 async def confirm_no(msg: Message, state: FSMContext):
     await state.clear()
@@ -377,9 +387,9 @@ async def confirm_no(msg: Message, state: FSMContext):
         await state.clear()
         await msg.answer("Cancelled.")
 
+
     @router.message(Form.name)
-    async def process_name(msg: Message, state: FSMContext):
-        ...
+    async def process_name(msg: Message, state: FSMContext): ...
     ```
 
 ## Input validation
@@ -426,6 +436,7 @@ dp = Dispatcher(storage=MemoryStorage(), strategy=FSMStrategy.CHAT)
 ```python
 from trueconf.fsm.storage.base import BaseStorage
 from trueconf.fsm.key_builder import StorageKey
+
 
 class MyCustomStorage(BaseStorage):
     async def get_state(self, key: StorageKey) -> str | None: ...

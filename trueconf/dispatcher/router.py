@@ -1,13 +1,15 @@
 from __future__ import annotations
-import asyncio
-import logging
+
 import inspect
-from typing import TYPE_CHECKING, Callable, Awaitable, Dict, List, Tuple, Any, Union
+import logging
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, List, Tuple, Union
+
 from magic_filter import MagicFilter
-from trueconf.filters.base import Event
-from trueconf.filters.base import Filter
+
+from trueconf.filters.base import Event, Filter
 from trueconf.filters.instance_of import InstanceOfFilter
-from trueconf.filters.method import MethodFilter
+from trueconf.filters.raw_update import RawUpdateFilter
+from trueconf.types.callback_query import CallbackQuery
 from trueconf.types.message import Message
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
 from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
@@ -24,6 +26,7 @@ from trueconf.types.requests.removed_chat import RemovedChat
 from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
 from trueconf.types.requests.removed_message import RemovedMessage
 from trueconf.types.requests.uploading_progress import UploadingProgress
+from trueconf.types.system_message import SystemMessage
 
 if TYPE_CHECKING:
     from trueconf.middleware import BaseMiddleware
@@ -36,34 +39,35 @@ FilterLike = Union[Filter, MagicFilter, Callable[[Event], bool], Callable[[Event
 
 class Router:
     """
-        Event router for handling incoming events in a structured and extensible way.
+    Event router for handling incoming events in a structured and extensible way.
 
-        A `Router` allows you to register event handlers with specific filters,
-        such as message types, chat events, or custom logic.
+    A `Router` allows you to register event handlers with specific filters,
+    such as message types, chat events, or custom logic.
 
-        You can also include nested routers using `include_router()` to build modular and reusable event structures.
+    You can also include nested routers using `include_router()` to build modular and reusable event structures.
 
-        Handlers can be registered for:
+    Handlers can be registered for:
 
-        - Messages (`@<router>.message(...)`)
-        - Chat creation events (`@<router>.created_personal_chat()`, `@<router>.created_group_chat()`, `@<router>.created_channel()`)
-        - Participant events (`@<router>.added_chat_participant()`, `@<router>.removed_chat_participant()`)
-        - Message lifecycle events (`@<router>.edited_message()`, `@<router>.removed_message()`)
-        - File upload events (`@<router>.uploading_progress()`)
-        - Removed chats (`@<router>.removed_chat()`)
+    - Messages (`@<router>.message(...)`)
+    - System messages (`@<router>.system_message(...)`)
+    - Chat creation events (`@<router>.created_personal_chat()`, `@<router>.created_group_chat()`, `@<router>.created_channel()`)
+    - Participant events (`@<router>.added_chat_participant()`, `@<router>.removed_chat_participant()`)
+    - Message lifecycle events (`@<router>.edited_message()`, `@<router>.removed_message()`)
+    - File upload events (`@<router>.uploading_progress()`)
+    - Removed chats (`@<router>.removed_chat()`)
 
-        Example:
+    Example:
 
-        ```python
-        router = Router()
+    ```python
+    router = Router()
 
-        @router.message(F.text == "hello")
-        async def handle_hello(msg: Message):
-            await msg.answer("Hi there!")
-        ```
+    @router.message(F.text == "hello")
+    async def handle_hello(msg: Message):
+        await msg.answer("Hi there!")
+    ```
 
-        If you have multiple routers, use `.include_router()` to add them to a parent router.
-        """
+    If you have multiple routers, use `.include_router()` to add them to a parent router.
+    """
 
     def __init__(
         self,
@@ -96,9 +100,7 @@ class Router:
         chain.reverse()
         return chain
 
-    def _collect_middlewares(
-        self, attr: str
-    ) -> List["BaseMiddleware"]:
+    def _collect_middlewares(self, attr: str) -> List["BaseMiddleware"]:
         """Collect middlewares from ancestors → self."""
         result: list[BaseMiddleware] = []
         for router in self._ancestors_with_self():
@@ -118,10 +120,8 @@ class Router:
         # Sugar: State instances are auto-wrapped with StateFilter
         from trueconf.fsm.filters import StateFilter
         from trueconf.fsm.state import State
-        filters = tuple(
-            StateFilter(f) if isinstance(f, State) else f
-            for f in filters
-        )
+
+        filters = tuple(StateFilter(f) if isinstance(f, State) else f for f in filters)
 
         def decorator(func: Handler):
             async def async_wrapper(evt: Event, **kwargs: Any):
@@ -135,7 +135,7 @@ class Router:
 
         return decorator
 
-    async def _feed(self, event: Event, data: Dict[str, Any]) -> bool:
+    async def _feed(self, event: Event, data: Dict[str, Any]) -> bool:  # noqa: C901
         """Feed an incoming event to the router and invoke the first matching handler.
 
         Pipeline:
@@ -159,7 +159,7 @@ class Router:
             for flts, handler in self._handlers:
                 if not flts:
                     handler_found = True
-                    self._spawn(handler, evt, "<none>")
+                    await self._run_handler(handler, evt, "<none>")
                     return
 
                 matched = True
@@ -177,21 +177,23 @@ class Router:
                         break
 
                     if isinstance(result, dict):
+                        evt = result.pop("event", evt)
                         kwargs.update(result)
 
                 if matched:
                     handler_found = True
                     filters_str = ", ".join(
-                        getattr(f, "__name__", type(f).__name__) if callable(f) else type(f).__name__
-                        for f in flts
+                        getattr(f, "__name__", type(f).__name__) if callable(f) else type(f).__name__ for f in flts
                     )
 
                     # Merge data dict (bot, state, etc.) with filter-returned kwargs
                     all_kwargs: dict[str, Any] = {**ctx, **kwargs}
 
                     # --- build inner chain: inner_mw → handler ---
-                    async def _inner_base(ievt: Event, ictx: Dict[str, Any]) -> None:
-                        self._spawn(handler, ievt, filters_str, **all_kwargs)
+                    async def _inner_base(
+                        ievt: Event, ictx: Dict[str, Any], _h=handler, _fs=filters_str, _ak=all_kwargs
+                    ) -> None:
+                        await self._run_handler(_h, ievt, _fs, **_ak)
 
                     inner_chain: Callable[[Event, Dict[str, Any]], Awaitable[None]] = _inner_base
                     for mw in reversed(self._collect_middlewares("_inner_middlewares")):
@@ -224,20 +226,24 @@ class Router:
     ) -> Callable[[Event, Dict[str, Any]], Awaitable[None]]:
         async def wrapped(evt: Event, ctx: Dict[str, Any]) -> None:
             await mw(nxt, evt, ctx)
+
         return wrapped
 
-    def _spawn(self, handler: Handler, event: Event, filters_str: str, **kwargs: dict[str, Any]):
-        """Internal method to spawn a task for executing the matched handler."""
+    async def _run_handler(
+        self,
+        handler: Handler,
+        event: Event,
+        filters_str: str,
+        **kwargs: Any,
+    ) -> None:
+        """Run a matched handler as part of the current update task."""
         name = getattr(handler, "__name__", "<handler>")
         logger.info(f"[router:{self.name}] matched handler={name} filters=[{filters_str}]")
 
-        async def _run():
-            try:
-                await handler(event, **kwargs)
-            except Exception as e:
-                logger.exception(f"Handler {name} failed: {e}")
-
-        asyncio.create_task(_run())
+        try:
+            await handler(event, **kwargs)
+        except Exception as e:
+            logger.exception(f"Handler {name} failed: {e}")
 
     async def _apply_filter(self, f: Filter | Any, event: Event, data: dict[str, Any] | None = None) -> bool:
         """Evaluate a filter against the event, passing matching kwargs from data."""
@@ -285,21 +291,35 @@ class Router:
         router._parent = self
         self._subrouters.append(router)
 
-    def event(self, method: str, *filters: FilterLike):
+    def event(self, method: str | None = None, *filters: FilterLike):
         """
-            Register a handler for a generic event type, filtered by method name.
+        Register a raw handler for incoming updates, filtered by method name.
 
-            Examples:
-                >>> @r.event(F.method == "SendMessage")
-                >>> async def handle_message(msg: Message): ...
+        Handlers receive the full raw envelope as ``trueconf.types.Update``
+        (``method``, ``type``, ``id``, ``payload``). Typed decorators
+        (``@r.callback_query()``, ``@r.message()``, ...) receive typed objects.
+
+        Examples:
+            >>> @r.event()                 # ловит все сырые апдейты
+            >>> async def raw_all(event: Update): ...
+
+            >>> @r.event("command")        # только нажатия кнопок
+            >>> async def raw_command(event: Update): ...
 
         """
-        mf = MethodFilter(method)
-        return self._register((mf, *filters))
+        return self._register((RawUpdateFilter(method), *filters))
 
     def message(self, *filters: FilterLike):
         """Register a handler for incoming `Message` events."""
         return self._register((InstanceOfFilter(Message), *filters))
+
+    def callback_query(self, *filters: FilterLike):
+        """Register a handler for incoming `CallbackQuery` events."""
+        return self._register((InstanceOfFilter(CallbackQuery), *filters))
+
+    def system_message(self, *filters: FilterLike):
+        """Register a handler for incoming `SystemMessage` events."""
+        return self._register((InstanceOfFilter(SystemMessage), *filters))
 
     def uploading_progress(self, *filters: FilterLike):
         """Register a handler for file uploading progress events."""
@@ -307,102 +327,102 @@ class Router:
 
     def changed_participant_role(self, *filters: FilterLike):
         """
-            **Requires TrueConf Server 5.5.2+**
-            Registers a handler for participant role change events in chats.
+        **Requires TrueConf Server 5.5.2+**
+        Registers a handler for participant role change events in chats.
 
-            This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
-            or conference chat. Used with the `ChangedParticipantRole` event type.
+        This handler is triggered when a user's role is changed in a personal chat, group chat, channel,
+        or conference chat. Used with the `ChangedParticipantRole` event type.
 
-            Source:
-                https://trueconf.com/docs/chatbot-connector/en/chats/#changedParticipantRole
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#changedParticipantRole
 
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+        Args:
+            *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
-            Returns:
-                Callable: A decorator function for registering the handler.
+        Returns:
+            Callable: A decorator function for registering the handler.
 
-            Example:
-                ```python
-                from trueconf.enums import ChatParticipantRole as role
-                from trueconf.types import ChangedParticipantRole
+        Example:
+            ```python
+            from trueconf.enums import ChatParticipantRole as role
+            from trueconf.types import ChangedParticipantRole
 
-                @router.changed_participant_role()
-                async def on_role_changed(event: ChangedParticipantRole):
-                    if event.role == role.admin:
-                        print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
-                ```
-            """
+            @router.changed_participant_role()
+            async def on_role_changed(event: ChangedParticipantRole):
+                if event.role == role.admin:
+                    print(f"{event.user_id} has been promoted to admin in chat {event.chat_id}")
+            ```
+        """
         return self._register((InstanceOfFilter(ChangedParticipantRole), *filters))
 
     def changed_file_upload_limits(self, *filters: FilterLike):
         """
 
-            **Requires TrueConf Server 5.5.3+**
-            Registers a handler for file upload limits change events.
+        **Requires TrueConf Server 5.5.3+**
+        Registers a handler for file upload limits change events.
 
-            This handler is triggered when the server's file upload restrictions are updated.
-            The event is represented by the `ChangedFileUploadLimits` type and may include:
+        This handler is triggered when the server's file upload restrictions are updated.
+        The event is represented by the `ChangedFileUploadLimits` type and may include:
 
-            - `max_size` — the maximum allowed file size in bytes (`1 MB = 1000 bytes`).
-              If the size limit is disabled, the value is `None`.
-            - `extensions` — file extension restrictions. If extension filtering is disabled,
-              the value is `None`.
+        - `max_size` — the maximum allowed file size in bytes (`1 MB = 1000 bytes`).
+          If the size limit is disabled, the value is `None`.
+        - `extensions` — file extension restrictions. If extension filtering is disabled,
+          the value is `None`.
 
-            If `extensions` is provided, it contains:
-            - `mode` — restriction mode:
-              - `block` — blocked extensions (blacklist)
-              - `allow` — allowed extensions (whitelist)
-            - `list` — list of file extensions.
+        If `extensions` is provided, it contains:
+        - `mode` — restriction mode:
+          - `block` — blocked extensions (blacklist)
+          - `allow` — allowed extensions (whitelist)
+        - `list` — list of file extensions.
 
-            Source:
-                https://trueconf.com/docs/chatbot-connector/en/files/#newFileUploadLimits
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/files/#newFileUploadLimits
 
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+        Args:
+            *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
-            Returns:
-                Callable: A decorator function for registering the handler.
+        Returns:
+            Callable: A decorator function for registering the handler.
 
-            Example:
-                ```python
-                from trueconf.types import ChangedFileUploadLimits
-                @router.changed_file_upload_limits()
-                async def on_limits_changed(event: ChangedFileUploadLimits):
-                    print(f"Max file size: {event.max_size}")
-                    if event.extensions:
-                        print(f"Mode: {event.extensions.mode}")
-                        print(f"Extensions: {event.extensions.list}")
-                ```
+        Example:
+            ```python
+            from trueconf.types import ChangedFileUploadLimits
+            @router.changed_file_upload_limits()
+            async def on_limits_changed(event: ChangedFileUploadLimits):
+                print(f"Max file size: {event.max_size}")
+                if event.extensions:
+                    print(f"Mode: {event.extensions.mode}")
+                    print(f"Extensions: {event.extensions.list}")
+            ```
         """
         return self._register((InstanceOfFilter(ChangedFileUploadLimits), *filters))
 
     def cleared_chat_history(self, *filters: FilterLike):
         """
-            **Requires TrueConf Server 5.5.3+**
-            Registers a handler for chat history clearing events.
+        **Requires TrueConf Server 5.5.3+**
+        Registers a handler for chat history clearing events.
 
-            This handler is triggered when the message history of a chat is cleared.
-            Used with the `ClearedChatHistory` event type.
+        This handler is triggered when the message history of a chat is cleared.
+        Used with the `ClearedChatHistory` event type.
 
-            Source:
-                https://trueconf.com/docs/chatbot-connector/en/chats/#clearedHistory
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#clearedHistory
 
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+        Args:
+            *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
-            Returns:
-                Callable: A decorator function for registering the handler.
+        Returns:
+            Callable: A decorator function for registering the handler.
 
-            Example:
-                ```python
-                from trueconf.types import ClearedChatHistory
-                @router.cleared_chat_history()
-                async def on_history_cleared(event: ClearedChatHistory):
-                    print(f"History was cleared in chat {event.chat_id}. For all: {event.for_all}")
+        Example:
+            ```python
+            from trueconf.types import ClearedChatHistory
+            @router.cleared_chat_history()
+            async def on_history_cleared(event: ClearedChatHistory):
+                print(f"History was cleared in chat {event.chat_id}. For all: {event.for_all}")
 
-                ```
-            """
+            ```
+        """
         return self._register((InstanceOfFilter(ClearedChatHistory), *filters))
 
     def created_personal_chat(self, *filters: FilterLike):
@@ -440,56 +460,56 @@ class Router:
     def edited_chat_avatar(self, *filters: FilterLike):
         """
 
-            **Requires TrueConf Server 5.5.3+**
-            Registers a handler for chat avatar edit events.
+        **Requires TrueConf Server 5.5.3+**
+        Registers a handler for chat avatar edit events.
 
-            This handler is triggered when a chat avatar is changed.
-            Used with the `EditedChatAvatar` event type.
+        This handler is triggered when a chat avatar is changed.
+        Used with the `EditedChatAvatar` event type.
 
-            Source:
-                https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatAvatar
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatAvatar
 
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+        Args:
+            *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
-            Returns:
-                Callable: A decorator function for registering the handler.
+        Returns:
+            Callable: A decorator function for registering the handler.
 
-            Example:
-                ```python
-                from trueconf.types import EditedChatAvatar
-                @router.edited_chat_avatar()
-                async def on_avatar_changed(event: EditedChatAvatar):
-                    print(f"Avatar was updated in chat {event.chat_id}")
-                    print(f"New avatar: {event.avatar_url}")
-                ```
+        Example:
+            ```python
+            from trueconf.types import EditedChatAvatar
+            @router.edited_chat_avatar()
+            async def on_avatar_changed(event: EditedChatAvatar):
+                print(f"Avatar was updated in chat {event.chat_id}")
+                print(f"New avatar: {event.avatar_url}")
+            ```
         """
         return self._register((InstanceOfFilter(EditedChatAvatar), *filters))
 
     def edited_chat_title(self, *filters: FilterLike):
         """
-            **Requires TrueConf Server 5.5.3+**
-            Registers a handler for chat title edit events.
+        **Requires TrueConf Server 5.5.3+**
+        Registers a handler for chat title edit events.
 
-            This handler is triggered when a chat title is changed.
-            Used with the `EditedChatTitle` event type.
+        This handler is triggered when a chat title is changed.
+        Used with the `EditedChatTitle` event type.
 
-            Source:
-                https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatTitle
+        Source:
+            https://trueconf.com/docs/chatbot-connector/en/chats/#editedChatTitle
 
-            Args:
-                *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
+        Args:
+            *filters (FilterLike): Optional filters to apply to the event. Multiple filters can be specified.
 
-            Returns:
-                Callable: A decorator function for registering the handler.
+        Returns:
+            Callable: A decorator function for registering the handler.
 
-            Example:
-                ```python
-                from trueconf.types import EditedChatTitle
-                @router.edited_chat_title()
-                async def on_title_changed(event: EditedChatTitle):
-                    print(f"Chat {event.chat_id} has a new title: {event.title}")
-                ```
+        Example:
+            ```python
+            from trueconf.types import EditedChatTitle
+            @router.edited_chat_title()
+            async def on_title_changed(event: EditedChatTitle):
+                print(f"Chat {event.chat_id} has a new title: {event.title}")
+            ```
         """
         return self._register((InstanceOfFilter(EditedChatTitle), *filters))
 
