@@ -13,8 +13,7 @@ class State:
     def bind(self, group: type[StatesGroup], name: str) -> None:
         if self._group is not None or self._name is not None:
             raise RuntimeError(
-                f"State '{self._name}' is already bound to {self._group}. "
-                f"Cannot rebind to {group.__name__}:{name}."
+                f"State '{self._name}' is already bound to {self._group}. Cannot rebind to {group.__name__}:{name}."
             )
         self._group = group
         self._name = name
@@ -66,11 +65,7 @@ class _StatesGroupMeta(type):
             if isinstance(value, State):
                 value.bind(cls, key)
                 states.append(value)
-            elif (
-                inspect.isclass(value)
-                and issubclass(value, StatesGroup)
-                and value is not StatesGroup
-            ):
+            elif inspect.isclass(value) and issubclass(value, StatesGroup) and value is not StatesGroup:
                 child = cls._prepare_child(value)
                 childs.append(child)
 

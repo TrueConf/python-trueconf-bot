@@ -23,7 +23,7 @@ pip install {{product_name}}
 ```
 
 !!! info
-    После установки будут автоматически подтянуты зависимости: `websockets`, `httpx`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.
+    После установки будут автоматически подтянуты зависимости: `websockets`, `httpx2`, `mashumaro`, `pillow`, `aiofiles`, `magic-filter`.
 
 ## Первое создание простого эхо-бота
 
@@ -42,7 +42,7 @@ dp = Dispatcher()
 # dp.include_router(r)
 ```
 
-Бот поддерживает два типа авторизации: по токену или по логину и паролю. Вы можете выбрать наиболее удобный способ.
+Бот поддерживает три типа авторизации: по токену, по логину и паролю или через OAuth2. Вы можете выбрать наиболее удобный способ. Подробнее — в разделе [Авторизация](authentication.md).
 
 ### Авторизация по токену
 
@@ -67,17 +67,23 @@ bot = Bot(server="video.example.com", token=TOKEN, dispatcher=dp)
 Для этого используйте метод `.from_credentials`:
 
 ```python
-bot = Bot.from_credentials(
-    username="echo_bot",
-    password="123tr",
-    server="10.110.2.240",
-    dispatcher=dp
-)
+bot = Bot.from_credentials(username="echo_bot", password="123tr", server="10.110.2.240", dispatcher=dp)
 ```
 
 !!! info
     При каждом вызове **from_credentials()** бот обращается к серверу за получением нового токена.
     Срок жизни каждого токена — 1 месяц.
+
+### Авторизация при выключенном логине и пароле
+
+Если на сервере по требованиям безопасности отключена авторизация по логину и паролю, бот авторизуется через OAuth-приложение методом `.from_oauth`. Помимо логина и пароля потребуется `client_id` приложения:
+
+```python
+bot = Bot.from_oauth(username="elisa", password="123tr", client_id="client_id_приложения", server="10.110.2.240", dispatcher=dp)
+```
+
+!!! Tip
+    Подробнее о способах авторизации, требованиях, параметрах и ошибках — в разделе [Авторизация](authentication.md).
 
 ### Обработчик сообщений
 
@@ -96,7 +102,8 @@ async def echo(message: Message):
 ```python
 async def main():
     await bot.run()
-    
+
+
 import asyncio
 
 if __name__ == "__main__":
@@ -268,4 +275,3 @@ def health():
 ```
 
 В такой схеме бот сообщает об изменениях через callback, а внешняя система мониторинга получает актуальный статус через HTTP-запрос.
-

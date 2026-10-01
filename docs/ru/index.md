@@ -1,5 +1,5 @@
 ---
-title: Главная
+title: Введение
 description: Как создавать чат-ботов для TrueConf Server на Python
 icon: material/home-variant
 ---
@@ -32,7 +32,7 @@ pip install {{product_name}}
 | Фильтрация сообщений    | `F.text`, `F.photo`, `F.document`              | `F.text`, `F.photo`, `F.document`                                                         |
 | Magic-filter            | ✅                                              | ✅                                                                                         |
 | Алиасы (шорткаты)       | `message.answer()`, `message.reply()`          | `message.answer()`, `message.reply()`                                                     |
-| Инициализация бота      | `Bot(token="...")`                             | `Bot(server,token="...")` или `Bot.from_credentials(server, login, password)`             |
+| Инициализация бота      | `Bot(token="...")`                             | `Bot(server, token="...")`, `Bot.from_credentials(server, login, password)` или `Bot.from_oauth(server, login, password, client_id)` |
 | JSON → Python           | Pydantic models                                | Mashumaro dataclasses                                                                     |
 | Транспорт               | HTTPS + long polling / webhook                 | Асинхронный WebSocket                                                                     |
 | Работа с файлами        | `bot.get_file(...)` + `bot.download_file(...)` | `message.photo.download()`, `message.document.download()`, `bot.download_file_by_id(...)` |

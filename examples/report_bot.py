@@ -9,8 +9,8 @@ You can use built-in modules, and third-party libraries if needed.
 
 import asyncio
 import uuid
-import trueconf
-from trueconf import *
+
+from trueconf import Bot, Dispatcher, F, Message, Router
 from trueconf.filters import Command
 
 r1 = Router()
@@ -20,23 +20,20 @@ dp.include_router(r1)
 router_list_for_report = {}
 list_message_for_report = {}
 
-bot = trueconf.Bot.from_credentials(
-    server="10.110.2.241",
-    username="report_bot",
-    password="123tr",
-    dispatcher=dp,
-    https=True,
-    verify_ssl=False)
+bot = Bot.from_credentials(
+    server="10.110.2.241", username="report_bot", password="123tr", dispatcher=dp, https=True, verify_ssl=False
+)
+
 
 async def handle_report(msg: Message):
-    if msg.from_user.id in router_list_for_report.keys():
+    if msg.from_user.id in router_list_for_report:
         list_message_for_report[msg.from_user.id].append(msg)
         await msg.answer("The message has been added to the report.")
 
 
 @r1.message(Command("report"))
 async def on_report(msg: Message):
-    number = uuid.uuid4() # генерация номера обращения с помощью uuid
+    number = uuid.uuid4()  # генерация номера обращения с помощью uuid
     await msg.answer(f"Your ticket number is {number}. All subsequent messages will be added to this ticket.")
     r = Router(name=str(number))
     dp.include_router(r)
@@ -47,7 +44,7 @@ async def on_report(msg: Message):
 
 @r1.message(Command("cancel"))
 async def on_cancel(msg: Message):
-    if msg.from_user.id in router_list_for_report.keys():
+    if msg.from_user.id in router_list_for_report:
         for router in dp.routers:
             if router.name == router_list_for_report[msg.from_user.id].name:
                 dp.routers.remove(router)
@@ -59,7 +56,7 @@ async def on_cancel(msg: Message):
         await msg.answer("You don’t have an active report.")
 
 
-def build_message_and_send_email(messages:list):
+def build_message_and_send_email(messages: list):
     """
     In Python, there are built-in libraries for working with email messages:
     https://docs.python.org/3/library/email.examples.html
@@ -73,15 +70,16 @@ def build_message_and_send_email(messages:list):
                 # You can put the text into the email body
             case MessageType.ATTACHMENT:
                 # Download the files from TrueConf Server via:
-                # msg.download(dest_path="path/to/file")
+                # msg.download(file_path="path/to/file")
 
     Once the email is assembled correctly, send it using the smtplib module:
     https://docs.python.org/3/library/smtplib.html#smtp-example
     """
 
+
 @r1.message(Command("send"))
 async def send_report(msg: Message):
-    if msg.from_user.id in router_list_for_report.keys():
+    if msg.from_user.id in router_list_for_report:
         if build_message_and_send_email(list_message_for_report[msg.from_user.id]):
             await msg.answer("Your request has been successfully submitted to Technical Support.")
         else:
@@ -89,6 +87,7 @@ async def send_report(msg: Message):
     else:
         await msg.answer("You don’t have an active report.")
         return
+
 
 if __name__ == "__main__":
     asyncio.run(bot.run())

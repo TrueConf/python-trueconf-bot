@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from mashumaro import DataClassDictMixin
+
 from trueconf.client.context_controller import BoundToBot
 
 

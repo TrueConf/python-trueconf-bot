@@ -18,10 +18,8 @@ class FSMMiddleware(BaseMiddleware):
     ) -> None:
         bot = data.get("bot")
         if bot is not None:
-            chat_id = (
-                getattr(event, "chat_id", None)
-                or getattr(getattr(event, "chat", None), "id", None)
-            )
+            chat = getattr(event, "chat", None)
+            chat_id = (getattr(chat, "chat_id", None) if chat is not None else None) or getattr(event, "chat_id", None)
             user = getattr(event, "from_user", None) or getattr(event, "author", None)
             user_id = getattr(user, "id", None) if user else None
 

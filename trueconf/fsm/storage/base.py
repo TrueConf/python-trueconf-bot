@@ -32,5 +32,5 @@ class BaseStorage(ABC):
         data = await self.get_data(key)
         return data.get(dict_key, default)
 
-    async def close(self) -> None:
-        pass
+    async def close(self) -> None:  # noqa: B027 - intentional concrete no-op, subclasses opt in
+        """Release held resources. Default is a no-op for in-memory backends."""

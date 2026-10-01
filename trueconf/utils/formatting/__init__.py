@@ -2,6 +2,7 @@ from .text import (
     AllMention,
     Bold,
     Italic,
+    LineBreak,
     Link,
     Mention,
     Strikethrough,
@@ -13,9 +14,10 @@ __all__ = [
     "AllMention",
     "Bold",
     "Italic",
+    "LineBreak",
     "Link",
     "Mention",
     "Strikethrough",
     "Text",
-    "Underline"
+    "Underline",
 ]

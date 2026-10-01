@@ -1,17 +1,18 @@
 from __future__ import annotations
+
 import asyncio
 import contextlib
 import json
 import logging
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable
 
 logger = logging.getLogger("chat_bot")
 
 
 class WebSocketSession:
-    def __init__(self, on_message: Optional[Callable[[str], Awaitable[None]]] = None):
+    def __init__(self, on_message: Callable[[str], Awaitable[None]] | None = None):
         self.ws = None
-        self._listener_task: Optional[asyncio.Task] = None
+        self._listener_task: asyncio.Task | None = None
         self._on_message = on_message
 
     def attach(self, ws) -> None:
@@ -31,10 +32,11 @@ class WebSocketSession:
         self.ws = None
 
     async def close(self) -> None:
+        ws = self.ws
         await self.detach()
-        if self.ws:
+        if ws:
             with contextlib.suppress(Exception):
-                await self.ws.close()
+                await ws.close()
 
     async def send_json(self, message: dict) -> None:
         if not self.ws:

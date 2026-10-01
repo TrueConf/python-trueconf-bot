@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
+
 from mashumaro import DataClassDictMixin
 
 
@@ -9,3 +11,4 @@ class SendFileResponse(DataClassDictMixin):
     chat_id: str = field(metadata={"alias": "chatId"})
     message_id: str = field(metadata={"alias": "messageId"})
     file_id: str = field(metadata={"alias": "fileId"})
+    caption_message_id: str | None = field(default=None, metadata={"alias": "captionMessageId"})

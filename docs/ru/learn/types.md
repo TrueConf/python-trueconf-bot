@@ -9,12 +9,12 @@ icon: material/database-search
 При разработке приложений особенно важно, чтобы среда разработки (IDE) подсказывала доступные методы и параметры классов.
 Однако роутер (Router) передаёт в обработчики разные типы данных, и IDE не всегда может корректно определить их тип. Поэтому ей необходимо «подсказать», какой именно объект приходит.
 
-В **{{product_name}}** для этого предусмотрен пакет [`trueconf.types`](../../en/reference/Types.md), в котором описаны все входящие от сервера события и запросы (уведомления).
+В **{{product_name}}** для этого предусмотрен пакет [`trueconf.types`](../reference/Types.md), в котором описаны все входящие от сервера события и запросы (уведомления).
 А для ответов на клиентские запросы используется отдельный модуль — `trueconf.types.responses`.
 
 Таким образом:
 
-- при работе с событиями используйте типы из [`trueconf.types`](../../en/reference/Types.md);
+- при работе с событиями используйте типы из [`trueconf.types`](../reference/Types.md);
 - при работе с результатами запросов клиента используйте типы из `trueconf.types.responses`.
 
 Это обеспечивает:
@@ -37,6 +37,7 @@ from trueconf import Router
 
 r = Router()
 
+
 @r.added_chat_participant()
 async def on_added_user(event): ...
 ```
@@ -48,6 +49,7 @@ from trueconf import Router
 from trueconf.types import AddedChatParticipant
 
 r = Router()
+
 
 @r.added_chat_participant()
 async def on_added_user(event: AddedChatParticipant):
@@ -72,7 +74,7 @@ async def on_added_user(event: AddedChatParticipant):
   "payload": {}
 }
 ```
-В такой ситуации лучше обратиться к [`trueconf.types.Update`](../../en/reference/Types.md/#trueconf.types.Update), который описывает структуру полного обновления, приходящего от сервера.
+В такой ситуации лучше обратиться к [`trueconf.types.Update`](../reference/Types.md/#trueconf.types.Update), который описывает структуру полного обновления, приходящего от сервера.
 
 ```python
 from trueconf import Router
@@ -81,11 +83,12 @@ from trueconf.enums import IncomingUpdateMethod
 
 r = Router()
 
+
 @r.event()
 async def raw_event(event: Update):
     if event.method == IncomingUpdateMethod.MESSAGE:
         pass
-    
+
     # Alternatively, without importing enum
     if event.method == "SendMessage":
         pass

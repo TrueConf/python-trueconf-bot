@@ -1,6 +1,7 @@
 from __future__ import annotations
-from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.send_file_response import SendFileResponse
 
@@ -20,20 +21,12 @@ class SendFile(TrueConfMethod[SendFileResponse]):
         super().__init__()
 
     def payload(self):
-        data = {
-            "chatId": self.chat_id,
-            "content": {
-                "temporalFileId": self.temporal_file_id
-            }
-        }
+        data = {"chatId": self.chat_id, "content": {"temporalFileId": self.temporal_file_id}}
 
         if self.reply_message_id:
             data["replyMessageId"] = self.reply_message_id
 
         if self.text:
-            data["content"]["caption"] = {
-                "text": self.text,
-                "parseMode": self.parse_mode
-            }
+            data["content"]["caption"] = {"text": self.text, "parseMode": self.parse_mode}
 
         return data

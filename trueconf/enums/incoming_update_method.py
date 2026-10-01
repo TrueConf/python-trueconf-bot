@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class IncomingUpdateMethod(str, Enum):
+    COMMAND = "command"
     ADDED_CHAT_PARTICIPANT = "addChatParticipant"
     CHANGED_PARTICIPANT_ROLE = "changeParticipantRole"
     CLEARED_CHAT_HISTORY = "clearHistory"

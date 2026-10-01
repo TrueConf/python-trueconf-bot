@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
+
 from mashumaro import DataClassDictMixin
+
 from trueconf.client.context_controller import BoundToBot
 from trueconf.enums.chat_type import ChatType
 from trueconf.types.last_message import LastMessage
@@ -35,6 +38,7 @@ class CreatedFavoritesChat(BoundToBot, DataClassDictMixin):
             print(f"Favorites chat created with id {event.chat_id}")
         ```
     """
+
     chat_id: str = field(metadata={"alias": "chatId"})
     title: str | None = field(metadata={"alias": "title"})
     chat_type: ChatType = field(metadata={"alias": "chatType"})

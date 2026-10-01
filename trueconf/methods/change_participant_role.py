@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.change_participant_role_response import ChangeParticipantRoleResponse
 
@@ -12,7 +14,6 @@ class ChangeParticipantRole(TrueConfMethod[ChangeParticipantRoleResponse]):
     chat_id: str
     user_id: str
     role: str
-
 
     def __post_init__(self):
         super().__init__()

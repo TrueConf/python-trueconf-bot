@@ -38,12 +38,10 @@ from trueconf.enums import ParseMode, FileReadyState
 ```python
 from trueconf.enums import ParseMode
 
+
 @r.message()
 async def on_message(message: Message):
-    await message.answer(
-        "Hello, *world*!",
-        parse_mode=ParseMode.MARKDOWN
-)
+    await message.answer("Hello, *world*!", parse_mode=ParseMode.MARKDOWN)
 ```
 
 Вместо того чтобы вручную писать строку `"Markdown"`, используется `ParseMode.MARKDOWN`.
@@ -56,7 +54,7 @@ from trueconf.enums import FileReadyState
 info = await bot.get_file_info(file_id="abc123")
 
 if info.ready_state == FileReadyState.READY:
-    await bot.download_file_by_id(info.file_id, "./downloads")
+    await bot.download_file_by_id(info.file_id, file_path=f"./downloads/{info.name}")
 elif info.ready_state == FileReadyState.NOT_AVAILABLE:
     print("File is not available")
 ```

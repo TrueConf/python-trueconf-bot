@@ -7,6 +7,11 @@ class TrueConfChatBotError(Exception):
     single place.
     """
 
+
+class WSConnectionError(TrueConfChatBotError, ConnectionError):
+    """Raised when WebSocket connection retries are exhausted."""
+
+
 class TokenValidationError(TrueConfChatBotError):
     """
     Raised when the bot token fails local validation.
@@ -14,7 +19,9 @@ class TokenValidationError(TrueConfChatBotError):
     This error indicates that the token value has an invalid format or
     cannot be used by the connector before the authorization request is sent.
     """
+
     pass
+
 
 class InvalidGrantError(TrueConfChatBotError):
     """
@@ -23,7 +30,44 @@ class InvalidGrantError(TrueConfChatBotError):
     This usually means that the token or credentials are invalid, expired,
     revoked, or cannot be used to authorize the bot.
     """
+
     pass
+
+
+class PasswordAuthDisabledError(TrueConfChatBotError):
+    """
+    Raised when the server has disabled password-based authentication.
+
+    This usually means the TrueConf server does not allow login/password
+    authentication (e.g., only SSO/NTLM/Kerberos or MFA is enabled). Use
+    `Bot.from_oauth()` with an OAuth application instead.
+    """
+
+    def __init__(
+        self,
+        message: str = ("Password-based authentication is disabled on this server. Use Bot.from_oauth() instead."),
+    ):
+        super().__init__(message)
+
+
+class OAuthMissingScopeError(TrueConfChatBotError):
+    """
+    Raised when the OAuth application has no scope configured.
+
+    The TrueConf Server rejected the OAuth token request because the OAuth
+    application has no scope. Add at least one scope (e.g. `version:read`)
+    to the OAuth application on the server.
+    """
+
+    def __init__(
+        self,
+        message: str = (
+            "The OAuth application has no scope configured. "
+            "Add at least one scope (e.g. version:read) to the OAuth application on the server."
+        ),
+    ):
+        super().__init__(message)
+
 
 class LimitExceededError(TrueConfChatBotError):
     """
@@ -36,6 +80,7 @@ class LimitExceededError(TrueConfChatBotError):
         actual_value: Actual value that exceeded the limit.
         limit: Maximum allowed value.
     """
+
     def __init__(self, message: str, actual_value: int, limit: int):
         super().__init__(message)
         self.actual_value = actual_value
@@ -54,6 +99,7 @@ class TextMessageTooLongError(LimitExceededError):
         actual_value: Actual visible length of the message text.
         limit: Maximum allowed message length.
     """
+
     def __init__(self, actual_length: int, limit: int = 4096):
         message = (
             f"Bad Request: text message is too long. "
@@ -61,6 +107,7 @@ class TextMessageTooLongError(LimitExceededError):
             f"Tip: use 'safe_split_text(text=text)' (from trueconf.utils import safe_split_text) to split your message."
         )
         super().__init__(message, actual_length, limit)
+
 
 class FileCaptionTooLongError(LimitExceededError):
     """
@@ -74,6 +121,7 @@ class FileCaptionTooLongError(LimitExceededError):
         actual_value: Actual visible length of the caption.
         limit: Maximum allowed caption length.
     """
+
     def __init__(self, actual_length: int, limit: int = 4096):
         message = (
             f"Bad Request: caption is too long. "
@@ -82,6 +130,7 @@ class FileCaptionTooLongError(LimitExceededError):
         )
         super().__init__(message, actual_length, limit)
 
+
 class ChatTitleTooLongError(LimitExceededError):
     """
     Base exception for chat title length errors.
@@ -89,7 +138,9 @@ class ChatTitleTooLongError(LimitExceededError):
     This class is inherited by more specific exceptions for group and channel
     title length validation.
     """
+
     pass
+
 
 class GroupTitleTooLongError(ChatTitleTooLongError):
     """
@@ -99,12 +150,14 @@ class GroupTitleTooLongError(ChatTitleTooLongError):
         actual_value: Actual length of the group title.
         limit: Maximum allowed group title length.
     """
+
     def __init__(self, actual_length: int, limit: int = 256):
         message = (
             f"Bad Request: group title is too long. "
             f"Maximum allowed length is {limit} characters, but got {actual_length}."
         )
         super().__init__(message, actual_length, limit)
+
 
 class ChannelTitleTooLongError(ChatTitleTooLongError):
     """
@@ -114,12 +167,14 @@ class ChannelTitleTooLongError(ChatTitleTooLongError):
         actual_value: Actual length of the channel title.
         limit: Maximum allowed channel title length.
     """
+
     def __init__(self, actual_length: int, limit: int = 256):
         message = (
             f"Bad Request: channel title is too long. "
             f"Maximum allowed length is {limit} characters, but got {actual_length}."
         )
         super().__init__(message, actual_length, limit)
+
 
 class FileValidationError(TrueConfChatBotError):
     """
@@ -128,7 +183,9 @@ class FileValidationError(TrueConfChatBotError):
     This class is used for errors related to file size limits, extension filters,
     and other file validation rules received from TrueConf Server.
     """
+
     pass
+
 
 class FileSizeTooLargeError(FileValidationError, LimitExceededError):
     """
@@ -141,14 +198,27 @@ class FileSizeTooLargeError(FileValidationError, LimitExceededError):
         actual_value: Actual file size in bytes.
         limit: Maximum allowed file size in bytes.
     """
+
     def __init__(self, actual_size: int, limit: int):
         actual_mb = round(actual_size / (1024 * 1024), 2)
         limit_mb = round(limit / (1024 * 1024), 2)
-        message = (
-            f"Bad Request: file is too large. "
-            f"Maximum allowed size is {limit_mb}MB, but got {actual_mb}MB."
-        )
+        message = f"Bad Request: file is too large. Maximum allowed size is {limit_mb}MB, but got {actual_mb}MB."
         super().__init__(message, actual_size, limit)
+
+
+class InMemoryDownloadLimitExceededError(LimitExceededError):
+    """Raised when a file exceeds the configured in-memory download limit."""
+
+    def __init__(self, actual_size: int, limit: int):
+        super().__init__(
+            (
+                "File is too large to download into memory: "
+                f"{actual_size} bytes exceeds the {limit} byte limit. "
+                "Pass dest_path to stream the file to disk."
+            ),
+            actual_size,
+            limit,
+        )
 
 
 class InvalidFileExtensionError(FileValidationError):
@@ -164,6 +234,7 @@ class InvalidFileExtensionError(FileValidationError):
         extensions: Set of extensions used for validation.
         mode: Extension filter mode.
     """
+
     def __init__(self, extension: str, extensions: set[str] | None = None, mode: str = "allow"):
         self.extension = extension
         self.extensions = extensions or set()
@@ -173,23 +244,18 @@ class InvalidFileExtensionError(FileValidationError):
 
         if mode == "allow":
             if self.extensions:
-                message = (
-                    f"Bad Request: extension '.{extension}' is not allowed. "
-                    f"Allowed extensions: {formatted_exts}"
-                )
+                message = f"Bad Request: extension '.{extension}' is not allowed. Allowed extensions: {formatted_exts}"
             else:
                 message = f"Bad Request: extension '.{extension}' is not in the allowed list."
 
         else:  # mode == "block"
             if self.extensions:
-                message = (
-                    f"Bad Request: extension '.{extension}' is blacklisted. "
-                    f"Blocked extensions: {formatted_exts}"
-                )
+                message = f"Bad Request: extension '.{extension}' is blacklisted. Blocked extensions: {formatted_exts}"
             else:
                 message = f"Bad Request: extension '.{extension}' is blocked."
 
         super().__init__(message)
+
 
 class ApiErrorException(TrueConfChatBotError):
     """
@@ -203,8 +269,13 @@ class ApiErrorException(TrueConfChatBotError):
         detail: Human-readable error description.
         payload: Raw error payload returned by the server, or an empty dict.
     """
+
     def __init__(self, code: int, detail: str, payload: dict | None = None):
         super().__init__(f"[{code}] {detail}")
         self.code = code
         self.detail = detail
         self.payload = payload or {}
+
+
+class FileUploadError(TrueConfChatBotError):
+    """Raised when a file cannot be uploaded to the server."""

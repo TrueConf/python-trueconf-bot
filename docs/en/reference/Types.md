@@ -102,6 +102,14 @@ from trueconf.types import *
             - "!bot"
             - "!bind"
 
+::: trueconf.types.SystemMessage
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
 ::: trueconf.types.RemovedChat
     options:
         filters:
@@ -142,9 +150,54 @@ from trueconf.types import *
             - "!bot"
             - "!bind"
 
+::: trueconf.types.contact.Contact
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+
+::: trueconf.types.CallbackQuery
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
+::: trueconf.types.Chat
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+            - "!bot"
+            - "!bind"
+
+::: trueconf.types.InlineKeyboardButton
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+
+::: trueconf.types.InlineKeyboardMarkup
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+
+::: trueconf.types.content.location.Location
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+
+::: trueconf.types.content.voice.Voice
+    options:
+        filters:
+            - "!^_"
+            - "!^__"
+
 
 
         
-
 
 

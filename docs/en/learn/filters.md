@@ -150,16 +150,16 @@ F.photo  # lambda message: message.photo
 **Equality:**
 
 ```python
-F.text == "hello"        # lambda message: message.text == "hello"
-F.from_user.id == 42     # lambda message: message.from_user.id == 42
-F.text != "spam"         # lambda message: message.text != "spam"
+F.text == "hello"  # lambda message: message.text == "hello"
+F.from_user.id == 42  # lambda message: message.from_user.id == 42
+F.text != "spam"  # lambda message: message.text != "spam"
 ```
 
 **Set membership:**
 
 ```python
 # lambda query: query.from_user.id in {42, 1000, 123123}
-F.from_user.id.in_({42, 1000, 123123})  
+F.from_user.id.in_({42, 1000, 123123})
 
 # lambda query: query.data in {"foo", "bar", "baz"}
 F.data.in_({"foo", "bar", "baz"})
@@ -175,7 +175,7 @@ F.text.contains("foo")  # lambda message: "foo" in message.text
 
 ```python
 F.text.startswith("foo")  # lambda message: message.text.startswith("foo")
-F.text.endswith("bar")    # lambda message: message.text.endswith("bar")
+F.text.endswith("bar")  # lambda message: message.text.endswith("bar")
 ```
 
 **Regular Expressions:**
@@ -194,8 +194,8 @@ F.chat.func(lambda chat: chat.id == -42)
 **Inversion of result:**
 
 ```python
-~F.text # not message.text        
-~F.text.startswith("spam") #not message.text.startswith("spam")
+~F.text  # not message.text
+~F.text.startswith("spam")  # not message.text.startswith("spam")
 ```
 
 **Combining conditions:**
@@ -211,9 +211,9 @@ F.text.startswith("a") | F.text.endswith("b")
 **Attribute Modifiers (Strings):**
 
 ```python
-F.text.lower() == "test"           # message.text.lower() == "test"  
-F.text.upper().in_({"FOO", "BAR"}) # message.text.upper() in {"FOO", "BAR"}
-F.text.len() == 5                  # len(message.text) == 5
+F.text.lower() == "test"  # message.text.lower() == "test"
+F.text.upper().in_({"FOO", "BAR"})  # message.text.upper() in {"FOO", "BAR"}
+F.text.len() == 5  # len(message.text) == 5
 ```
 
 ## Building Custom Filters
@@ -229,9 +229,10 @@ You can build custom filters to fine-tune your event-handling logic. This allows
 ```python
 from typing import Any
 
+
 class MyFilter:
     """
-    This filter checks whether a user belongs 
+    This filter checks whether a user belongs
     to the specified group via the server API.
     """
 
@@ -257,10 +258,12 @@ Once the filter class is defined, you can use it in handler decorators exactly t
 
 ```python hl_lines="8"
 from aiogram import Router, Message
+
 # Import your filter class
 from my_filters import MyFilter
 
 router = Router()
+
 
 # Attach the filter in the same way as Command or F
 @router.message(MyFilter(target_group="0032"))
@@ -279,7 +282,7 @@ In **python-trueconf-bot**, you can combine multiple filters within a single han
 You can restrict access to a specific command by using your own filter. The handler will run only if the message is the specified command **and** your filter returns `True`.
 
 ```python
-# Triggers if the /admin command is received 
+# Triggers if the /admin command is received
 # AND the user belongs to group "0032"
 @r.message(Command("admin"), InGroupFilter(target_group="0032"))
 async def admin_panel(message: Message):

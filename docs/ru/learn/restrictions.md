@@ -37,11 +37,24 @@ for chunk in safe_split_text(long_text):
 ```python
 bot.max_file_size: int | None
 bot.file_extension_filter_mode: str | None
-bot.file_extensions_list: set | None 
+bot.file_extensions_list: set | None
 ```
 
 При отправке файла библиотека проверяет его размер и расширение. Если файл превышает допустимый размер, будет вызвано исключение [`FileSizeTooLargeError`](../reference/Exceptions.md/#trueconf.exceptions.FileSizeTooLargeError). Если расширение файла запрещено настройками сервера, будет вызвано исключение [`InvalidFileExtensionError`](../reference/Exceptions.md/#trueconf.exceptions.InvalidFileExtensionError).
 
 !!! Note
     Файловые ограничения зависят от настроек конкретного TrueConf Server. Если администратор изменит максимальный размер файла или список разрешенных расширений, бот автоматически получит обновленные значения при следующем событии изменения лимитов.
+
+#### Инлайн-кнопки
+
+Ограничения inline-клавиатуры проверяются библиотекой при создании `InlineKeyboardMarkup`:
+
+- не более `8` рядов;
+- не более `8` кнопок в ряду;
+- всего не более `64` кнопок;
+- текст кнопки — от `1` до `32` символов;
+- команда кнопки — до `255` символов ASCII;
+- `custom_data` — до `4096` символов ASCII (только для кнопок `command`).
+
+При нарушении лимитов будет вызвано исключение `ValueError`. Подробнее — в разделе [Интерактивные кнопки и Callback](buttons.md).
 

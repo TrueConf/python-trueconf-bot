@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.get_file_info_response import GetFileInfoResponse
 
@@ -15,6 +17,4 @@ class GetFileInfo(TrueConfMethod[GetFileInfoResponse]):
         super().__init__()
 
     def payload(self):
-        return {
-            "fileId": self.file_id
-        }
+        return {"fileId": self.file_id}

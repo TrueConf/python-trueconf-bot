@@ -163,6 +163,7 @@ from trueconf.enums import ParseMode
 from trueconf.utils.formatting import (
     Bold,
     Italic,
+    LineBreak,
     Link,
     Mention,
     Text,
@@ -172,7 +173,7 @@ content = Text(
     Bold("Important"),
     " message for ",
     Mention("John Doe", user_id="john_doe@video.example.com"),
-    "\n",
+    LineBreak(),
     Link("Open website", url="https://trueconf.com"),
 )
 
@@ -192,6 +193,7 @@ await bot.send_message(
 - [`Link(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Link)
 - [`Mention(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Mention)
 - [`AllMention()`](../reference/Formatting.md/#trueconf.utils.formatting.AllMention)
+- [`LineBreak()`](../reference/Formatting.md/#trueconf.utils.formatting.LineBreak)
 - [`Text(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Text)
 
 ### Ограничения длины сообщения
@@ -219,6 +221,10 @@ for chunk in chunks:
 !!! Tip "Shortcut-методы"
     В обработчиках сообщений часто удобнее использовать `message.answer(...)`, `message.reply(...)` и другие shortcut-методы вместо прямого вызова `bot.send_message(...)`.
     Подробнее см. раздел [Шорткаты](shortcuts.md).
+
+!!! Tip "Интерактивные кнопки"
+    К сообщениям можно прикреплять inline-клавиатуры, а нажатия на кнопки обрабатывать через `CallbackQuery`.
+    Подробнее см. раздел [Интерактивные кнопки и Callback](buttons.md).
 
 !!! Tip "Отправка файлов"
     Этот раздел посвящён текстовым сообщениям. 

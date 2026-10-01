@@ -6,6 +6,93 @@ icon: material/note-text
 
 # List of Changes
 
+## 1.5.0
+
+🚀 **Major release!** This is not only a set of new features, but also extensive work on stability.
+
+!!! Tip
+    Support for Python 3.10 ends on 31.10.2026, together with the end of its official support by the Python Software Foundation.
+
+**Added:**
+
+- Support for incoming voice messages with the `MessageType.VOICE_MESSAGE` (`205`) type
+- Support for inline buttons via `InlineKeyboardMarkup`/`InlineKeyboardButton` (actions: command, URL, message, copy). Requires TrueConf Server 5.5.6 and TrueConf client apps for Windows, macOS and Linux version 8.6.0, TrueConf for Android 3.3.0, TrueConf for iOS 4.2.0
+- Callback queries for handling button presses: the `@router.callback_query()` handler, `callback_query.edit_message(...)` and `callback_query.answer(...)` shortcuts
+- Buttons with `wait_reply=True` and the `answerCommand` method temporarily raise `NotImplementedError`: the functionality is supported by TrueConf Server but awaits support from client applications. Once it becomes available, a new release will be published that removes this limitation
+- Chat object: the `chat` field with the `Chat` model in `Message` and `LastMessage`
+- Message replies: incoming reply messages now include `Message.reply_message` with the content of the original message being replied to
+- System messages: the `SystemMessage` model and the `@router.system_message()` handler
+- Reply with a quote via the `quote` parameter in `Message.reply()` and `Bot.send_message()`, as well as the `Message.quote` property
+- Chat activity indicator: the `Bot.send_chat_activity()` method, the `ChatActivity` enum and the `ChatActivitySender.typing(...)` context manager
+- In-memory file download size limit via the `max_in_memory_download_size` parameter
+- The `LineBreak` node in `trueconf.utils.formatting` (`<br>` for HTML, `\n` for Markdown)
+- The `message.location` and `message.contact` shortcuts for geolocation and contacts (vCard files and trueconf links)
+- OAuth2 authentication via `Bot.from_oauth()` for servers with login/password authentication disabled. Requires TrueConf Server 5.5.3+
+- New exceptions: `WSConnectionError`, `InMemoryDownloadLimitExceededError`, `FileUploadError`, `OAuthMissingScopeError`, `PasswordAuthDisabledError`
+- Text descriptions for API error codes (399, 400–408) in `ApiError.message()`. Codes 400–408 relate to files and replace the single generic code 310 (“error while sending”) — now it is clear what exactly went wrong during the send
+- The `caption_message_id` field in `SendFileResponse` — the ID of the caption message sent with a file; allows changing the file caption via `edit_message(...)`
+- A custom `User-Agent` on all library requests in the format `python-trueconf-bot/<version> (Python/<version>; <OS>/<release>)`, e.g.: `python-trueconf-bot/1.5.0 (Python/3.12.4; Darwin/24.0.0)`
+
+**Changed:**
+
+- The `Underline` node in `trueconf.utils.formatting` now also renders in Markdown (`__text__`) — previously underline worked only in HTML markup
+- File download: the `file_path` parameter sets the exact output path, parent directories are created automatically
+- The `mimetype` parameter was renamed to `mime_type`
+- `ws_max_retries`/`ws_max_delay` behavior: once the attempts are exhausted, the connection ends with `WSConnectionError`
+- Bot shutdown now waits for running handlers and closes the WebSocket transport; a `timeout` parameter was added to `shutdown()`
+- The HTTP client was migrated from `httpx` to `httpx2`
+
+**Fixed:**
+
+- Parsing of system messages in chat history and API responses
+- File upload errors: the caller now receives `FileUploadError` with the original cause
+- Infinite WebSocket reconnection after the retry limit is exhausted
+- The WebSocket connection was not closed on bot shutdown — the session now properly closes the attached socket
+- Download URLs and tokens no longer appear in logs in full: the query string is stripped from URLs (`https://server/.../files/download?token=...` → `https://server/.../files/download`), and tokens in debug logs are truncated to the last 30 characters
+- Token acquisition in `Bot.from_credentials()` now respects the `https` and `web_port` parameters — previously the token was always requested via https:443, even if the server runs on http or a non-standard port
+
+**Deprecated:**
+
+- The `Message.chat_id` property — use `message.chat.chat_id` instead
+- The `dest_path` parameter — use `file_path` instead (will be removed in version 2.0)
+- The `mimetype` parameter — use `mime_type` instead
+
+## 1.4.4
+
+**Fixed:**
+
+- Fixed a library (bot) crash occurring when the LastMessage contained a notification about a chat avatar change [#15](https://github.com/TrueConf/python-trueconf-bot/issues/15).
+
+## 1.4.3
+
+**Fixed:**
+
+- Checking server version. Currently, the check is performed via the API first; if an error occurs, the check is based on the TrueConf service status.
+
+## 1.4.2
+
+**Fixed:**
+
+- Bot crash when server version field is empty
+
+## 1.4.1
+
+**Added:**
+
+- New parameter `timeout` in class `Bot` and `Bot.from_credentials()` method
+
+**Fixed:**
+
+- System events like `ChangedFileUploadLimits` don't have chat_id or author, which caused `DefaultKeyBuilder` to raise `RuntimeError`. Now `FSMMiddleware` checks for `chat_id/user_id` before building FSM context. System events pass through without FSM context.
+
+**Refactor:**
+
+- Improve network timeout logic for file download and upload:
+    - Remove hardcoded `chunk_size` from `httpx.stream` to prevent false ReadTimeout on slow networks.
+    - Configure `aiohttp.ClientTimeout` using `sock_read` instead of `total` to allow long file uploads without socket freezes.
+    - Enforce strict `int | float` types for timeouts, removing redundant `None` checks
+    - Update method docstrings to clearly reflect adaptive timeout behavior.
+
 ## 1.4.0
 
 **Added:**
@@ -17,6 +104,13 @@ It allows you to log events, block them, check access, and modify data.
 It supports two types: outer middleware, which runs before filters, and inner middleware, which runs after filters. Learn more: [Middleware](learn/middleware.md).
 - **The `skip_self_messages` parameter** in `Bot()`. By default, it is set to `True`, so the bot automatically ignores messages sent by itself.  
 It can be disabled with `skip_self_messages=False`.
+- Added `Message.reply_message`, containing the full message being replied to.
+- Added the `SystemMessage` model for system Envelopes in live updates and chat history, together with the
+  `@router.system_message()` handler.
+
+**Fixed:**
+
+- The history-clearing notification now preserves `for_all` as the server-provided `bool` value.
 
 ## 1.3.0
 

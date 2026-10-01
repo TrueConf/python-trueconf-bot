@@ -1,24 +1,22 @@
 from __future__ import annotations
+
 from typing import TypeVar
+
 from trueconf.enums.incoming_update_method import IncomingUpdateMethod as IUM
-from trueconf.enums.message_type import MessageType
 from trueconf.enums.update_type import UpdateType
-from trueconf.types.author_box import EnvelopeAuthor, EnvelopeBox
-from trueconf.types.content.attachment import AttachmentContent
-from trueconf.types.content.location import Location
-from trueconf.types.content.survey import SurveyContent
-from trueconf.types.content.text import TextContent
-from trueconf.types.message import Message
+from trueconf.types.callback_query import CallbackQuery
+from trueconf.types.content.parser import UnsupportedMessageType
+from trueconf.types.envelope_parser import deserialize_envelope
 from trueconf.types.requests.added_chat_participant import AddedChatParticipant
+from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
 from trueconf.types.requests.changed_participant_role import ChangedParticipantRole
 from trueconf.types.requests.cleared_chat_history import ClearedChatHistory
-from trueconf.types.requests.changed_file_upload_limits import ChangedFileUploadLimits
-from trueconf.types.requests.edited_chat_avatar import EditedChatAvatar
-from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.created_channel import CreatedChannel
 from trueconf.types.requests.created_favorites_chat import CreatedFavoritesChat
 from trueconf.types.requests.created_group_chat import CreatedGroupChat
 from trueconf.types.requests.created_personal_chat import CreatedPersonalChat
+from trueconf.types.requests.edited_chat_avatar import EditedChatAvatar
+from trueconf.types.requests.edited_chat_title import EditedChatTitle
 from trueconf.types.requests.edited_message import EditedMessage
 from trueconf.types.requests.removed_chat import RemovedChat
 from trueconf.types.requests.removed_chat_participant import RemovedChatParticipant
@@ -28,21 +26,24 @@ from trueconf.types.update import Update
 
 T = TypeVar("T")
 
-
-def _content_factory(env_type: MessageType, raw: dict):
-    match env_type:
-        case MessageType.FORWARDED_MESSAGE:
-            return Message.from_dict(raw)
-        case MessageType.PLAIN_MESSAGE:
-            return TextContent.from_dict(raw)
-        case MessageType.ATTACHMENT:
-            return AttachmentContent.from_dict(raw)
-        case MessageType.SURVEY:
-            return SurveyContent.from_dict(raw)
-        case MessageType.LOCATION:
-            return Location.from_dict(raw)
-        case _:
-            return None
+_INBOX_EVENT_MAP = {
+    IUM.COMMAND: CallbackQuery,
+    IUM.UPLOADING_PROGRESS: UploadingProgress,
+    IUM.REMOVED_CHAT_PARTICIPANT: RemovedChatParticipant,
+    IUM.REMOVED_MESSAGE: RemovedMessage,
+    IUM.REMOVED_CHAT: RemovedChat,
+    IUM.EDITED_CHAT_AVATAR: EditedChatAvatar,
+    IUM.EDITED_CHAT_TITLE: EditedChatTitle,
+    IUM.EDITED_MESSAGE: EditedMessage,
+    IUM.ADDED_CHAT_PARTICIPANT: AddedChatParticipant,
+    IUM.CREATED_PERSONAL_CHAT: CreatedPersonalChat,
+    IUM.CREATED_GROUP_CHAT: CreatedGroupChat,
+    IUM.CREATED_CHANNEL: CreatedChannel,
+    IUM.CREATED_FAVORITES_CHAT: CreatedFavoritesChat,
+    IUM.CHANGED_PARTICIPANT_ROLE: ChangedParticipantRole,
+    IUM.CHANGED_FILE_UPLOAD_LIMITS: ChangedFileUploadLimits,
+    IUM.CLEARED_CHAT_HISTORY: ClearedChatHistory,
+}
 
 
 def parse_update(raw: dict):
@@ -53,69 +54,14 @@ def parse_update(raw: dict):
     if not isinstance(p, dict):
         return None
 
-    match raw["method"]:
-        case IUM.UPLOADING_PROGRESS:
-            return UploadingProgress.from_dict(raw["payload"])
+    parser = _INBOX_EVENT_MAP.get(raw["method"])
+    if parser is not None:
+        return parser.from_dict(p)
 
-        case IUM.REMOVED_CHAT_PARTICIPANT:
-            return RemovedChatParticipant.from_dict(raw["payload"])
+    if raw["method"] == IUM.MESSAGE:
+        try:
+            return deserialize_envelope(p)
+        except UnsupportedMessageType:
+            return None
 
-        case IUM.REMOVED_MESSAGE:
-            return RemovedMessage.from_dict(raw["payload"])
-
-        case IUM.REMOVED_CHAT:
-            return RemovedChat.from_dict(raw["payload"])
-
-        case IUM.EDITED_CHAT_AVATAR:
-            return EditedChatAvatar.from_dict(raw["payload"])
-
-        case IUM.EDITED_CHAT_TITLE:
-            return EditedChatTitle.from_dict(raw["payload"])
-
-        case IUM.EDITED_MESSAGE:
-            return EditedMessage.from_dict(raw["payload"])
-
-        case IUM.ADDED_CHAT_PARTICIPANT:
-            return AddedChatParticipant.from_dict(raw["payload"])
-
-        case IUM.CREATED_PERSONAL_CHAT:
-            return CreatedPersonalChat.from_dict(raw["payload"])
-
-        case IUM.CREATED_GROUP_CHAT:
-            return CreatedGroupChat.from_dict(raw["payload"])
-
-        case IUM.CREATED_CHANNEL:
-            return CreatedChannel.from_dict(raw["payload"])
-
-        case IUM.CREATED_FAVORITES_CHAT:
-            return CreatedFavoritesChat.from_dict(raw["payload"])
-
-        case IUM.CHANGED_PARTICIPANT_ROLE:
-            return ChangedParticipantRole.from_dict(raw["payload"])
-
-        case IUM.CHANGED_FILE_UPLOAD_LIMITS:
-            return ChangedFileUploadLimits.from_dict(raw["payload"])
-
-        case IUM.CLEARED_CHAT_HISTORY:
-            return ClearedChatHistory.from_dict(raw["payload"])
-
-        case IUM.MESSAGE:
-            env_type = MessageType(p.get("type", 0))
-            content = _content_factory(env_type, p.get("content", {}))
-            if content is None:
-                return None
-            p["content"] = content
-            return Message(
-                message_id=p["messageId"],
-                chat_id=p["chatId"],
-                timestamp=p["timestamp"],
-                reply_message_id=p.get("replyMessageId"),
-                is_edited=p["isEdited"],
-                type=env_type,
-                author=EnvelopeAuthor.from_dict(p["author"]),
-                box=EnvelopeBox.from_dict(p["box"]),
-                content=content,
-            )
-
-        case _:
-            return Update(raw["method"], raw["type"], raw["id"], raw["payload"])
+    return Update(raw["method"], raw["type"], raw["id"], raw["payload"])

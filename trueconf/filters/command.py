@@ -1,13 +1,16 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field, replace
 from re import Match, Pattern
 from typing import Any
-from trueconf.enums.message_type import MessageType
-from trueconf.types.message import Message
-from magic_filter import F
+
 from magic_filter import MagicFilter
 
+from trueconf.enums.message_type import MessageType
+from trueconf.types.message import Message
+
 Event = Any  # позже можно заменить на типизированные модели
+
 
 class Command:
     """
@@ -26,10 +29,7 @@ class Command:
     ):
         if not commands:
             raise ValueError("At least one command is required")
-        self.commands = tuple(
-            cmd.casefold() if isinstance(cmd, str) and ignore_case else cmd
-            for cmd in commands
-        )
+        self.commands = tuple(cmd.casefold() if isinstance(cmd, str) and ignore_case else cmd for cmd in commands)
         self.prefix = prefix
         self.ignore_case = ignore_case
         self.magic = magic
@@ -87,6 +87,7 @@ class Command:
             if isinstance(pattern, Pattern) and pattern.match(name):
                 return
         raise ValueError("Command not matched")
+
 
 @dataclass(frozen=True)
 class CommandObject:

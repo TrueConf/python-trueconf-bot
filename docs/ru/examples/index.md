@@ -60,24 +60,23 @@ logging.basicConfig(
     encoding="utf-8",
 )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bot_task = asyncio.create_task(bot.run())
     yield
 
+
 app = FastAPI(lifespan=lifespan)
-bot = Bot.from_credentials(
-    server="10.140.1.255",
-    username="echo_bot",
-    password="123tr",
-    verify_ssl=False)
+bot = Bot.from_credentials(server="10.140.1.255", username="echo_bot", password="123tr", verify_ssl=False)
 
 
 @app.post("/send")
 async def read_root(data: dict[str, Any]):
     r = await bot.create_personal_chat(user_id="user")
-    r = await bot.send_message(chat_id = r.chat_id, text=str(data))
+    r = await bot.send_message(chat_id=r.chat_id, text=str(data))
     print(r.message_id)
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
@@ -114,6 +113,7 @@ logging.basicConfig(
     encoding="utf-8",
 )
 
+
 async def main():
     await bot.start()
     await bot.connected_event.wait()
@@ -131,6 +131,7 @@ async def main():
                         continue
 
     await bot.shutdown()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -173,12 +174,9 @@ router_list_for_report = {}
 list_message_for_report = {}
 
 bot = trueconf.Bot.from_credentials(
-    server="10.110.2.241",
-    username="report_bot",
-    password="123tr",
-    dispatcher=dp,
-    https=True,
-    verify_ssl=False)
+    server="10.110.2.241", username="report_bot", password="123tr", dispatcher=dp, https=True, verify_ssl=False
+)
+
 
 async def handle_report(msg: Message):
     if msg.from_user.id in router_list_for_report.keys():
@@ -188,7 +186,7 @@ async def handle_report(msg: Message):
 
 @r1.message(Command("report"))
 async def on_report(msg: Message):
-    number = uuid.uuid4() # генерация номера обращения с помощью uuid
+    number = uuid.uuid4()  # генерация номера обращения с помощью uuid
     await msg.answer(f"Your ticket number is {number}. All subsequent messages will be added to this ticket.")
     r = Router(name=str(number))
     dp.include_router(r)
@@ -211,7 +209,7 @@ async def on_cancel(msg: Message):
         await msg.answer("You don’t have an active report.")
 
 
-def build_message_and_send_email(messages:list):
+def build_message_and_send_email(messages: list):
     """
     In Python, there are built-in libraries for working with email messages:
     https://docs.python.org/3/library/email.examples.html
@@ -225,11 +223,12 @@ def build_message_and_send_email(messages:list):
                 # You can put the text into the email body
             case MessageType.ATTACHMENT:
                 # Download the files from TrueConf Server via:
-                # msg.download(dest_path="path/to/file")
+                # msg.download(file_path="path/to/file")
 
     Once the email is assembled correctly, send it using the smtplib module:
     https://docs.python.org/3/library/smtplib.html#smtp-example
     """
+
 
 @r1.message(Command("send"))
 async def send_report(msg: Message):
@@ -241,6 +240,7 @@ async def send_report(msg: Message):
     else:
         await msg.answer("You don’t have an active report.")
         return
+
 
 if __name__ == "__main__":
     asyncio.run(bot.run())
@@ -409,6 +409,7 @@ bot = Bot.from_credentials(
 )
 
 import asyncio
+
 if __name__ == "__main__":
     asyncio.run(bot.run())
 ```
@@ -421,7 +422,6 @@ if __name__ == "__main__":
 3. Проверка фильтров                  — Command("start") или F.text
 4. Обработчик                         — cmd_start или echo
 ```
-
 
 
 

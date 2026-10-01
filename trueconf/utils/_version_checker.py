@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from importlib import metadata
+
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
@@ -39,10 +40,7 @@ class _VersionChecker:
             return
 
         if rule.library_spec is None:
-            raise RuntimeError(
-                f"Error: Server version {server_version} is too old. "
-                f"{rule.message}"
-            )
+            raise RuntimeError(f"Error: Server version {server_version} is too old. {rule.message}")
 
         if library_version not in rule.library_spec:
             hint = f"\nRun: {rule.install_hint}" if rule.install_hint else ""

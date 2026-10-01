@@ -165,11 +165,14 @@ nav:
   - Features: features.md
   - Learn:
       - learn/getting-started.md
+      - learn/authentication.md
       - learn/parse-messages.md
       - learn/filters.md
       - learn/middleware.md
       - learn/fsm.md
       - learn/send_message.md
+      - learn/buttons.md
+      - learn/typing_indicator.md
       - learn/shortcuts.md
       - learn/enums.md
       - learn/types.md
@@ -182,6 +185,7 @@ nav:
       - reference/Enums.md
       - reference/Types.md
       - reference/Formatting.md
+      - reference/chat_activity.md
       - reference/Exceptions.md
   - Examples: examples/index.md
   - Release Notes: release_notes.md

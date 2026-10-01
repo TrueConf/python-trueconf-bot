@@ -8,9 +8,7 @@ from trueconf.fsm.state import State
 
 class StateFilter:
     def __init__(self, *states: State | str | None) -> None:
-        self._states: set[str | None] = {
-            str(s) if isinstance(s, State) else s for s in states
-        }
+        self._states: set[str | None] = {str(s) if isinstance(s, State) else s for s in states}
         self._wildcard = "*" in self._states
 
     async def __call__(

@@ -29,13 +29,15 @@ from trueconf.filters import F
 
 router = Router()
 
+
 @router.message(F.text.startswith("/start"))
 async def on_start(msg: Message):
-  await msg.answer("Hello! I'm TrueConf bot 👋")
+    await msg.answer("Hello! I'm TrueConf bot 👋")
+
 
 @router.message(F.document.mime_type == "application/pdf")
 async def on_pdf(msg: Message):
-  await msg.reply("Thanks for the PDF!")
+    await msg.reply("Thanks for the PDF!")
 ```
 
 ## Two Connection Options
@@ -77,6 +79,7 @@ Exactly the same as in aiogram:
 ```python
 @router.message(F.photo)
 async def on_photo(msg: Message): ...
+
 
 @router.message(F.document.mime_type.in_(["application/pdf", "application/msword"]))
 async def on_doc(msg: Message): ...

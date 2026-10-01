@@ -3,11 +3,10 @@ import re
 import subprocess
 from datetime import datetime, timezone
 from html import unescape
-from importlib.metadata import PackageNotFoundError, version as package_version
-
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 
 from mkdocs.utils import log
-
 
 ALLOWED_PATTERNS = [
     r"^index\.html$",
@@ -156,19 +155,15 @@ def convert_details_to_markdown(details_html: str) -> str:
     return f"\n\n### {summary}\n\n"
 
 
-def html_to_markdown(html: str) -> str:
+def html_to_markdown(html: str) -> str:  # noqa: C901
     """Convert rendered HTML into readable Markdown for llms outputs."""
     if not html:
         return ""
 
     text = html
 
-    text = re.sub(
-        r"<script\b[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE
-    )
-    text = re.sub(
-        r"<style\b[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE
-    )
+    text = re.sub(r"<script\b[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<style\b[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(
         r"<a[^>]*class=\"[^\"]*headerlink[^\"]*\"[^>]*>.*?</a>",
         "",
@@ -244,9 +239,7 @@ def html_to_markdown(html: str) -> str:
         pattern = rf"<h{level}[^>]*>(.*?)</h{level}>"
         text = re.sub(
             pattern,
-            lambda match, lvl=level: (
-                f"\n\n{'#' * lvl} {strip_tags(match.group(1))}\n\n"
-            ),
+            lambda match, lvl=level: f"\n\n{'#' * lvl} {strip_tags(match.group(1))}\n\n",
             text,
             flags=re.DOTALL | re.IGNORECASE,
         )
@@ -308,9 +301,7 @@ def get_page_title(html: str, fallback: str) -> str:
         if title:
             return title
 
-    title_match = re.search(
-        r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE
-    )
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE)
     if title_match:
         raw_title = strip_tags(title_match.group(1))
         title = re.split(r"\s[-|–—]\s", raw_title)[0].strip()
@@ -364,9 +355,7 @@ def flatten_nav(nav_items) -> list[str]:
 
 def get_section_key(path: str) -> str:
     normalized = path.replace("\\", "/")
-    if normalized == "index.html" or normalized.startswith(
-        ("features/", "release_notes/")
-    ):
+    if normalized == "index.html" or normalized.startswith(("features/", "release_notes/")):
         return "root"
     if normalized.startswith("learn/"):
         return "learn"
@@ -405,9 +394,7 @@ def make_indent(level: int) -> str:
     return "  " * max(level, 0)
 
 
-def add_index_entry(
-    index_lines: list[str], title: str, url: str, level: int = 0
-) -> None:
+def add_index_entry(index_lines: list[str], title: str, url: str, level: int = 0) -> None:
     index_lines.append(f"{make_indent(level)}- [{title}]({url})")
 
 
@@ -415,28 +402,20 @@ def build_index_lines(page_entries: list[dict]) -> list[str]:
     """Build the hierarchical INDEX section."""
     index_lines = ["## INDEX"]
 
-    home_entry = next(
-        (entry for entry in page_entries if entry["path"] == "index.html"), None
-    )
+    home_entry = next((entry for entry in page_entries if entry["path"] == "index.html"), None)
     features_entry = next(
         (entry for entry in page_entries if entry["path"] == "features/index.html"),
         None,
     )
     release_notes_entry = next(
-        (
-            entry
-            for entry in page_entries
-            if entry["path"] == "release_notes/index.html"
-        ),
+        (entry for entry in page_entries if entry["path"] == "release_notes/index.html"),
         None,
     )
 
     if home_entry:
         add_index_entry(index_lines, home_entry["title"], home_entry["url"], level=0)
     if features_entry:
-        add_index_entry(
-            index_lines, features_entry["title"], features_entry["url"], level=0
-        )
+        add_index_entry(index_lines, features_entry["title"], features_entry["url"], level=0)
 
     grouped_sections = {"learn": [], "reference": [], "examples": []}
     for entry in page_entries:
@@ -485,9 +464,7 @@ def on_post_build(config):
             if should_include_page(rel_path):
                 discovered_paths.append(rel_path)
 
-    sorted_paths = sorted(
-        set(discovered_paths), key=lambda path: path_sort_key(path, nav_positions)
-    )
+    sorted_paths = sorted(set(discovered_paths), key=lambda path: path_sort_key(path, nav_positions))
 
     page_entries = []
     for rel_path in sorted_paths:

@@ -163,6 +163,7 @@ from trueconf.enums import ParseMode
 from trueconf.utils.formatting import (
     Bold,
     Italic,
+    LineBreak,
     Link,
     Mention,
     Text,
@@ -172,7 +173,7 @@ content = Text(
     Bold("Important"),
     " message for ",
     Mention("John Doe", user_id="john_doe@video.example.com"),
-    "\n",
+    LineBreak(),
     Link("Open website", url="https://trueconf.com"),
 )
 
@@ -192,6 +193,7 @@ The module supports:
 - [`Link(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Link)
 - [`Mention(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Mention)
 - [`AllMention()`](../reference/Formatting.md/#trueconf.utils.formatting.AllMention)
+- [`LineBreak()`](../reference/Formatting.md/#trueconf.utils.formatting.LineBreak)
 - [`Text(...)`](../reference/Formatting.md/#trueconf.utils.formatting.Text)
 
 ### Message length limits
@@ -219,6 +221,10 @@ For more information about limits, see the [Restrictions](restrictions.md) secti
 !!! Tip "Shortcut methods"
     In message handlers, it is often more convenient to use `message.answer(...)`, `message.reply(...)`, and other shortcut methods instead of calling `bot.send_message(...)` directly.
     For details, see the [Shortcuts](shortcuts.md) section.
+
+!!! Tip "Interactive buttons"
+    You can attach inline keyboards to messages and handle button clicks through `CallbackQuery`.
+    For details, see [Interactive Buttons](buttons.md).
 
 !!! Tip "Sending files"
     This section covers text messages.

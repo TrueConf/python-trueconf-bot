@@ -1,6 +1,3 @@
-
-from __future__ import annotations
-
 """
 Utilities for building formatted message text.
 
@@ -9,13 +6,13 @@ helpers. Formatting nodes can be composed and rendered either as HTML or Markdow
 
 Example:
     ```python
-    from trueconf.utils.formatting import Bold, Link, Mention, Text
+    from trueconf.utils.formatting import Bold, LineBreak, Link, Mention, Text
 
     content = Text(
         Bold("Important"),
         " message for ",
         Mention("John Doe", user_id="john_doe@video.example.com"),
-        "\n",
+        LineBreak(),
         Link("Open website", url="https://trueconf.com"),
     )
 
@@ -24,9 +21,13 @@ Example:
     ```
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from html import escape
 
 from .decorations import TextDecoration, html_decoration, markdown_decoration
+
 
 class TextNode(ABC):
     """
@@ -51,6 +52,24 @@ class TextNode(ABC):
         """
         ...
 
+    def as_html(self) -> str:
+        """
+        Renders the node as HTML.
+
+        Returns:
+            str: HTML representation of the formatted text.
+        """
+        return self.render(html_decoration)
+
+    def as_markdown(self) -> str:
+        """
+        Renders the node as Markdown.
+
+        Returns:
+            str: Markdown representation of the formatted text.
+        """
+        return self.render(markdown_decoration)
+
 
 class Text(TextNode):
     """
@@ -65,6 +84,7 @@ class Text(TextNode):
         html = content.as_html()
         ```
     """
+
     def __init__(self, *body: str | TextNode):
         """
         Initializes a text container.
@@ -94,27 +114,10 @@ class Text(TextNode):
 
         return "".join(parts)
 
-    def as_html(self) -> str:
-        """
-        Renders the text container as HTML.
-
-        Returns:
-            str: HTML representation of the formatted text.
-        """
-        return self.render(html_decoration)
-
-    def as_markdown(self) -> str:
-        """
-        Renders the text container as Markdown.
-
-        Returns:
-            str: Markdown representation of the formatted text.
-        """
-        return self.render(markdown_decoration)
-
 
 class Bold(Text):
     """Represents bold text."""
+
     def render(self, decoration: TextDecoration) -> str:
         """
         Renders the nested content as bold text.
@@ -130,6 +133,7 @@ class Bold(Text):
 
 class Italic(Text):
     """Represents italic text."""
+
     def render(self, decoration: TextDecoration) -> str:
         """
         Renders the nested content as italic text.
@@ -145,6 +149,7 @@ class Italic(Text):
 
 class Underline(Text):
     """Represents underlined text."""
+
     def render(self, decoration: TextDecoration) -> str:
         """
         Renders the nested content as underlined text.
@@ -160,6 +165,7 @@ class Underline(Text):
 
 class Strikethrough(Text):
     """Represents strikethrough text."""
+
     def render(self, decoration: TextDecoration) -> str:
         """
         Renders the nested content as strikethrough text.
@@ -181,6 +187,7 @@ class Link(Text):
         *body (str | TextNode): Link label as plain text or formatting nodes.
         url (str): Link target URL.
     """
+
     def __init__(self, *body: str | TextNode, url: str):
         """
         Initializes a hyperlink node.
@@ -213,6 +220,7 @@ class Mention(Text):
         *body (str | TextNode): Mention label as plain text or formatting nodes.
         user_id (str): TrueConf user ID, for example ``john_doe@video.example.com``.
     """
+
     def __init__(self, *body: str | TextNode, user_id: str):
         """
         Initializes a TrueConf mention node.
@@ -237,8 +245,30 @@ class Mention(Text):
         return decoration.mention(super().render(decoration), self.user_id)
 
 
+class LineBreak(TextNode):
+    """
+    Represents a line break.
+
+    Rendered as ``<br>`` in HTML and as ``\\n`` in Markdown, since raw newlines
+    are collapsed to spaces in HTML messages.
+    """
+
+    def render(self, decoration: TextDecoration) -> str:
+        """
+        Renders a line break.
+
+        Args:
+            decoration (TextDecoration): Formatting strategy used for rendering.
+
+        Returns:
+            str: Rendered line break.
+        """
+        return decoration.line_break()
+
+
 class AllMention(TextNode):
     """Represents an ``@all`` mention."""
+
     def render(self, decoration: TextDecoration) -> str:
         """
         Renders an ``@all`` mention.
@@ -250,3 +280,54 @@ class AllMention(TextNode):
             str: Rendered ``@all`` mention.
         """
         return decoration.all_mention()
+
+
+def _quote_reply_html(quote: str, text: str) -> str:
+    """
+    Build a reply-with-quote body for HTML messages: quote block + ``<br><br>`` + text.
+
+    The quote is HTML-escaped so that user input cannot break out of the
+    ``<quote class="reply">`` tag. ``text`` is expected to be valid HTML.
+
+    Args:
+        quote (str): Part of the replied message to highlight.
+        text (str): HTML reply text that follows the quote block.
+
+    Returns:
+        str: Full message body for a reply-with-quote.
+    """
+    return f'<quote class="reply">{escape(quote, quote=False)}</quote><br><br>{text}'
+
+
+def _quote_reply_plain(quote: str, text: str) -> str:
+    """
+    Build a reply-with-quote body from plain text: quote and text are HTML-escaped.
+
+    Used when the caller supplies plain text (parse mode TEXT): escaping both parts
+    keeps the literal content visible inside the HTML quote block.
+
+    Args:
+        quote (str): Part of the replied message to highlight.
+        text (str): Plain reply text that follows the quote block.
+
+    Returns:
+        str: Full message body for a reply-with-quote.
+    """
+    return _quote_reply_html(quote, escape(text, quote=False))
+
+
+def _quote_reply_markdown(quote: str, text: str) -> str:
+    """
+    Build a reply-with-quote body for Markdown messages: ``>quote`` + blank line + text.
+
+    The quote text is passed through as-is so Markdown inside the original message
+    stays intact. Known TrueConf server rendering deviations are tracked separately.
+
+    Args:
+        quote (str): Part of the replied message to highlight.
+        text (str): Markdown reply text that follows the quote block.
+
+    Returns:
+        str: Full message body for a reply-with-quote.
+    """
+    return f">{quote}\n\n{text}"

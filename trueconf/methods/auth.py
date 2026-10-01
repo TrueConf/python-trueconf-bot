@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from trueconf.methods.base import TrueConfMethod
 from trueconf.types.responses.auth_response_payload import AuthResponsePayload
 
@@ -22,5 +24,5 @@ class AuthMethod(TrueConfMethod[AuthResponsePayload]):
             "token": self.token,
             "tokenType": self.tokenType,
             "receiveUnread": self.receive_unread_messages,
-            "receiveSystemMessageEnvelopes": self.receive_system_messages
+            "receiveSystemMessageEnvelopes": self.receive_system_messages,
         }

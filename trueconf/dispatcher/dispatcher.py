@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, List
-from trueconf.filters.base import Event
+
 from trueconf.dispatcher.router import Router
+from trueconf.filters.base import Event
 
 MiddlewareHandler = Callable[[Event, Dict[str, Any]], Awaitable[None]]
 
@@ -15,10 +17,14 @@ if TYPE_CHECKING:
 class Dispatcher(Router):
     """Central dispatcher for routing incoming events.
 
-    The dispatcher is the root router of an application. It receives incoming
-    events, applies its own outer middleware chain, and then passes each event
-    to the included root routers in order. Processing stops when a router handles
-    the event, unless that router allows propagation to its child routers.
+    The dispatcher receives incoming events, applies its outer middleware chain,
+    and then passes each event to every included root router in registration order.
+    Root routers are independent; handling an event in one root does not prevent
+    another root from receiving it.
+
+    Each root owns an ordered tree of child routers. Within one tree, traversal
+    stops at the first router that handles the event. A router created with
+    ``allow_child_on_event=True`` also propagates handled events to its children.
 
     `Dispatcher` inherits from `Router`, so it supports the same handler,
     middleware, and subrouter registration APIs.
@@ -89,8 +95,7 @@ class Dispatcher(Router):
 
         if self.fsm is not None:
             raise RuntimeError(
-                "FSM is already configured for this Dispatcher. "
-                "Call setup_fsm() only once, or create a new Dispatcher."
+                "FSM is already configured for this Dispatcher. Call setup_fsm() only once, or create a new Dispatcher."
             )
 
         if fsm_manager is None:
@@ -115,13 +120,11 @@ class Dispatcher(Router):
         self.routers.append(router)
 
     async def _feed_update(self, event: Event, data: Dict[str, Any]) -> None:
-        """
-            Feeds an event to all child routers in order,
-            stopping at the first one that handles it.
+        """Feed an event to every independent root router in order.
 
-            The event first passes through the dispatcher's own middleware chain
-            (outer middlewares from dispatcher ancestors → dispatcher), then is
-            fed to each child router.
+        The event first passes through the dispatcher's outer middleware chain.
+        Each root then traverses its child tree in registration order until one
+        branch handles the event, subject to ``allow_child_on_event``.
 
         Args:
             event (Event): The event to be processed.
@@ -129,13 +132,16 @@ class Dispatcher(Router):
         """
 
         async def _feed_children(evt: Event, ctx: Dict[str, Any]) -> None:
-            async def progress_router(router: Router, count: int = 0) -> None:
+            async def progress_router(router: Router) -> bool:
                 handled = await router._feed(evt, ctx)
-                if count < 0 or count >= len(router._subrouters):
-                    return
-                if (not handled) or (handled and router.allow_child_on_event):
-                    subrouter = router._subrouters[count]
-                    await progress_router(subrouter, count=len(router._subrouters) - 1)
+                if handled and not router.allow_child_on_event:
+                    return True
+
+                for subrouter in router._subrouters:
+                    if await progress_router(subrouter):
+                        return True
+
+                return handled
 
             for router in self.routers:
                 await progress_router(router)

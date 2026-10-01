@@ -1,10 +1,15 @@
 from __future__ import annotations
-import logging
-from asyncio import get_running_loop
-from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
-from trueconf.types.responses.api_error import ApiError
+
 import asyncio
+import logging
+from abc import ABC, abstractmethod
+from asyncio import get_running_loop
+from typing import TYPE_CHECKING, ClassVar, Generic, Protocol, TypeVar, runtime_checkable
+
+from trueconf.types.responses.api_error import ApiError
+
+if TYPE_CHECKING:
+    from trueconf.client.bot import Bot
 
 logger = logging.getLogger("chat_bot")
 
@@ -34,27 +39,25 @@ class TrueConfMethod(ABC, Generic[T]):
         __api_method__: ClassVar[str]
         __returning__: ClassVar[type[T]]
     else:
-        @property
-        @abstractmethod
-        def __api_method__(self) -> str:
-            ...
 
         @property
         @abstractmethod
-        def __returning__(self) -> type[T]:
-            ...
+        def __api_method__(self) -> str: ...
+
+        @property
+        @abstractmethod
+        def __returning__(self) -> type[T]: ...
 
     @abstractmethod
-    def payload(self) -> dict:
-        ...
+    def payload(self) -> dict: ...
 
     def _parse_return(self, resp: dict) -> T:
         ret = self.__returning__
 
-        payload = (resp.get("payload") or {})
+        payload = resp.get("payload") or {}
 
         if isinstance(payload, dict) and (payload.get("errorCode", 0) != 0):
-            error =  ApiError.from_dict(payload)  # type: ignore[return-value] # type: ignore[return-value]
+            error = ApiError.from_dict(payload)  # type: ignore[return-value] # type: ignore[return-value]
             raise error.to_exception(payload=payload)
 
         if hasattr(ret, "parse"):
@@ -84,18 +87,25 @@ class TrueConfMethod(ABC, Generic[T]):
             }
 
         except AttributeError:
-            raise RuntimeError(
-                f"{type(self).__name__} must define __api_method__ and __returning__"
-            )
+            raise RuntimeError(f"{type(self).__name__} must define __api_method__ and __returning__")
 
-        logger.debug(f"📤 Sending message: {message}")
-
-        await bot._send_ws_payload(message)
+        log_message = {
+            **message,
+            "payload": dict(message["payload"]),
+        }
+        if "token" in log_message["payload"]:
+            log_message["payload"]["token"] = log_message["payload"]["token"][-30:]
+        logger.debug(f"📤 Sending message: {log_message}")
 
         try:
-            data = await asyncio.wait_for(future, timeout=timeout)
-        except asyncio.TimeoutError:
-            raise TimeoutError(f"Request to {self.__api_method__} timed out after {timeout}s")
+            await bot._send_ws_payload(message)
+
+            try:
+                data = await asyncio.wait_for(future, timeout=timeout)
+            except asyncio.TimeoutError:
+                raise TimeoutError(f"Request to {self.__api_method__} timed out after {timeout}s")
+        finally:
+            bot._discard_future(self.id, future)
         logger.debug(f"✅ Received response for {self.__api_method__}: {data}")
 
         return self._parse_return(data)
