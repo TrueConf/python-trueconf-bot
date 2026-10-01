@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block outdated %}
+  You're not viewing the latest version.
+  <a href="{{ '../' ~ base_url }}">
+    <strong>Click here to go to latest.</strong>
+  </a>
+{% endblock %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% if page and page.file %}
+    {% set src = page.file.src_uri.replace('en/', '').replace('ru/', '') %}
+  <link rel="alternate" type="text/markdown" href="{{ config.site_url.rstrip('/') }}/{{ src }}">
+  {% endif %}
+  <script
+          src="https://context7.com/widget.js"
+          data-library="/websites/trueconf_github_io_python-trueconf-bot"
+          data-color="#0397A7"
+          data-placeholder="Ask about python-trueconf-bot"
+          async
+  ></script>
+
+  <script>
+      // Проверка в консоли браузера (F12), загружается ли скрипт
+    console.log("Custom overrides loaded");
+    document$.subscribe(function() {
+      // Если виджет требует ручной инициализации или специфических настроек,
+      // добавьте их сюда. Обычно внешние чаты подхватываются сами.
+      console.log("Context7 chat initialized");
+    })
+  </script>
+{% endblock %}
