@@ -3,9 +3,14 @@
 <head>
   <meta charset="utf-8">
   <title>Redirecting</title>
-  <meta http-equiv="refresh" content="0; url=latest/">
-  <link rel="canonical" href="https://trueconf.github.io/python-trueconf-bot/latest/">
-  <link rel="llms-txt" href="https://trueconf.github.io/python-trueconf-bot/latest/llms.txt">
+  <noscript>
+    <meta http-equiv="refresh" content="1; url=latest/" />
+  </noscript>
+  <script>
+    window.location.replace(
+      "latest/" + window.location.search + window.location.hash
+    );
+  </script>
 </head>
 <body>
   Redirecting to <a href="latest/">latest/</a>...
