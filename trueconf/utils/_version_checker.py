@@ -25,8 +25,14 @@ class _VersionChecker:
         CompatibilityRule(
             server_spec=SpecifierSet(">=5.5.0,<=5.5.2"),
             library_spec=SpecifierSet(">=1.1.0,<1.2.0"),
-            message="Server version 5.5.0–5.5.2 requires python-trueconf-bot v1.1.x.",
+            message="Server version 5.5.0-5.5.2 requires python-trueconf-bot v1.1.x.",
             install_hint='uv pip install "python-trueconf-bot>=1.1.0,<1.2.0"',
+        ),
+        CompatibilityRule(
+            server_spec=SpecifierSet(">=5.5.3,<=5.5.5"),
+            library_spec=SpecifierSet(">=1.2.1,<1.5.0"),
+            message="Server version 5.5.3-5.5.5 requires python-trueconf-bot >=1.2.1,<1.5.0",
+            install_hint='uv pip install "python-trueconf-bot>=1.2.1,<1.5.0"',
         ),
     )
 
