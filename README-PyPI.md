@@ -60,9 +60,10 @@ uv add python-trueconf-bot
 
 | TrueConf Server Version | Required Library Version |
 |:------------------------|:-------------------------|
-| < 5.5.0                 | ❌ Not supported          |
+| < 5.5.0                 | ❌ Not supported         |
 | 5.5.0 — 5.5.2           | v1.1.x                   |
-| >= 5.5.3                | **v1.2.1** (or higher)   |
+| 5.5.3 — 5.5.5           | v1.2.1-1.4.x             |
+| >= 5.5.6                | **v1.5.0** (or higher)   |
 
 ## 📌 Key Features
 
