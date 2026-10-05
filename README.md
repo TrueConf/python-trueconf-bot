@@ -62,12 +62,15 @@ uv add python-trueconf-bot
 
 ## 📦 Version Compatibility
 
-| TrueConf Server Version | Required Library Version |
-|:------------------------|:-------------------------|
-| < 5.5.0                 | ❌ Not supported         |
-| 5.5.0 — 5.5.2           | v1.1.x                   |
-| 5.5.3 — 5.5.5           | v1.2.1-1.4.x             |
-| >= 5.5.6                | **v1.5.0** (or higher)   |
+| TrueConf Server Version | Library Version                          |
+|:------------------------|:-----------------------------------------|
+| < 5.5.0                 | ❌ Not supported                         |
+| 5.5.0 — 5.5.2           | v1.1.x                                   |
+| 5.5.3 — 5.5.5           | v1.2.1-1.4.x                             |
+| >= 5.5.6                | v1.4.x — compatible / **v1.5.0+** — full support |
+
+> [!NOTE]
+> v1.4.x works with TrueConf Server 5.5.6 for basic messaging (new API fields are simply ignored). **v1.5.0+ is required** to use the new 5.5.6 features: inline buttons, chat activity, voice messages, `message.chat` and `reply_message`. Note that v1.4.x cannot parse voice messages (type 205) — such updates are dropped.
 
 ## 📌 Key Features
 
