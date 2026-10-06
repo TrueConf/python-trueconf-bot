@@ -58,6 +58,7 @@ jobs:
         uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.10"
+          cache-suffix: "-httpx2-2.7.0"
 
       - name: Create venv with httpx2 pinned to the minimum supported version
         run: |
