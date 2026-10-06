@@ -34,10 +34,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package and test dependencies
-        run: |
-          uv venv
-          uv pip install -e . pytest "anyio>=4.10" "trio>=0.34.0"
+      - name: Install dependencies
+        run: uv sync --group test
 
       - name: Show versions
         run: |
@@ -45,3 +43,30 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests/ -v
+
+  test-httpx2-floor:
+    name: pytest (Python 3.10, httpx2==2.7.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.10"
+
+      - name: Create venv with httpx2 pinned to the minimum supported version
+        run: |
+          uv venv --python 3.10 --clear
+          uv pip install --python .venv/bin/python -e . "httpx2==2.7.0" pytest "anyio>=4.10" "trio>=0.34.0"
+
+      - name: Show versions
+        run: |
+          .venv/bin/python -c "import sys, httpx2; print('python', sys.version.split()[0], '| httpx2', httpx2.__version__)"
+
+      - name: Run tests
+        run: .venv/bin/python -m pytest tests/ -v
