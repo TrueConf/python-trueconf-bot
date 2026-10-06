@@ -1857,6 +1857,12 @@ class Bot:
                 cancelling = getattr(current_task, "cancelling", None)
                 if cancelling is not None and cancelling():
                     raise
+                # Python 3.10 fallback: shutdown() sets self._stop before
+                # cancelling the connect task, so an unset flag means the
+                # cancellation came from outside (task.cancel()) and must
+                # propagate to the caller.
+                if self._connect_task is not None and not self._stop:
+                    raise
 
     async def send_document(
         self,

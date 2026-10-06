@@ -43,7 +43,7 @@ classifiers = [
 
 dependencies = [
     "websockets",
-    "httpx2>=2.13.0",
+    "httpx2>=2.7.0",
     "mashumaro>=3.23",
     "aiofiles",
     "magic-filter",

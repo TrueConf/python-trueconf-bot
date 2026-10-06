@@ -9,7 +9,16 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    name: Tests before release
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
+    permissions:
+      contents: read
+
   build-and-publish:
+    needs: test
     runs-on: ubuntu-latest
     environment: pypi
     steps:

@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to check out (used when called from another workflow)"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and test dependencies
+        run: |
+          uv venv
+          uv pip install -e . pytest "anyio>=4.10" "trio>=0.34.0"
+
+      - name: Show versions
+        run: |
+          uv run python -c "import sys, httpx2; print('python', sys.version.split()[0], '| httpx2', httpx2.__version__)"
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
