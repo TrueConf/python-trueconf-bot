@@ -16,6 +16,7 @@ from httpx2 import AsyncClient
 from typing_extensions import Self
 
 from trueconf import loggers
+from trueconf.exceptions import FileSizeTooLargeError, FileUploadError
 from trueconf.utils._user_agent import get_user_agent
 
 try:
@@ -175,8 +176,8 @@ class BufferedInputFile(InputFile):
             )
             mime_type = mime_type or kwargs.pop("mimetype")
 
-        if file_name is None:
-            raise TypeError("BufferedInputFile.__init__() missing 1 required argument: 'file_name'")
+        if not file_name:
+            raise TypeError("BufferedInputFile.__init__() requires a non-empty 'file_name'")
 
         if file_size is None:
             file_size = len(file)
@@ -230,6 +231,8 @@ class BufferedInputFile(InputFile):
 
         if file_name is None:
             file_name = os.path.basename(path)
+        if not file_name:
+            raise ValueError(f"Cannot determine file name from path: {path}")
         with open(path, "rb") as f:
             data = f.read()
 
@@ -325,6 +328,8 @@ class FSInputFile(InputFile):
 
         if file_name is None:
             file_name = os.path.basename(path)
+        if not file_name:
+            raise ValueError(f"Cannot determine file name from path: {path}")
 
         if file_size is None:
             file_size = os.path.getsize(path)
@@ -427,51 +432,98 @@ class URLInputFile(InputFile):
         self.headers = headers
         self.timeout = timeout
         self.verify_ssl = verify_ssl
+        # Shared with clones: they see the content even if cloned before the download.
+        self._downloaded_content: list[bytes | None] = [None]
+
+    @property
+    def _content(self) -> bytes | None:
+        return self._downloaded_content[0]
+
+    @_content.setter
+    def _content(self, value: bytes | None) -> None:
+        self._downloaded_content[0] = value
 
     async def prepare(self):
         """
-        Prepares file metadata by sending a HEAD request to the specified URL.
+        Prepares file metadata from HTTP response headers without downloading the body.
 
-        This method attempts to detect:
+        Sends a streaming GET request and reads only the response headers:
 
           - MIME type from the `Content-Type` header.
-          - File size from the `Content-Length` header.
           - File name from the `Content-Disposition` header or URL path.
+          - File size from the `Content-Length` header.
+
+        Note:
+            `Content-Length` is only an estimate for dynamic sources (e.g. a camera
+            snapshot endpoint returns a new image per request). The authoritative
+            `file_size` is set by `read()` from the actual downloaded bytes.
 
         Raises:
-            ValueError: If the server does not provide a valid `Content-Length`.
+            HTTPStatusError: If the server responds with an error status code.
+            FileUploadError: If the file name cannot be resolved from the
+                `Content-Disposition` header or the URL path.
         """
-        if self.file_size is not None and self.mime_type is not None:
+        if self._content is not None or (self.file_size is not None and self.mime_type is not None):
+            self.__resolve_file_name()
             return
 
-        async with AsyncClient(
-            verify=self.verify_ssl, headers={"User-Agent": get_user_agent(), **self.headers}
-        ) as client, client.stream("HEAD", self.url, headers=self.headers, timeout=self.timeout) as response:
+        async with (
+            AsyncClient(
+                verify=self.verify_ssl,
+                headers={"User-Agent": get_user_agent(), **self.headers},
+                follow_redirects=True,
+            ) as client,
+            client.stream("GET", self.url, headers=self.headers, timeout=self.timeout) as response,
+        ):
+            response.raise_for_status()
+
             if self.mime_type is None:
                 content_type = response.headers.get("Content-Type")
                 if content_type:
                     self.mime_type = content_type.split(";")[0].strip()
 
-            content_length = response.headers.get("Content-Length")
-            if content_length and content_length.isdigit():
-                self.file_size = int(content_length)
-            else:
-                raise ValueError("Server did not provide Content-Length, unable to determine file size.")
-
-            content_disp = response.headers.get("Content-Disposition", "")
             if self.file_name is None:
+                content_disp = response.headers.get("Content-Disposition", "")
                 self.file_name = file_name_from_content_disposition(content_disp) or file_name_from_url(self.url)
-        return
 
-    async def read(self):
+            if self.file_size is None:
+                content_length = response.headers.get("Content-Length")
+                if content_length and content_length.isdigit():
+                    self.file_size = int(content_length)
+
+        self.__resolve_file_name()
+
+    def __resolve_file_name(self) -> None:
+        if self.file_name is None:
+            self.file_name = file_name_from_url(self.url)
+        if not self.file_name:
+            raise FileUploadError(f"Unable to determine file name from URL: {self.url}")
+
+    async def read(self, max_size: int | None = None):
         """
         Downloads the file content from the remote URL.
 
-        Performs a full GET request and returns the content as raw bytes.
+        The content is downloaded once and cached: repeated calls (and calls on
+        clones) return the same bytes. After a successful download `file_size` is
+        set to the actual size of the downloaded body, so the size declared to the
+        server always matches the uploaded content — even for sources that return
+        a new file per request.
+
+        Args:
+            max_size (int | None): Optional download limit in bytes. If the
+                accumulated content exceeds it, the download is aborted and
+                `FileSizeTooLargeError` is raised.
 
         Returns:
             bytes: File content.
+
+        Raises:
+            HTTPStatusError: If the server responds with an error status code.
+            FileSizeTooLargeError: If the content exceeds `max_size`.
         """
+        if self._content is not None:
+            return self._content
+
         async with AsyncClient(
             verify=self.verify_ssl, headers={"User-Agent": get_user_agent(), **self.headers}
         ) as client:
@@ -483,24 +535,40 @@ class URLInputFile(InputFile):
                 timeout=self.timeout,
                 follow_redirects=True,
             ) as response:
+                response.raise_for_status()
                 async for chunk in response.aiter_bytes():
                     data.extend(chunk)
-        return bytes(data)
+                    if max_size is not None and len(data) > max_size:
+                        raise FileSizeTooLargeError(actual_size=len(data), limit=max_size)
+
+        self._content = bytes(data)
+        if self.file_size != len(self._content):
+            if self.file_size is not None:
+                loggers.chatbot.debug(
+                    f"Content-Length {self.file_size} != actual {len(self._content)} bytes, using actual size"
+                )
+            self.file_size = len(self._content)
+        return self._content
 
     def clone(self) -> URLInputFile:
         """
         Creates a clone of the current `URLInputFile` instance.
 
         Useful when the same file needs to be reused (e.g., sending a preview).
-        The cloned object retains the same URL, headers, and metadata.
+        The cloned object retains the same URL, headers, and metadata, and shares
+        the already downloaded content: no second download is performed.
 
         Returns:
             URLInputFile: A new instance with identical parameters.
         """
-        return URLInputFile(
+        cloned = URLInputFile(
             url=self.url,
             headers=self.headers.copy(),
             file_name=self.file_name,
+            file_size=self.file_size,
+            mime_type=self.mime_type,
             timeout=self.timeout,
             verify_ssl=self.verify_ssl,
         )
+        cloned._downloaded_content = self._downloaded_content
+        return cloned

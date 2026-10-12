@@ -6,6 +6,56 @@ icon: material/note-text
 
 # List of Changes
 
+## 1.5.4
+
+**Added:**
+
+- The `Message.forwarded_message` property — the original of a forwarded message
+- The `max_size` parameter in `URLInputFile.read()` — aborts the download with `FileSizeTooLargeError` when the content exceeds the limit
+
+**Fixed:**
+
+- Parsing of forwarded messages (type `201`): `ForwardMessage` inherits from `Message` and gains all its parameters — `text`, `voice`, `document`, `reply_message`, `bind` and others; nested forwards are resolved recursively. A forwarded voice message no longer drops the whole update with `InvalidFieldValue`
+- `getChatHistory`: the `fromMessageId` parameter is no longer sent as `null` — it caused the `399 WRONG_PAYLOAD_FORMAT` server error
+- `URLInputFile`: the file size is now computed from the actually downloaded body. Sources that return a new file per request (e.g. camera snapshots) led to `400 Bad Request`: the size was taken from the headers of one response while the body of another was uploaded
+- `URLInputFile`: redirecting URLs and servers rejecting HEAD requests are handled correctly; an error response (e.g. 404) is no longer treated as the file with the error-page size
+
+**Changed:**
+
+- `URLInputFile.prepare()` reads only HTTP headers and does not download the body; `Content-Length` is treated as an estimate. The exact size becomes known after the download and is the size declared to the server
+- One `URLInputFile` object corresponds to one content: repeated sends and `clone()` reuse the downloaded bytes. Need a fresh file (e.g. a new camera frame) — create a new object
+- `read(max_size=...)` aborts the download when the limit is exceeded; the `bot.max_file_size` limit now applies to URL files as well
+- Metadata completeness (a non-empty name + size) is now guaranteed by the file classes themselves: `URLInputFile` resolves the name in `prepare()` (otherwise `FileUploadError`), `BufferedInputFile` and `FSInputFile` reject an empty `file_name` (`TypeError`/`ValueError`)
+- `Message.box` is now optional — a forwarded message carries no `box`
+
+## 1.5.3
+
+**Fixed:**
+
+- Connect task cancellation in Python 3.10: an external cancellation (`task.cancel()`) now propagates to the caller
+- The `httpx2` dependency is back to `>=2.7.0` (previously `>=2.13.0`)
+- Tests are wired into GitHub Actions; CI updated: actions moved to Node 24, `setup-uv` pinned to v10.2.0, caching added
+
+## 1.5.2
+
+**Added:**
+
+- Python 3.14 support declared
+
+**Fixed:**
+
+- The version compatibility table in README
+
+## 1.5.1
+
+**Added:**
+
+- Version compatibility check: TrueConf Server 5.5.3–5.5.5 requires `python-trueconf-bot >=1.2.1,<1.5.0` (with an install hint)
+
+**Fixed:**
+
+- The version compatibility table in README
+
 ## 1.5.0
 
 🚀 **Major release!** This is not only a set of new features, but also extensive work on stability.

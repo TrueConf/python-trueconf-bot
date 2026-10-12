@@ -89,6 +89,19 @@ file = URLInputFile(
 )
 ```
 
+**How the size is determined.** `await file.prepare()` reads only the HTTP headers
+(type, name, `Content-Length`) without downloading the body — it is cheap. For
+dynamic sources (e.g. a camera that returns a new snapshot per request)
+`Content-Length` is only an estimate: the exact size becomes known after the
+download, and it is the size declared to the server, so it always matches the
+uploaded content.
+
+- One `URLInputFile` object = one content: repeated sends and `clone()` reuse the
+  downloaded bytes instead of downloading again. Need a fresh snapshot — create a
+  new object.
+- `await file.read(max_size=...)` aborts the download when the content exceeds the
+  limit (when sending, the `bot.max_file_size` limit is applied automatically).
+
 ### Recommendations
 
 - **MIME type**: determined automatically. If the

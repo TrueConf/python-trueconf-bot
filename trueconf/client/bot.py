@@ -680,15 +680,23 @@ class Bot:
                 response does not contain `temporalFileId`.
         """
 
-        loggers.chatbot.info(f"📤 Uploading file: {file.file_name} ({file.file_size} bytes)")
         if isinstance(file, URLInputFile):
             await file.prepare()
             if isinstance(preview, URLInputFile):
                 await preview.prepare()
 
-        if file.file_name is None or file.file_size is None:
-            raise FileUploadError("File metadata is incomplete: file_name and file_size are required")
+            try:
+                # Declare the size of the actual body: otherwise the server rejects the upload with 400.
+                file_data = await file.read(max_size=self.max_file_size)
+            except (httpx2.HTTPError, httpx2.InvalidURL, httpx2.StreamError) as error:
+                raise FileUploadError(f"File download failed: {error}") from error
+        else:
+            try:
+                file_data = await file.read()
+            except OSError as error:
+                raise FileUploadError(f"File download failed: {error}") from error
 
+        loggers.chatbot.info(f"📤 Uploading file: {file.file_name} ({file.file_size} bytes)")
         res = await self(UploadFile(file_size=file.file_size, file_name=file.file_name))
         loggers.chatbot.info(f"📤 Upload task created: {res.upload_task_id}")
         upload_task_id = res.upload_task_id
@@ -710,7 +718,7 @@ class Bot:
                 data = FormData(quote_fields=False)
                 data.add_field(
                     name="file",
-                    value=await file.read(),
+                    value=file_data,
                     filename=file.file_name,
                     content_type="sticker/webp" if is_sticker else file.mime_type,
                 )
@@ -981,7 +989,11 @@ class Bot:
                 exc_info=(type(error), error, error.__traceback__),
             )
 
-    def __check_file_limitations(self, file):
+    async def __check_file_limitations(self, file):
+        if isinstance(file, URLInputFile):
+            # Headers only, so the size check below uses the declared size.
+            await file.prepare()
+
         loggers.chatbot.info(
             f"🔍 Checking file limitations: {file.file_name} ({file.file_size} bytes, .{file.extension})"
         )
@@ -1904,7 +1916,7 @@ class Bot:
             ```
         """
 
-        self.__check_file_limitations(file)
+        await self.__check_file_limitations(file)
 
         if caption and (length := visible_len(caption)) > 4096:
             raise FileCaptionTooLongError(actual_length=length)
@@ -2087,7 +2099,7 @@ class Bot:
 
         loggers.chatbot.info(f"✉️ Sending photo to {chat_id}")
 
-        self.__check_file_limitations(file)
+        await self.__check_file_limitations(file)
 
         if caption and (length := visible_len(caption)) > 4096:
             raise FileCaptionTooLongError(actual_length=length)
@@ -2144,7 +2156,7 @@ class Bot:
         if file.mime_type != "image/webp":
             raise TypeError("File type not supported. File type must be 'image/webp'")
 
-        self.__check_file_limitations(file)
+        await self.__check_file_limitations(file)
 
         temporal_file_id = await self.__upload_file_to_server(file=file, preview=file.clone(), is_sticker=True)
         loggers.chatbot.info(f"🎨 Sticker uploaded: temporalFileId={temporal_file_id}")

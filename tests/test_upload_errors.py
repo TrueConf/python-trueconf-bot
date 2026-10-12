@@ -65,6 +65,7 @@ def bot(monkeypatch):
     bot._protocol = "https"
     bot.ssl_context = None
     bot.timeout = 10
+    bot.max_file_size = None
 
     async def create_upload_task(_self, _method):
         return SimpleNamespace(upload_task_id="task-id")

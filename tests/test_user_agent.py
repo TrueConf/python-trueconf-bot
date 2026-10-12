@@ -151,6 +151,7 @@ async def test_upload_client_sends_user_agent(monkeypatch):
     bot._protocol = "https"
     bot.ssl_context = None
     bot.timeout = 10
+    bot.max_file_size = None
 
     async def create_upload_task(_self, _method):
         return SimpleNamespace(upload_task_id="task-id")
@@ -348,6 +349,9 @@ def test_url_input_file_constructs_without_file_name():
 
 class _FakeUrlResponse:
     headers = {"Content-Length": "10", "Content-Type": "text/plain"}
+
+    def raise_for_status(self):
+        return None
 
     async def aiter_bytes(self):
         yield b"data"
