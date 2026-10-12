@@ -19,8 +19,10 @@ class GetChatHistory(TrueConfMethod[GetChatHistoryResponse]):
         super().__init__()
 
     def payload(self):
-        return {
+        payload = {
             "chatId": self.chat_id,
             "count": self.count,
-            "fromMessageId": self.from_message_id,
         }
+        if self.from_message_id is not None:
+            payload["fromMessageId"] = self.from_message_id
+        return payload

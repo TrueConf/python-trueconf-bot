@@ -25,7 +25,13 @@ class LastMessage(DataClassDictMixin):
     timestamp: int
     author: EnvelopeAuthor
     type: MessageType
-    content: UserMessageContent | SystemMessageContent = field(metadata={"deserialize": pass_through})
+    content: UserMessageContent | SystemMessageContent = field(
+        metadata={
+            "deserialize": pass_through,
+            # lastMessage may be a forward, so pack content via to_dict().
+            "serialize": lambda value: value.to_dict(),
+        }
+    )
     chat: Chat
 
     @classmethod

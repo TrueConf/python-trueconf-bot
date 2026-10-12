@@ -45,7 +45,7 @@ QUOTE_RE = re.compile(r'<quote\s+class="reply">(.*?)</quote>', re.DOTALL)
 STRIP_QUOTE_RE = re.compile(rf"^{QUOTE_RE.pattern}(?:<br>)+", re.DOTALL)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Message(BoundToBot, DataClassDictMixin):
     """
     Represents a single chat message within TrueConf Chatbot Connector.
@@ -105,8 +105,14 @@ class Message(BoundToBot, DataClassDictMixin):
     timestamp: int
     type: MessageType
     author: EnvelopeAuthor
-    box: EnvelopeBox
-    content: UserMessageContent = field(metadata={"deserialize": pass_through})
+    box: EnvelopeBox | None = None
+    # `Message` covers `ForwardMessage` (a forward's content is the original).
+    content: UserMessageContent | Message = field(
+        metadata={
+            "deserialize": pass_through,
+            "serialize": lambda value: value.to_dict(),
+        }
+    )
     message_id: str = field(metadata={"alias": "messageId"})
     is_edited: bool = field(metadata={"alias": "isEdited"})
     reply_message_id: str | None = field(default=None, metadata={"alias": "replyMessageId"})
@@ -123,7 +129,28 @@ class Message(BoundToBot, DataClassDictMixin):
         super().bind(bot)
         if self.reply_message is not None:
             self.reply_message.bind(bot)
+        if isinstance(self.content, BoundToBot):
+            self.content.bind(bot)
         return self
+
+    @property
+    def forwarded_message(self) -> Message | None:
+        """
+        Returns the forwarded original message if this message is a forward.
+
+        The server sends a forward as an `Envelope` of `type` 201 whose
+        `content` is the `Envelope` of the forwarded original (without its
+        `box`). That inner envelope is parsed into a `ForwardMessage`, which
+        is a full `Message`, so all regular shortcuts (`text`, `voice`,
+        `reply_message`, ...) work on it.
+
+        Returns:
+            Optional[Message]: The forwarded original message, or None if the
+            message is not a forward.
+        """
+
+        # Dispatch guarantees `content` is a `Message` instance only for forwards.
+        return self.content if isinstance(self.content, Message) else None
 
     @property
     @deprecated("Message.chat_id is deprecated, use message.chat.chat_id instead")
