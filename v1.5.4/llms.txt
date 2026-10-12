@@ -1,0 +1,33 @@
+# Python TrueConf Bot SDK
+## INDEX
+- [Python Library for TrueConf Chatbot Connector ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/index.md)
+- [Features ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/features.md)
+- [Learn](#learn)
+  - [Getting Started ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/getting-started.md)
+  - [Authentication ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/authentication.md)
+  - [Handling Requests ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/parse-messages.md)
+  - [Filters ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/filters.md)
+  - [Middleware ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/middleware.md)
+  - [FSM — Finite State Machine ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/fsm.md)
+  - [Sending messages ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/send_message.md)
+  - [Interactive Buttons ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/buttons.md)
+  - [Chat activity indicator ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/typing_indicator.md)
+  - [Shortcuts ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/shortcuts.md)
+  - [Using enumerations ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/enums.md)
+  - [Data Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/types.md)
+  - [Working with Files ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/files.md)
+  - [Restrictions ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/learn/restrictions.md)
+- [Reference](#reference)
+  - [Class Bot ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Bot.md)
+  - [Class Router ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Router.md)
+  - [Class Dispatcher ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Dispatcher.md)
+  - [Enums](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Enums.md)
+  - [Types ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Types.md)
+  - [Formatting](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Formatting.md)
+  - [Chat activity](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/chat_activity.md)
+  - [Exceptions](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Exceptions.md)
+  - [Responses ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/reference/Responses.md)
+- [List of Changes ⚓︎](https://trueconf.github.io/python-trueconf-bot/v1.5.4/release_notes.md)
+
+## CONTENT
+See `llms-full.txt` for the complete rendered documentation.
