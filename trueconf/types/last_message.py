@@ -10,6 +10,7 @@ from trueconf.enums.message_type import MessageType
 from trueconf.types.author_box import EnvelopeAuthor
 from trueconf.types.chat import Chat
 from trueconf.types.content.attachment import AttachmentContent
+from trueconf.types.content.forward_message import ForwardMessage
 from trueconf.types.content.parser import (
     SystemMessageContent,
     UnsupportedMessageType,
@@ -25,7 +26,7 @@ class LastMessage(DataClassDictMixin):
     timestamp: int
     author: EnvelopeAuthor
     type: MessageType
-    content: UserMessageContent | SystemMessageContent = field(
+    content: UserMessageContent | SystemMessageContent | ForwardMessage = field(
         metadata={
             "deserialize": pass_through,
             # lastMessage may be a forward, so pack content via to_dict().

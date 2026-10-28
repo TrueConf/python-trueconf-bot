@@ -4,6 +4,7 @@ import pytest
 
 from trueconf.enums.message_type import MessageType
 from trueconf.types.content.clear_chat_history import ClearChatHistoryContent
+from trueconf.types.content.forward_message import ForwardMessage
 from trueconf.types.content.parser import UnsupportedMessageType
 from trueconf.types.content.remove_participant import RemoveParticipant
 from trueconf.types.content.text import TextContent
@@ -90,3 +91,28 @@ def test_remove_participant_last_message_parses():
 def test_unknown_last_message_type_raises_unsupported():
     with pytest.raises(UnsupportedMessageType):
         LastMessage.from_dict(_last_message(999, {"foo": "bar"}))
+
+
+def test_get_chat_by_id_survives_forward_last_message_without_is_edited():
+    # Regression: getChatById's lastMessage may be a forward whose inner
+    # envelope carries no `isEdited` — the whole chat info must still parse.
+    response = GetChatByIdResponse.from_dict(
+        _chat(
+            _last_message(
+                201,
+                {
+                    "chat": {"chatId": "chat-2", "chatTitle": "Source", "chatType": 1},
+                    "chatId": "chat-2",
+                    "messageId": "orig",
+                    "timestamp": 1,
+                    "author": {"id": "alice@example.com", "type": 1},
+                    "type": 200,
+                    "content": {"text": "hi", "parseMode": "html"},
+                },
+            )
+        )
+    )
+
+    assert isinstance(response.last_message.content, ForwardMessage)
+    assert response.last_message.content.is_edited is False
+    assert response.last_message.content.text == "hi"

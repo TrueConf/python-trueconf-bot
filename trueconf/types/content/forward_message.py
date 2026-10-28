@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from trueconf.enums.message_type import MessageType
@@ -19,7 +19,9 @@ class ForwardMessage(Message):
     Content of a forwarded message (`FORWARDED_MESSAGE`, type 201).
 
     Corresponds to the [ForwardMessageContent][1] interface: the `Envelope`
-    of the forwarded original message without the `box` field.
+    of the forwarded original message without the `box` field. `isEdited` is
+    optional here (`False` when absent): the server omits it inside a forward,
+    notably in `getChatById`'s `lastMessage`.
 
     The class inherits from `Message`, so the forwarded original is a fully
     functional message: shortcuts such as `text`, `voice`, `document`,
@@ -33,6 +35,11 @@ class ForwardMessage(Message):
     # Overrides the parent field (no `pass_through`) so mashumaro resolves
     # the content by shape; `Message` last is the fallback for the envelope form.
     content: TextContent | AttachmentContent | SurveyContent | Location | Voice | Message
+
+    # The server omits `isEdited` from `ForwardMessageContent` (observed in
+    # `getChatById`'s `lastMessage`), and the inner copy carries no edit state.
+    # The parent keeps it required for real `Envelope` updates.
+    is_edited: bool = field(default=False, metadata={"alias": "isEdited"})
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[str, Any]) -> dict[str, Any]:
