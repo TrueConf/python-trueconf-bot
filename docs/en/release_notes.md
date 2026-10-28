@@ -6,6 +6,12 @@ icon: material/note-text
 
 # List of Changes
 
+## 1.5.5
+
+**Fixed:**
+
+- `getChatById`: when the chat's last message is a forward (type `201`) and the nested `ForwardMessageContent` carries no `isEdited`, the response no longer fails with `InvalidFieldValue`/`MissingField` and the chat info is preserved. `ForwardMessage.is_edited` now defaults to `False`
+
 ## 1.5.4
 
 **Added:**

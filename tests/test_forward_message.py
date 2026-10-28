@@ -120,6 +120,26 @@ def test_forwarded_original_envelope_fields():
     assert forwarded.box is None
 
 
+def test_forward_content_without_is_edited_defaults_to_false():
+    raw = _forward_raw(200, {"text": "hi", "parseMode": "html"})
+    del raw["content"]["isEdited"]
+
+    msg = deserialize_envelope(raw)
+
+    assert isinstance(msg.content, ForwardMessage)
+    assert msg.content.is_edited is False
+
+
+def test_forward_explicit_is_edited_is_preserved():
+    raw = _forward_raw(200, {"text": "hi", "parseMode": "html"})
+    raw["content"]["isEdited"] = True
+
+    msg = deserialize_envelope(raw)
+
+    assert isinstance(msg.content, ForwardMessage)
+    assert msg.content.is_edited is True
+
+
 def test_forwarded_chat_id_deprecated_property_still_works():
     msg = deserialize_envelope(_forward_raw(205, _CANONICAL_CONTENTS[4][1]))
 
@@ -405,3 +425,30 @@ def test_last_message_forward_does_not_raise():
 
     assert isinstance(parsed.content, ForwardMessage)
     assert isinstance(parsed.content.content, Voice)
+
+
+def test_last_message_forward_without_is_edited_parses():
+    # Regression for getChatById: the lastMessage projection omits isEdited at
+    # the top level and the server omits it inside the forwarded content too.
+    last_message = {
+        "chat": {"chatId": "g1", "chatTitle": "G", "chatType": 2},
+        "messageId": "m2",
+        "timestamp": 2,
+        "author": {"id": "g@x", "type": 0},
+        "type": 201,
+        "content": {
+            "chat": {"chatType": 1, "chatTitle": "U", "chatId": "c1"},
+            "chatId": "c1",
+            "messageId": "m1",
+            "author": {"id": "u@x", "type": 1},
+            "type": 200,
+            "timestamp": 1,
+            "content": {"text": "hi", "parseMode": "text"},
+        },
+    }
+
+    parsed = LastMessage.from_dict(last_message)
+
+    assert isinstance(parsed.content, ForwardMessage)
+    assert parsed.content.is_edited is False
+    assert parsed.content.text == "hi"

@@ -6,6 +6,12 @@ icon: material/note-text
 
 # Список изменений
 
+## 1.5.5
+
+**Исправлено:**
+
+- `getChatById`: если последнее сообщение чата — пересылка (тип `201`), а во вложенном `ForwardMessageContent` нет `isEdited`, ответ больше не падает с `InvalidFieldValue`/`MissingField` и информация о чате не теряется. `ForwardMessage.is_edited` по умолчанию `False`
+
 ## 1.5.4
 
 **Добавлено:**
